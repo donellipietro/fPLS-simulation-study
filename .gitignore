@@ -1,0 +1,26 @@
+*.RData
+*.rds
+*.Rhistory
+*.DS_Store
+*.txt
+*.pdf
+*.png
+*.Rproj
+*.csv
+.env
+
+# generated outputs and root links
+/results
+/images
+/logs
+/queue
+/data
+/build
+/tmp
+/.fdapde-cpp
+/libraries
+/cpp/ipopt.opt
+/cpp/*/fit_model*
+/.idea/
+
+.Rproj.user
