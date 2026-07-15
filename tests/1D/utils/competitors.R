@@ -1,3 +1,8 @@
+# = ========================================================================== =
+# - Script: competitors.R
+# - Desc: Adapts the corrected source MV/B/PB competitors to testbench results.
+# = ========================================================================== =
+
 fit_rank_one_pls <- function(Y, X, n_comp) {
   Y <- as.matrix(Y)
   X <- as.matrix(X)
@@ -72,9 +77,12 @@ competitor_provenance <- function(model_name, test_options, data) {
       batch_index = test_options$batch_index,
       data_seed = data$data_seed,
       model = model_name,
-      comparator_implementation = "candidate_paper_definition",
+      comparator_implementation = "historical_corrected_competitor_port",
       comparator_status = test_options$provenance$comparator_status,
-      run_settings_status = test_options$test_options$run_settings_status
+      run_settings_status = test_options$test_options$run_settings_status,
+      fda_version = as.character(utils::packageVersion("fda")),
+      pls_version = as.character(utils::packageVersion("pls")),
+      expm_version = as.character(utils::packageVersion("expm"))
     )
   )
 }
@@ -153,66 +161,70 @@ fit_mv_pls_competitor <- function(data, test_options) {
   )
 }
 
-symmetric_sqrt <- function(value) {
-  decomposition <- eigen((value + t(value)) / 2, symmetric = TRUE)
-  if (min(decomposition$values) <= 0) stop("functional metric is not positive definite")
-  decomposition$vectors %*%
-    diag(sqrt(decomposition$values), nrow = length(decomposition$values)) %*%
-    t(decomposition$vectors)
+fit_source_basis_coefficients <- function(X, locations, basis, Psi, penalty, lambda) {
+  if (lambda == 0) {
+    fd <- fda::Data2fd(locations, y = t(X), basisobj = basis)
+    return(t(as.matrix(fd[["coefs"]])))
+  }
+  t(solve(crossprod(Psi) + lambda * penalty, crossprod(Psi, t(X))))
 }
 
-fit_basis_coefficients <- function(X, Psi, penalty, lambda) {
-  system <- crossprod(Psi) + lambda * penalty
-  t(solve(system, crossprod(Psi, t(X))))
-}
-
-select_modal_gcv_lambda <- function(X, Psi, penalty, lambda_grid) {
-  gram <- crossprod(Psi)
-  systems <- lapply(lambda_grid, function(lambda) solve(gram + lambda * penalty))
-  effective_df <- vapply(systems, function(inverse) sum(diag(inverse %*% gram)), numeric(1))
-  selected_index <- vapply(seq_len(nrow(X)), function(i) {
-    y <- X[i, ]
-    scores <- vapply(seq_along(lambda_grid), function(j) {
-      coefficients <- systems[[j]] %*% crossprod(Psi, y)
-      residual <- y - Psi %*% coefficients
-      mean(residual^2) / (1 - effective_df[j] / nrow(Psi))^2
+select_source_modal_gcv_lambda <- function(X, locations, basis, lambda_grid) {
+  selected <- vapply(seq_len(nrow(X)), function(i) {
+    scores <- vapply(lambda_grid, function(lambda) {
+      fit <- fda::smooth.basis(
+        locations, X[i, ], fda::fdPar(basis, Lfdobj = 2, lambda = lambda)
+      )
+      sum(fit$gcv)
     }, numeric(1))
-    which.min(scores)
-  }, integer(1))
-  counts <- tabulate(selected_index, nbins = length(lambda_grid))
+    lambda_grid[which.min(scores)]
+  }, numeric(1))
+  log_density <- stats::density(log10(selected))
   list(
-    lambda = lambda_grid[which.max(counts)],
-    selected_by_curve = lambda_grid[selected_index],
-    counts = counts
+    lambda = 10^log_density$x[which.max(log_density$y)],
+    selected_by_curve = selected,
+    log10_density_mode = log_density$x[which.max(log_density$y)]
   )
 }
 
-fit_metric_pls <- function(Y, A, mass, penalty, lambda, n_comp) {
-  metric_sqrt <- symmetric_sqrt(mass + lambda * penalty)
+fit_source_metric_pls <- function(Y, A, mass, penalty, lambda, n_comp) {
+  metric_sqrt <- as.matrix(expm::sqrtm(mass + lambda * penalty))
   inverse_sqrt <- solve(metric_sqrt)
-  transformed_X <- A %*% mass %*% inverse_sqrt
+  data_pls <- A %*% mass %*% inverse_sqrt
+  model <- pls::plsr(
+    Y ~ data_pls,
+    ncomp = n_comp,
+    method = "oscorespls",
+    center = FALSE,
+    scale = FALSE
+  )
   list(
-    fit = fit_rank_one_pls(Y, transformed_X, n_comp),
+    model = model,
     metric_sqrt = metric_sqrt,
-    inverse_sqrt = inverse_sqrt
+    inverse_sqrt = inverse_sqrt,
+    transformed_X = data_pls
   )
 }
 
-select_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp, folds, seed) {
+select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp, folds) {
   n_units <- nrow(A)
   folds <- min(as.integer(folds), n_units)
-  set.seed(seed)
   fold_id <- sample(rep(seq_len(folds), length.out = n_units))
   cv_error <- vapply(lambda_grid, function(lambda) {
     fold_error <- vapply(seq_len(folds), function(fold) {
       train <- fold_id != fold
       validation <- !train
-      metric <- fit_metric_pls(Y[train, , drop = FALSE], A[train, , drop = FALSE],
-                               mass, penalty, lambda, n_comp)
-      transformed_validation <- A[validation, , drop = FALSE] %*%
-        mass %*% metric$inverse_sqrt
-      prediction <- transformed_validation %*% metric$fit$Beta[[n_comp]]
-      mean((Y[validation, , drop = FALSE] - prediction)^2)
+      metric <- fit_source_metric_pls(
+        Y[train, , drop = FALSE], A[train, , drop = FALSE],
+        mass, penalty, lambda, n_comp
+      )
+      # Source parity: validation coefficients were not penalty-transformed.
+      prediction <- predict(
+        metric$model,
+        newdata = A[validation, , drop = FALSE],
+        n_comp = n_comp
+      )
+      mean((Y[validation, , drop = FALSE] - prediction[, , n_comp])^2)
     }, numeric(1))
     mean(fold_error)
   }, numeric(1))
@@ -237,47 +249,63 @@ fit_functional_competitor <- function(model_name, data, test_options) {
   mass <- fda::bsplinepen(basis, Lfdobj = 0)
   penalty <- fda::bsplinepen(basis, Lfdobj = 2)
 
-  smoothing <- list(lambda = 0, selected_by_curve = numeric(), counts = integer())
+  smoothing <- list(
+    lambda = 0,
+    selected_by_curve = numeric(),
+    log10_density_mode = NA_real_
+  )
   if (identical(model_name, "B_fPLS_smooth")) {
-    smoothing <- select_modal_gcv_lambda(
-      data$X, Psi, penalty, test_options$competitors$smoothing_lambda_grid
+    smoothing <- select_source_modal_gcv_lambda(
+      data$X, data$locations[, 1], basis,
+      test_options$competitors$smoothing_lambda_grid
     )
   }
-  A <- fit_basis_coefficients(data$X, Psi, penalty, smoothing$lambda)
+  A <- fit_source_basis_coefficients(
+    data$X, data$locations[, 1], basis, Psi, penalty, smoothing$lambda
+  )
 
   component_lambda <- 0
   cv <- list(cv_error = numeric(), fold_id = integer())
   if (identical(model_name, "PB_fPLS")) {
-    cv <- select_pb_lambda(
+    cv <- select_source_pb_lambda(
       data$Y, A, mass, penalty, test_options$competitors$pb_lambda_grid,
-      test_options$model$n_comp, test_options$competitors$cv_folds,
-      test_options$competitors$cv_seed + data$data_seed
+      test_options$model$n_comp, test_options$competitors$cv_folds
     )
     component_lambda <- cv$lambda
   }
 
-  metric <- fit_metric_pls(
+  metric <- fit_source_metric_pls(
     data$Y, A, mass, penalty, component_lambda, test_options$model$n_comp
   )
-  fit <- metric$fit
-  directions <- metric$inverse_sqrt %*% fit$X_space_directions
-  loadings <- solve(mass, metric$metric_sqrt %*% fit$X_loadings)
+  fit <- metric$model
+  scores <- as.matrix(fit$scores)
+  y_scores <- as.matrix(fit$Yscores)
+  transformed_loadings <- as.matrix(fit$loadings)
+  y_loadings <- as.matrix(fit$Yloadings)
+  transformed_directions <- as.matrix(fit$loading.weights)
+  directions <- matrix(NA_real_, nrow = ncol(Psi), ncol = test_options$model$n_comp)
+  loadings <- solve(mass, metric$metric_sqrt %*% transformed_loadings)
   directions_locations <- Psi %*% directions
   loadings_locations <- Psi %*% loadings
   X_hat_locations <- lapply(seq_len(test_options$model$n_comp), function(h) {
-    fit$X_latent_scores[, seq_len(h), drop = FALSE] %*%
+    scores[, seq_len(h), drop = FALSE] %*%
       t(loadings_locations[, seq_len(h), drop = FALSE])
   })
-
-  beta_coefficients <- lapply(fit$Beta, function(beta_transformed) {
-    metric$inverse_sqrt %*% beta_transformed
+  Y_hat <- lapply(seq_len(test_options$model$n_comp), function(h) {
+    as.matrix(fit$fitted.values[, , h])
   })
-  for (h in seq_along(beta_coefficients)) {
-    beta_prediction <- A %*% mass %*% beta_coefficients[[h]]
-    if (max(abs(beta_prediction - fit$Y_hat[[h]])) > 1e-8) {
-      stop("functional beta coefficients do not reproduce the fitted response")
-    }
-  }
+
+  beta_coefficients <- lapply(seq_len(test_options$model$n_comp), function(h) {
+    active <- seq_len(h)
+    transformed_beta <- transformed_directions[, active, drop = FALSE] %*%
+      solve(crossprod(
+        transformed_loadings[, active, drop = FALSE],
+        transformed_directions[, active, drop = FALSE]
+      )) %*%
+      t(y_loadings[, active, drop = FALSE])
+    source_beta <- metric$inverse_sqrt %*% transformed_beta
+    solve(crossprod(Psi) + smoothing$lambda * penalty, mass %*% source_beta)
+  })
   beta_locations <- lapply(beta_coefficients, function(beta) Psi %*% beta)
   beta_evaluation <- lapply(beta_coefficients, function(beta) Psi_evaluation %*% beta)
 
@@ -286,13 +314,13 @@ fit_functional_competitor <- function(model_name, data, test_options) {
   raw <- list(
     X_space_directions = directions,
     X_space_directions_locations = directions_locations,
-    Y_space_directions = fit$Y_space_directions,
-    X_latent_scores = fit$X_latent_scores,
-    Y_latent_scores = fit$Y_latent_scores,
+    Y_space_directions = matrix(1, 1L, test_options$model$n_comp),
+    X_latent_scores = scores,
+    Y_latent_scores = y_scores,
     X_loadings = loadings,
     X_loadings_locations = loadings_locations,
-    Y_loadings = fit$Y_loadings,
-    Y_hat = fit$Y_hat,
+    Y_loadings = y_loadings,
+    Y_hat = Y_hat,
     X_hat_locations = X_hat_locations,
     Beta_coefficients = beta_coefficients,
     Beta_locations = beta_locations,
@@ -301,23 +329,25 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     Y_mean = matrix(0, 1L, ncol(data$Y)),
     smoothing_lambda = smoothing$lambda,
     smoothing_lambdas_by_curve = smoothing$selected_by_curve,
-    smoothing_lambda_counts = smoothing$counts,
+    smoothing_log10_density_mode = smoothing$log10_density_mode,
     component_lambda = component_lambda,
     cv_error = cv$cv_error,
     cv_fold_id = cv$fold_id,
-    cv_seed = if (model_name == "PB_fPLS") {
-      test_options$competitors$cv_seed + data$data_seed
-    } else {
-      NA_integer_
-    },
+    cv_rng = if (model_name == "PB_fPLS") {
+      "source_rng_state_after_data_generation"
+    } else NA_character_,
+    cv_validation_space = if (model_name == "PB_fPLS") {
+      "source_untransformed_basis_coefficients"
+    } else NA_character_,
     basis_k_source = basis_k,
-    beta_mapping = "functional_inner_product"
+    beta_mapping = "historical_corrected_source_projection",
+    x_direction_status = "not_reconstructed_by_historical_competitor_source"
   )
   calibration <- switch(
     model_name,
     B_fPLS = "regression_spline",
-    B_fPLS_smooth = "per_curve_gcv_modal_lambda",
-    PB_fPLS = "five_fold_cv_penalty"
+    B_fPLS_smooth = "per_curve_gcv_log10_density_mode",
+    PB_fPLS = "source_five_fold_cv_penalty"
   )
   finish_r_model(
     model_name, raw, elapsed, cpu_seconds, r_peak_memory_mb(),

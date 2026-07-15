@@ -223,7 +223,7 @@ write_json(
     paper_design_complete = FALSE,
     paper_results_reproduced = FALSE,
     design_blockers = c(
-      "comparator_implementation_acceptance",
+      "competitor_paper_description_precision",
       "basis_and_rng_semantics_acceptance",
       "final_metric_acceptance"
     ),

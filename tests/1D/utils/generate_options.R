@@ -105,8 +105,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       smoothing_lambda_grid = lambda_grid,
       pb_lambda_grid = lambda_grid,
       cv_folds = 5L,
-      cv_seed = 0L,
-      implementation_status = "candidate_pending_explicit_acceptance"
+      implementation_status = "historical_corrected_source_port_pending_paper_precision"
     ),
     provenance = list(
       template_commit = "e92e1a14b567572fea8b67a99c320c239e366dec",
@@ -119,9 +118,9 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       submitted_metric_status = "provisional_submitted_paper_formula",
       submitted_metric_formula = "frobenius_error/(nrow*ncol*frobenius_truth)",
       source_k_status = "historical_scenario_label_actual_basis_count_may_differ",
-      comparator_status = "candidate_pending_explicit_acceptance",
-      beta_mapping = "functional_inner_product",
-      pb_cv_seed_status = "provisional_cv_seed_plus_data_seed",
+      comparator_status = "historical_corrected_source_port_pending_paper_precision",
+      beta_mapping = "historical_corrected_source_projection",
+      pb_cv_rng_status = "source_rng_state_after_data_generation_fold_ids_preserved",
       smoke_override = SMOKE_TEST,
       paper_design_complete = FALSE,
       paper_results_reproduced = FALSE

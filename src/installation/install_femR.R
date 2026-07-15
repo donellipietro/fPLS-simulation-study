@@ -27,7 +27,8 @@ print(.libPaths())
 cat("CRAN mirror:", getOption("repos")[["CRAN"]], "\n")
 
 cran_packages <- c(
-  "dplyr", "fda", "ggplot2", "glue", "gridExtra", "jsonlite", "RColorBrewer", "tidyr"
+  "dplyr", "expm", "fda", "ggplot2", "glue", "gridExtra", "jsonlite", "pls",
+  "RColorBrewer", "tidyr"
 )
 missing_packages <- cran_packages[
   !vapply(cran_packages, requireNamespace, quietly = TRUE, FUN.VALUE = logical(1))

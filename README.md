@@ -50,6 +50,29 @@ selected lambdas, telemetry, and outer/core commit provenance under the
 standard batch result directory. R competitors preserve their component-wise
 fits, calibration details, telemetry, and provenance in the same batch cache.
 
+## Competitor Provenance
+
+The fdaPDE-R fitting bridge remains archaeology and is not used. MV-PLS and
+the B-fPLS/PB-fPLS competitors are adapted from Pietro's corrected competitor
+implementation at historical design commit `7fb9172`, while retaining the
+standard testbench model and batch contracts. The adaptation uses `pls::plsr`
+with orthogonal-scores PLS, the source B-spline coefficient representation,
+and the source coefficient-function projection.
+
+The submitted paper and corrected implementation agree on the competitor
+families but require more precise wording in five places. Source `k` is the
+number of spline breakpoints and produces `k + 2` cubic B-spline basis
+functions. The smoothing-spline B-fPLS lambda is the kernel-density mode on
+the log10 scale of per-curve GCV optima. PB-fPLS uses five folds inherited
+from the RNG state immediately after each batch's data generation; the exact
+fold assignments are retained with every fit. Finally, source PB validation
+passes the untransformed basis-coefficient matrix to the prediction method
+for a model fitted in the penalty-transformed space. That last source-era
+detail is reproduced for figure fidelity and remains a methodological point
+to state or revise explicitly, not something the migration silently changes.
+The reported beta curves also use the corrected source's coefficient-space
+projection rather than being reconstructed from the fitted response.
+
 ## Workflow
 
 ```bash
@@ -72,7 +95,7 @@ and `data_1D.pdf` uses the submitted pink-to-purple palette.
 Running the same `make run_test` commands without `SMOKE_TEST=1` executes the
 full configured grids and 30 replications and creates all of those production
 figures. They remain candidate paper-facing outputs, not accepted paper
-reproductions, until the provisional comparator, basis/RNG, metric, and
+reproductions, until the competitor-description, basis/RNG, metric, and
 numerical-matching decisions below are resolved.
 
 Cached fit paths do not encode smoke mode. Before switching this working copy
@@ -98,17 +121,16 @@ provisional because the submitted notation and source evaluator disagree.
 Historical lambda grids, seeds, location RNG adaptations, tolerance, iteration
 cap, and the precise meaning of source `k` are also provisional.
 
-The B/PB and MV comparator implementations are runnable candidates based on
-the paper definitions, not accepted reproduction evidence. In particular,
-PB-fPLS cross-validation still differs numerically from the submitted boxes.
-Its extra `vary_n` outliers stretch the X and beta plot scales even though the
-other four methods remain at essentially the submitted numerical levels. The fold count
-and `0 + data_seed` fold seed are provisional, and the submitted folds were not
-recorded, so PB-fPLS must not be silently retuned to match the PDF. Aggregation
-can mark an executed smoke or production run complete only after checking every
-expected model, batch, raw output, provenance field, metric, and repetition.
-It always leaves `paper_design_complete` and `paper_results_reproduced` false
-until explicit scientific and numerical acceptance decisions are recorded.
+The B/PB implementation now reproduces Pietro's corrected source mechanics
+rather than a paper-definition reimplementation. This resolves the previous
+custom PB behavior, but it does not by itself validate the paper's current
+method description: basis-count semantics, inherited fold RNG, validation
+space, and the source coefficient projection remain explicit source-era
+details. Aggregation can mark an executed smoke or production run complete
+only after checking every expected model, batch, raw output, provenance field,
+metric, and repetition. It always leaves `paper_design_complete` and
+`paper_results_reproduced` false until the scientific wording, final metric,
+and numerical matching are accepted.
 
 ## Excluded Scope
 
