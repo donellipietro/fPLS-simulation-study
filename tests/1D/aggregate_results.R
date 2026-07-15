@@ -156,6 +156,24 @@ for (family in families) {
 
   image_dir <- file.path(cfg$PATH_IMAGES, test_suite, family)
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
+
+  ## Create the standard standalone model legend
+  pdf(file.path(image_dir, "legend.pdf"), width = 14, height = 1.5, bg = "white")
+  par(mar = rep(0, 4))
+  plot.new()
+  legend(
+    "center",
+    legend = loaded$model_labels,
+    col = loaded$model_colors,
+    lty = 1,
+    lwd = 2,
+    pch = 15,
+    pt.cex = 1.5,
+    horiz = TRUE,
+    bty = "n"
+  )
+  dev.off()
+
   for (metric in metrics) {
     data_plot <- loaded$rmse[[metric]][final_component, , drop = FALSE]
     pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)

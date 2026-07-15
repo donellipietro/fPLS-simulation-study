@@ -60,9 +60,28 @@ SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
 
 The standard testbench owns configuration, cloning, compilation, queues,
 execution strategy, batch files, result loading, telemetry, aggregation, and
-quantitative plotting. Production 1D `vary_k` also creates the `k=11/101`
-qualitative beta comparison; production 2D `vary_n` creates the representative
-beta maps.
+quantitative plotting. Each family produces three metric PDFs and a standalone
+`legend.pdf`. Production 1D `vary_k` also creates the `k=11/101` qualitative
+beta comparison; production 2D `vary_n` creates the representative beta maps.
+
+Running the same `make run_test` commands without `SMOKE_TEST=1` executes the
+full configured grids and 30 replications and creates all of those production
+figures. They remain candidate paper-facing outputs, not accepted paper
+reproductions, until the provisional comparator, basis/RNG, metric, and
+numerical-matching decisions below are resolved.
+
+Cached fit paths do not encode smoke mode. Before switching this working copy
+from smoke to production, clean each family through the standard target:
+
+```bash
+for suite in 1D 2D; do
+  for family in vary_k vary_n vary_m; do
+    make clean_test PROFILE=macbook TEST_SUITE="$suite" TEST_NAME="$family"
+  done
+done
+make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
+make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
+```
 
 ## Provisional Contract
 
