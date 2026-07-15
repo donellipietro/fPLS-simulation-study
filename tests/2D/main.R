@@ -37,16 +37,28 @@ queue_file <- file.path(path_list$queue, file_options)
 test_options <- fromJSON(queue_file, simplifyVector = TRUE)
 path_list <- update_paths(path_list, name_main_test, test_options)
 
+## Log file ----
+run_message <- glue::glue(
+  "- Running: {test_suite} / {test_options$name_test}\n",
+  .trim = FALSE
+)
+cat(run_message)
+sink(file.path(path_list$logs, "log.txt"), append = TRUE)
+cat(run_message)
+sink()
+sink(
+  file.path(path_list$logs, glue::glue("log_{test_options$name_test}.txt")),
+  append = TRUE
+)
+cat(run_message)
+
 ## Run every repetition ----
-cat(glue::glue("- Running: {test_suite} / {test_options$name_test}\n", .trim = FALSE))
 for (batch_index in seq_len(test_options$test_options$n_reps)) {
-  cat(glue::glue(
-    "- Batch {batch_index} of {test_options$test_options$n_reps}\n",
-    .trim = FALSE
-  ))
+  cat(glue::glue("\nBatch {batch_index}:\n", .trim = FALSE))
   path_list$batch <- config_path(path_list$results, glue::glue("batch_{batch_index}"))
   mkdir(path_list$batch)
 
+  cat("- Generate data\n")
   data <- generate_fpls_data(test_options, data_seed = batch_index)
   saveRDS(data, file.path(path_list$batch, "generated_data.rds"))
   if (batch_index == 1L) {
@@ -54,6 +66,7 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
   }
 
   test_options$batch_index <- batch_index
+  cat("- Fit models\n")
   fit_and_evaluate_models(
     path_list = path_list,
     data = data,
@@ -63,5 +76,6 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
   )
 }
 
-## Remove the processed option from the queue ----
+## Test finalization ----
 unlink(queue_file)
+sink()

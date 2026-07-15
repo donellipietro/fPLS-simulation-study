@@ -21,8 +21,14 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
       load(model_file)
       model <- get(object_name)
     } else {
-      cat(glue::glue("  fitting {model_name}\n", .trim = FALSE))
+      cat(glue::glue("- Fitting model: {model_name} ... ", .trim = FALSE))
+      model_start <- Sys.time()
       model <- fit_model(model_name, domain, data, path_list, test_options)
+      model_elapsed <- Sys.time() - model_start
+      cat(glue::glue(
+        "finished after {model_elapsed} {attr(model_elapsed, 'units')}\n",
+        .trim = FALSE
+      ))
       assign(object_name, model)
       save(list = object_name, file = model_file)
       rm(list = object_name)
@@ -31,5 +37,5 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
   }
 
   save(index_batch = batch_index, results_evaluation, file = evaluation_file)
-  cat("  batch complete\n")
+  cat(glue::glue("- Batch {batch_index} completed.\n", .trim = FALSE))
 }

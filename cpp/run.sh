@@ -14,8 +14,9 @@ Options:
   -h, --help               Show this help.
 
 The runtime is selected from .env:
-  - empty SINGULARITY_IMAGE: run on the host
+  - filled DOCKER_IMAGE: run through Docker
   - filled SINGULARITY_IMAGE: run through apptainer or singularity exec
+  - neither image configured: run on the host
 USAGE
 }
 
@@ -84,7 +85,24 @@ export VECLIB_MAXIMUM_THREADS="${VECLIB_MAXIMUM_THREADS:-1}"
 
 WORKDIR="${WORKDIR:-${PATH_REPO:-${PROJECT_DIR}}}"
 
-if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
+if [[ -n "${SINGULARITY_IMAGE:-}" && -n "${DOCKER_IMAGE:-}" ]]; then
+  echo "Error: configure only one of SINGULARITY_IMAGE and DOCKER_IMAGE." >&2
+  exit 1
+elif [[ -n "${DOCKER_IMAGE:-}" ]]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Error: DOCKER_IMAGE is set, but Docker is unavailable." >&2
+    exit 1
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    echo "Error: Docker is installed but its daemon is unavailable." >&2
+    exit 1
+  fi
+  if ! docker image inspect "${DOCKER_IMAGE}" >/dev/null 2>&1; then
+    echo "Error: Docker image not found: ${DOCKER_IMAGE}. Run make build for this profile." >&2
+    exit 1
+  fi
+  RUNTIME="Docker"
+elif [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
   if command -v apptainer >/dev/null 2>&1; then
     CONTAINER_RUNTIME="apptainer"
     RUNTIME="Apptainer"
@@ -109,6 +127,9 @@ if [[ "${DESCRIBE}" -eq 1 || "${QUIET}" -eq 0 ]]; then
   if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
     echo "Image: ${SINGULARITY_IMAGE}"
     echo "Bind paths: ${SINGULARITY_BIND_PATHS:-}"
+  elif [[ -n "${DOCKER_IMAGE:-}" ]]; then
+    echo "Image: ${DOCKER_IMAGE}"
+    echo "Bind paths: ${DOCKER_BIND_PATHS:-}"
   fi
   echo "Working directory: $(display_path "${WORKDIR}")"
 fi
@@ -124,7 +145,30 @@ fi
 
 cd "${WORKDIR}"
 
-if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
+if [[ -n "${DOCKER_IMAGE:-}" ]]; then
+  docker_args=(run --rm --user "$(id -u):$(id -g)" --workdir "${WORKDIR}")
+  docker_args+=(--env "OMP_NUM_THREADS=${OMP_NUM_THREADS}")
+  docker_args+=(--env "OPENBLAS_NUM_THREADS=${OPENBLAS_NUM_THREADS}")
+  docker_args+=(--env "VECLIB_MAXIMUM_THREADS=${VECLIB_MAXIMUM_THREADS}")
+
+  if [[ -n "${DOCKER_BIND_PATHS:-}" ]]; then
+    IFS=',' read -r -a docker_bind_paths <<< "${DOCKER_BIND_PATHS}"
+    for bind_path in "${docker_bind_paths[@]}"; do
+      [[ -n "${bind_path}" ]] || continue
+      docker_args+=(--volume "${bind_path}:${bind_path}")
+    done
+  fi
+
+  if [[ -n "${TESTBENCH_MEMORY_FILE:-}" ]]; then
+    docker_args+=(--entrypoint /usr/bin/time)
+    exec docker "${docker_args[@]}" "${DOCKER_IMAGE}" \
+      -v -o "${TESTBENCH_MEMORY_FILE}" "$@"
+  fi
+
+  docker_args+=(--entrypoint "$1")
+  shift
+  exec docker "${docker_args[@]}" "${DOCKER_IMAGE}" "$@"
+elif [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
   singularity_args=()
   if [[ -n "${SINGULARITY_BIND_PATHS:-}" ]]; then
     singularity_args+=(--bind "${SINGULARITY_BIND_PATHS}")

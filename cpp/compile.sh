@@ -171,7 +171,7 @@ compile_flags() {
     )
   fi
 
-  if [[ -n "${SINGULARITY_IMAGE:-}" ]]; then
+  if [[ -n "${SINGULARITY_IMAGE:-}" || -n "${DOCKER_IMAGE:-}" ]]; then
     if [[ ! -f "${eigen_plugin}" ]]; then
       echo "Error: Eigen compatibility plugin not found: ${eigen_plugin}" >&2
       exit 1

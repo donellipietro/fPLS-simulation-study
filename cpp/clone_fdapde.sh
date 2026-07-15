@@ -4,11 +4,37 @@ set -euo pipefail
 repository="${1:-}"
 outer_branch="${2:-}"
 destination="${3:-}"
+managed="${FDAPDE_CPP_MANAGED:-true}"
 
 if [[ -z "${repository}" || -z "${outer_branch}" || -z "${destination}" ]]; then
   echo "Usage: $0 <fdaPDE-cpp-repository> <outer-branch> <destination>" >&2
   exit 1
 fi
+
+# Unmanaged mode validates an existing checkout without changing Git state.
+case "${managed}" in
+  0|false|FALSE|no|NO)
+    if ! git -C "${destination}" rev-parse --git-dir >/dev/null 2>&1; then
+      echo "Error: unmanaged fdaPDE-cpp path is not a git repository: ${destination}" >&2
+      exit 1
+    fi
+    core_dir="${destination}/fdaPDE/core"
+    if ! git -C "${core_dir}" rev-parse --git-dir >/dev/null 2>&1; then
+      echo "Error: unmanaged fdaPDE/core submodule is unavailable: ${core_dir}" >&2
+      exit 1
+    fi
+    if [[ ! -f "${destination}/fdaPDE/models.h" ]]; then
+      echo "Error: unmanaged fdaPDE-cpp headers are unavailable: ${destination}" >&2
+      exit 1
+    fi
+
+    outer_commit="$(git -C "${destination}" rev-parse HEAD)"
+    core_commit="$(git -C "${core_dir}" rev-parse HEAD)"
+    printf 'Using unmanaged fdaPDE-cpp at %s (%s); core (%s)\n' \
+      "${destination}" "${outer_commit}" "${core_commit}"
+    exit 0
+    ;;
+esac
 
 # Validate the approved outer/core branch pairing before using the outer gitlink.
 case "${outer_branch}" in

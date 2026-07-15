@@ -48,9 +48,13 @@ TESTBENCH_CONFIG_PROFILES <- list(
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
       # outer branch selected by this profile for the local fdaPDE stack
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop_fPLS"),
+      # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
+      FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
 
       SINGULARITY_IMAGE = "",
       SINGULARITY_BIND_PATHS = PATH_REPO,
+      DOCKER_IMAGE = "",
+      DOCKER_BIND_PATHS = "",
       TEST_EXECUTION_STRATEGY = "parallel",
       COMPILE_STRATEGY = "local",
       MULTITHREAD_CPUS = Sys.getenv("MULTITHREAD_CPUS", unset = "12"),
@@ -58,6 +62,62 @@ TESTBENCH_CONFIG_PROFILES <- list(
       MULTITHREAD_TIME = Sys.getenv("MULTITHREAD_TIME", unset = "12:00:00"),
       R_CRAN_REPO = "https://cloud.r-project.org",
       R_LIBS_USER = Sys.getenv("R_LIBS_USER", unset = ""),
+      R_LIBS_SITE = Sys.getenv("R_LIBS_SITE", unset = "")
+    )
+  }),
+  windows = local({
+    PATH_REPO <- normalizePath(".", mustWork = FALSE)
+    PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
+    PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
+    PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
+    FDAPDE_CPP_REPOSITORY <- Sys.getenv(
+      "FDAPDE_CPP_REPOSITORY",
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
+    )
+    DOCKER_BIND_PATHS <- unique(c(PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP))
+    DOCKER_BIND_PATHS <- DOCKER_BIND_PATHS[nzchar(DOCKER_BIND_PATHS)]
+
+    list(
+      PATH_REPO = PATH_REPO,
+
+      PATH_RESULTS = file.path(PATH_OUTPUT, "results"),
+      PATH_IMAGES = file.path(PATH_OUTPUT, "images"),
+      PATH_TEST_DATA = file.path(PATH_OUTPUT, "data/tests"),
+      PATH_TMP = PATH_TMP,
+      PATH_QUEUE = file.path(PATH_TMP, "queue"),
+      PATH_LOGS = file.path(PATH_REPO, "logs"),
+      PATH_TMP_DATA = file.path(PATH_TMP, "data"),
+      PATH_TMP_RESULTS = file.path(PATH_TMP, "results"),
+      PATH_BUILD = file.path(PATH_OUTPUT, "build"),
+
+      CC = "gcc",
+      CXX = "g++",
+      PATH_FDAPDE_CPP = PATH_FDAPDE_CPP,
+      PATH_FDAPDE_CORE = file.path(PATH_FDAPDE_CPP, "fdaPDE/core"),
+      PATH_EIGEN_INCLUDE = "/usr/include/eigen3",
+      FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
+      # Outer branch selected by this profile for the local fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop_fPLS"),
+      # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
+      FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
+
+      SINGULARITY_IMAGE = "",
+      SINGULARITY_BIND_PATHS = PATH_REPO,
+      DOCKER_IMAGE = Sys.getenv(
+        "DOCKER_IMAGE",
+        unset = "aldoclemente/fdapde-docker:latest"
+      ),
+      DOCKER_BIND_PATHS = paste(DOCKER_BIND_PATHS, collapse = ","),
+      TEST_EXECUTION_STRATEGY = "parallel",
+      COMPILE_STRATEGY = "local",
+      MULTITHREAD_CPUS = Sys.getenv("MULTITHREAD_CPUS", unset = "12"),
+      MULTITHREAD_MEM = Sys.getenv("MULTITHREAD_MEM", unset = "8GB"),
+      MULTITHREAD_TIME = Sys.getenv("MULTITHREAD_TIME", unset = "12:00:00"),
+      R_CRAN_REPO = "https://cloud.r-project.org",
+      R_LIBS_USER = Sys.getenv(
+        "R_LIBS_USER",
+        unset = file.path(PATH_REPO, "libraries", "R")
+      ),
       R_LIBS_SITE = Sys.getenv("R_LIBS_SITE", unset = "")
     )
   }),
@@ -105,6 +165,8 @@ TESTBENCH_CONFIG_PROFILES <- list(
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
       # outer branch selected by this profile for the local fdaPDE stack
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop_fPLS"),
+      # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
+      FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
 
       SINGULARITY_IMAGE = SINGULARITY_IMAGE,
       SINGULARITY_IMAGE_SOURCE = Sys.getenv(
@@ -112,6 +174,8 @@ TESTBENCH_CONFIG_PROFILES <- list(
         unset = "docker://aldoclemente/fdapde-docker:latest"
       ),
       SINGULARITY_BIND_PATHS = paste(SINGULARITY_BIND_PATHS, collapse = ","),
+      DOCKER_IMAGE = "",
+      DOCKER_BIND_PATHS = "",
       TEST_EXECUTION_STRATEGY = "slurm",
       COMPILE_STRATEGY = "slurm",
       DEFAULT_CPUS = Sys.getenv("DEFAULT_CPUS", unset = "1"),

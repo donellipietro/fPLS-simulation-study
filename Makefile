@@ -55,8 +55,10 @@ PATH_BUILD := $(call config_value,PATH_BUILD)
 PATH_FDAPDE_CPP := $(call config_value,PATH_FDAPDE_CPP)
 FDAPDE_CPP_REPOSITORY := $(call config_value,FDAPDE_CPP_REPOSITORY)
 FDAPDE_CPP_BRANCH := $(call config_value,FDAPDE_CPP_BRANCH)
+FDAPDE_CPP_MANAGED := $(call config_value,FDAPDE_CPP_MANAGED)
 SINGULARITY_IMAGE := $(call config_value,SINGULARITY_IMAGE)
 SINGULARITY_IMAGE_SOURCE := $(call config_value,SINGULARITY_IMAGE_SOURCE)
+DOCKER_IMAGE := $(call config_value,DOCKER_IMAGE)
 TEST_EXECUTION_STRATEGY := $(call config_value,TEST_EXECUTION_STRATEGY)
 COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
@@ -138,12 +140,18 @@ build:
 			./cpp/prepare_image.sh "$(SINGULARITY_IMAGE_SOURCE)" "$(SINGULARITY_IMAGE)" && \
 			printf 'Installation completed.\n\n'; \
 		fi && \
+		if [ -n "$(DOCKER_IMAGE)" ]; then \
+			printf '\nInstalling Docker image...\n' && \
+			./cpp/prepare_docker_image.sh "$(DOCKER_IMAGE)" && \
+			printf 'Installation completed.\n\n'; \
+		fi && \
 		$(MAKE) --no-print-directory install PROFILE="$(TESTBENCH_PROFILE)" && \
 		printf '\nInstalling nlohmann/json...\n' && \
 		./cpp/prepare_json.sh && \
 		printf 'Installation completed.\n\n' && \
 		printf '\nInstalling fdaPDE-cpp...\n' && \
-		./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_BRANCH)" "$(PATH_FDAPDE_CPP)" && \
+		FDAPDE_CPP_MANAGED="$(FDAPDE_CPP_MANAGED)" \
+			./cpp/clone_fdapde.sh "$(FDAPDE_CPP_REPOSITORY)" "$(FDAPDE_CPP_BRANCH)" "$(PATH_FDAPDE_CPP)" && \
 		printf 'Installation completed.\n\n' && \
 		printf 'Profile %s build completed.\n\n' "$(TESTBENCH_PROFILE)"; \
 	fi
@@ -216,24 +224,28 @@ clean: clean_tmp
 	@$(RM) .RData
 	@printf 'Cleanup completed.\n\n'
 
-## Clean results and images of a specific test
-# - usage: make clean_test TEST_SUITE=centering TEST_NAME=test1
-clean_test:
+## Clean results, images and generated data for a test or test group
+# - usage: make clean_test TEST_SUITE=centering TEST_NAME=<test_or_group>
+clean_test: clean
 	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
 		echo ""; \
-		echo "Usage: make clean_test TEST_SUITE=<suite> TEST_NAME=<test_name>"; \
+		echo "Usage: make clean_test TEST_SUITE=<suite> TEST_NAME=<test_or_group>"; \
 		echo ""; \
 		echo "Available TEST_SUITEs:"; \
 		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
-		sed 's/^\(.*\)/- \1 (make clean_test TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
+		sed 's/^\(.*\)/- \1 (make clean_test TEST_SUITE=\1 TEST_NAME=<test_or_group>)/'; \
 		echo ""; \
 		exit 0; \
 	else \
-		echo "Cleaning results and images for test: $(TEST_NAME) from suite: $(TEST_SUITE)"; \
-		$(RM) -r "$(PATH_RESULTS)/$(TEST_SUITE)/$(TEST_NAME)"; \
-		$(RM) -r "$(PATH_IMAGES)/$(TEST_SUITE)/$(TEST_NAME)"; \
-		$(RM) -r "$(PATH_TEST_DATA)/$(TEST_SUITE)/$(TEST_NAME)"; \
-		echo "Cleanup completed for test: $(TEST_NAME)"; \
+		echo "Cleaning test or group: $(TEST_SUITE)/$(TEST_NAME)"; \
+		resolved_tests="$$( $(RSCRIPT) src/resolve_test_names.R "$(TEST_SUITE)" "$(TEST_NAME)" )" || exit 1; \
+		for test_name in $$resolved_tests; do \
+			$(RM) -r "$(PATH_RESULTS)/$(TEST_SUITE)/$$test_name"; \
+			$(RM) -r "$(PATH_IMAGES)/$(TEST_SUITE)/$$test_name"; \
+			$(RM) -r "$(PATH_TEST_DATA)/$(TEST_SUITE)/$$test_name"; \
+		done; \
+		$(RM) -r "$(PATH_RESULTS)/$(TEST_SUITE)/aggregate/$(TEST_NAME)"; \
+		echo "Cleanup completed for: $(TEST_SUITE)/$(TEST_NAME)"; \
 	fi
 
 ## DANGER ZONE: Full cleanup of all generated files

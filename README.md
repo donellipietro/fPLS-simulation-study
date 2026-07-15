@@ -3,8 +3,9 @@
 This repository ports the submitted fPLS simulations to the current
 `fdaPDE-test-bench` architecture and the outer `fdaPDE-cpp` branch
 `develop_fPLS`. It was generated from testbench commit `e92e1a1` with fresh
-Git history. All generated dependencies, builds, data, queues, logs, results,
-and images remain repository-local and ignored.
+Git history; its generic framework is aligned through canonical commit
+`868cf48`. All generated dependencies, builds, data, queues, logs, results, and
+images remain repository-local and ignored.
 
 ## Test Suites
 
@@ -81,11 +82,34 @@ SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
 SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
 ```
 
+Runtime profiles are selected in `config.R`: `macbook` runs locally,
+`hpc-slurm` uses Apptainer/Singularity and Slurm, and `windows` runs from WSL2
+through Docker Desktop. The Windows profile uses
+`aldoclemente/fdapde-docker:latest` by default and requires Docker integration
+with the active WSL2 distribution:
+
+```bash
+make build PROFILE=windows
+SMOKE_TEST=1 make run_test PROFILE=windows TEST_SUITE=1D TEST_NAME=all
+```
+
+Profiles use their configured `PATH_FDAPDE_CPP`, repository, and outer branch.
+To compile against an existing initialized checkout without modifying its Git
+state, set the path and disable managed preparation for the build:
+
+```bash
+TESTBENCH_PATH_FDAPDE_CPP=/absolute/path/to/fdaPDE-cpp \
+TESTBENCH_FDAPDE_CPP_MANAGED=false \
+make build PROFILE=macbook
+```
+
 The standard testbench owns configuration, cloning, compilation, queues,
 execution strategy, batch files, result loading, telemetry, aggregation, and
 quantitative plotting. Each family produces three metric PDFs and a standalone
 `legend.pdf`. Production 1D `vary_k` also creates the `k=11/101` qualitative
 beta comparison; production 2D `vary_n` creates the representative beta maps.
+Detailed batch and model progress is retained in the per-option files under
+`logs/<suite>/<family>/`; parallel terminal output remains concise.
 Boxplots use the submitted black-outline style. The 1D `vary_k` plots retain
 the submitted figure ranges, and its qualitative beta comparison normalizes
 and sign-aligns coefficient shapes before plotting. MV-PLS is shown at its
@@ -102,14 +126,15 @@ Cached fit paths do not encode smoke mode. Before switching this working copy
 from smoke to production, clean each family through the standard target:
 
 ```bash
-for suite in 1D 2D; do
-  for family in vary_k vary_n vary_m; do
-    make clean_test PROFILE=macbook TEST_SUITE="$suite" TEST_NAME="$family"
-  done
-done
+make clean_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
+make clean_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
 make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
 make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
 ```
+
+`clean_test` resolves suite groups and removes their generated data, images,
+results, grouped aggregate output, temporary files, and logs. `make clean`
+preserves the active `.env`; only confirmed `make distclean` removes it.
 
 ## Provisional Contract
 

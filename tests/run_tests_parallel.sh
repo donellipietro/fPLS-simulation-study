@@ -123,8 +123,19 @@ for test_name in "${TEST_NAMES[@]}"; do
         CURRENT_OPTION=""
     else
         CURRENT_STAGE="running single-thread child ${TEST_SUITE}/${test_name}"
-        echo "Running ${TEST_SUITE}/${test_name} in parallel with ${PARALLEL_CORES} workers"
         cd "$directory" || exit 1
+        option_count="$(find . -maxdepth 1 -type f -name '*.json' | wc -l | tr -d '[:space:]')"
+        if [[ "${option_count}" -lt 1 ]]; then
+            echo "No option files found for ${TEST_SUITE}/${test_name}." >&2
+            exit 1
+        fi
+        parallel_jobs="${PARALLEL_CORES}"
+        if [[ "${parallel_jobs}" -gt "${option_count}" ]]; then
+            parallel_jobs="${option_count}"
+        fi
+        worker_label="workers"
+        [[ "${parallel_jobs}" -eq 1 ]] && worker_label="worker"
+        echo "Running ${TEST_SUITE}/${test_name} in parallel with ${parallel_jobs} ${worker_label}"
         joblog="${PATH_LOGS}/${TEST_SUITE}/${test_name}/parallel_joblog.tsv"
         mkdir -p "$(dirname "$joblog")"
         # Run tasks in parallel using GNU Parallel
@@ -133,7 +144,7 @@ for test_name in "${TEST_NAMES[@]}"; do
             OMP_NUM_THREADS="1" \
             OPENBLAS_NUM_THREADS="1" \
             VECLIB_MAXIMUM_THREADS="1" \
-            parallel -j "$PARALLEL_CORES" --halt soon,fail=1 --joblog "$joblog" \
+            parallel -j "$parallel_jobs" --halt soon,fail=1 --joblog "$joblog" \
               'cd "$PATH_REPO" && Rscript tests/"$TEST_SUITE"/main.R "$TEST_NAME" {}'
         parallel_status="$?"
         set -e

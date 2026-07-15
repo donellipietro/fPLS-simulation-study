@@ -58,8 +58,33 @@ r_peak_memory_mb <- function() {
 #   * ignore.stdout: passed through to system2
 # - Desc:
 #   Runs an external command and returns elapsed time, status, and peak RSS in MiB.
+#   Docker profiles request /usr/bin/time inside the container so the measured
+#   process is the fitted C++ model rather than the Docker client.
 system_with_memory <- function(command, ignore.stdout = FALSE) {
   start.time <- Sys.time()
+
+  if (nzchar(Sys.getenv("DOCKER_IMAGE", unset = ""))) {
+    path_tmp <- Sys.getenv("PATH_TMP", unset = tempdir())
+    time_file <- tempfile("time_", tmpdir = path_tmp)
+    on.exit(unlink(time_file), add = TRUE)
+
+    command <- paste(
+      glue::glue("TESTBENCH_MEMORY_FILE={shQuote(time_file)}"),
+      command
+    )
+    status <- system(command, ignore.stdout = ignore.stdout)
+    peak_ram_mib <- if (file.exists(time_file)) {
+      parse_peak_rss_mib(readLines(time_file, warn = FALSE), sysname = "Linux")
+    } else {
+      NaN
+    }
+    return(list(
+      execution_time = Sys.time() - start.time,
+      peak_ram_mib = peak_ram_mib,
+      memory_usage = peak_ram_mib,
+      status = status
+    ))
+  }
 
   time_bin <- "/usr/bin/time"
   if (!file.exists(time_bin)) {

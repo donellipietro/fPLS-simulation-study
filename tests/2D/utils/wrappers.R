@@ -43,10 +43,7 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
   locations_file <- file.path(raw_dir, "locations.csv")
   evaluation_file <- file.path(raw_dir, "evaluation.csv")
   params_file <- file.path(raw_dir, "params.json")
-  log_file <- file.path(
-    path_list$logs,
-    glue::glue("{test_options$name_test}_batch_{test_options$batch_index}_{model_name}.log")
-  )
+  log_file <- file.path(path_list$logs, glue::glue("log_{test_options$name_test}.txt"))
 
   write.csv(data$X, X_file, row.names = FALSE)
   write.csv(data$Y, Y_file, row.names = FALSE)
@@ -107,7 +104,7 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
   runner <- file.path(path_list$repo, "cpp", "run.sh")
   command <- glue::glue(
     "{shQuote(runner)} --quiet -- {shQuote(binary)} {shQuote(params_file)} ",
-    "> {shQuote(log_file)} 2>&1"
+    ">> {shQuote(log_file)} 2>&1"
   )
   run_stats <- system_with_memory(command, ignore.stdout = IGNORE_CPP_OUTPUT)
   if (!identical(run_stats$status, 0L)) {
