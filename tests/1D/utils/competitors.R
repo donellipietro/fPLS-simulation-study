@@ -269,11 +269,15 @@ fit_functional_competitor <- function(model_name, data, test_options) {
       t(loadings_locations[, seq_len(h), drop = FALSE])
   })
 
-  effective_system <- crossprod(Psi) + smoothing$lambda * penalty
   beta_coefficients <- lapply(fit$Beta, function(beta_transformed) {
-    beta_function <- metric$inverse_sqrt %*% beta_transformed
-    solve(effective_system, mass %*% beta_function)
+    metric$inverse_sqrt %*% beta_transformed
   })
+  for (h in seq_along(beta_coefficients)) {
+    beta_prediction <- A %*% mass %*% beta_coefficients[[h]]
+    if (max(abs(beta_prediction - fit$Y_hat[[h]])) > 1e-8) {
+      stop("functional beta coefficients do not reproduce the fitted response")
+    }
+  }
   beta_locations <- lapply(beta_coefficients, function(beta) Psi %*% beta)
   beta_evaluation <- lapply(beta_coefficients, function(beta) Psi_evaluation %*% beta)
 
@@ -301,7 +305,13 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     component_lambda = component_lambda,
     cv_error = cv$cv_error,
     cv_fold_id = cv$fold_id,
-    basis_k_source = basis_k
+    cv_seed = if (model_name == "PB_fPLS") {
+      test_options$competitors$cv_seed + data$data_seed
+    } else {
+      NA_integer_
+    },
+    basis_k_source = basis_k,
+    beta_mapping = "functional_inner_product"
   )
   calibration <- switch(
     model_name,

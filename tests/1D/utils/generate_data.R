@@ -209,24 +209,44 @@ generate_fpls_data <- function(test_options, data_seed) {
 write_data_illustration <- function(data, file) {
   dir.create(dirname(file), recursive = TRUE, showWarnings = FALSE)
   pdf(file, width = 11, height = 5)
-  layout(matrix(1:2, nrow = 1L))
+  layout(matrix(1:2, nrow = 1L), widths = c(1, 2))
 
+  par(mar = c(4, 4, 3, 1))
+  response_range <- range(data$truth$Y[, 1], data$Y[, 1])
   plot(
-    data$truth$Y[, 1], data$Y[, 1], pch = 20,
-    xlab = "Y truth", ylab = "Noisy Y", asp = 1
+    data$truth$Y[, 1], data$Y[, 1], type = "n",
+    xlim = response_range, ylim = response_range, asp = 1,
+    xlab = expression(Y[true]), ylab = expression(Y),
+    main = expression(bolditalic(Y~vs~Y[true]))
   )
-  abline(0, 1, col = "grey50", lty = 2)
   grid()
+  abline(0, 1, col = "grey70", lty = 2)
+  points(data$truth$Y[, 1], data$Y[, 1], pch = 20)
 
-  units <- seq_len(min(5L, nrow(data$X)))
-  matplot(
+  units <- seq_len(min(4L, nrow(data$X)))
+  colors <- RColorBrewer::brewer.pal(5, "RdPu")[2:5]
+  predictor_range <- range(
+    data$truth$X_reference[units, , drop = FALSE],
+    data$X[units, , drop = FALSE]
+  )
+  par(mar = c(4, 3, 3, 1))
+  plot(
+    NA_real_, NA_real_, xlim = range(data$evaluation[, 1]), ylim = predictor_range,
+    xlab = "t", ylab = expression(X(t)), yaxt = "n",
+    main = expression(bolditalic(X~vs~X[true]))
+  )
+  grid()
+  matlines(
     data$evaluation[, 1], t(data$truth$X_reference[units, , drop = FALSE]),
-    type = "l", lty = 1, xlab = "t", ylab = "X(t)"
+    lty = 1, lwd = 2, col = colors
+  )
+  matlines(
+    data$locations[, 1], t(data$X[units, , drop = FALSE]),
+    lty = 2, lwd = 1, col = colors
   )
   matpoints(
     data$locations[, 1], t(data$X[units, , drop = FALSE]),
-    pch = 20, col = seq_along(units)
+    pch = 20, cex = 0.55, col = colors
   )
-  grid()
   dev.off()
 }

@@ -65,7 +65,9 @@ quantitative plotting. Each family produces three metric PDFs and a standalone
 beta comparison; production 2D `vary_n` creates the representative beta maps.
 Boxplots use the submitted black-outline style. The 1D `vary_k` plots retain
 the submitted figure ranges, and its qualitative beta comparison normalizes
-and sign-aligns coefficient shapes before plotting.
+and sign-aligns coefficient shapes before plotting. MV-PLS is shown at its
+observed vertices, functional curves are restricted to the observed support,
+and `data_1D.pdf` uses the submitted pink-to-purple palette.
 
 Running the same `make run_test` commands without `SMOKE_TEST=1` executes the
 full configured grids and 30 replications and creates all of those production
@@ -98,9 +100,12 @@ cap, and the precise meaning of source `k` are also provisional.
 
 The B/PB and MV comparator implementations are runnable candidates based on
 the paper definitions, not accepted reproduction evidence. In particular,
-PB-fPLS cross-validation still differs numerically from the submitted boxes and
-must not be silently retuned to match them. Aggregation can
-mark an executed smoke or production run complete only after checking every
+PB-fPLS cross-validation still differs numerically from the submitted boxes.
+Its extra `vary_n` outliers stretch the X and beta plot scales even though the
+other four methods remain at essentially the submitted numerical levels. The fold count
+and `0 + data_seed` fold seed are provisional, and the submitted folds were not
+recorded, so PB-fPLS must not be silently retuned to match the PDF. Aggregation
+can mark an executed smoke or production run complete only after checking every
 expected model, batch, raw output, provenance field, metric, and repetition.
 It always leaves `paper_design_complete` and `paper_results_reproduced` false
 until explicit scientific and numerical acceptance decisions are recorded.

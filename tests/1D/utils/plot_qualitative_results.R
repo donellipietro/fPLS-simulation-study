@@ -41,7 +41,13 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
           norm(as.matrix(raw_evaluation), "F")
       )
     }), options$model_names)
-    values <- c(truth, unlist(lapply(estimates, `[[`, "evaluation"), use.names = FALSE))
+    observed_support <- data$evaluation[, 1] >= min(data$locations[, 1]) &
+      data$evaluation[, 1] <= max(data$locations[, 1])
+    values <- c(
+      truth,
+      estimates$MV_PLS$locations,
+      unlist(lapply(estimates[-1], function(x) x$evaluation[observed_support]), use.names = FALSE)
+    )
 
     par(mar = c(4, 4, 3, 1))
 
@@ -56,12 +62,13 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
 
     mv <- estimates$MV_PLS$locations
     lines(data$locations[, 1], mv, col = "grey70", lty = 2, lwd = 1)
-    points(data$locations[, 1], mv, col = "grey70", pch = 16, cex = 0.3)
+    points(data$locations[, 1], mv, col = "grey70", pch = 16, cex = 0.55)
 
     colors <- setNames(options$model_colors, options$model_names)
     for (model_name in c("B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS")) {
       lines(
-        data$evaluation[, 1], estimates[[model_name]]$evaluation,
+        data$evaluation[observed_support, 1],
+        estimates[[model_name]]$evaluation[observed_support],
         col = colors[[model_name]], lwd = if (model_name %in% c("B_fPLS_smooth", "R1_fPLS")) 2 else 1
       )
     }
@@ -80,7 +87,7 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
     lty = c(2, 2, rep(1, 4)),
     lwd = c(1.5, 1, 2, 1, 2, 1),
     pch = c(NA, 16, rep(NA, 4)),
-    pt.cex = 0.7,
+    pt.cex = 0.9,
     ncol = 2,
     cex = 0.8,
     bty = "n"

@@ -120,6 +120,8 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       submitted_metric_formula = "frobenius_error/(nrow*ncol*frobenius_truth)",
       source_k_status = "historical_scenario_label_actual_basis_count_may_differ",
       comparator_status = "candidate_pending_explicit_acceptance",
+      beta_mapping = "functional_inner_product",
+      pb_cv_seed_status = "provisional_cv_seed_plus_data_seed",
       smoke_override = SMOKE_TEST,
       paper_design_complete = FALSE,
       paper_results_reproduced = FALSE
