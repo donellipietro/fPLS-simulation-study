@@ -23,6 +23,7 @@ source("src/utils/load_results_utils.R")
 source("src/utils/plotting_utils.R")
 source("tests/1D/config.R")
 source("tests/1D/utils/generate_options.R")
+source("tests/1D/utils/models_evaluation.R")
 source("tests/1D/utils/plot_qualitative_results.R")
 
 validate_family_files <- function(path_list, family, family_options, cfg) {
@@ -72,7 +73,9 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
           stop(glue::glue("invalid component-wise result shape for {model_name}"))
         }
         provenance <- model$results$provenance
-        if (!identical(provenance$metric_status, "provisional_submitted_paper_formula") ||
+        if (!provenance$metric_status %in% c(
+              "provisional_submitted_paper_formula", "provisional_source_figure_metric"
+            ) ||
             !identical(provenance$paper_design_complete, FALSE)) {
           stop(glue::glue("invalid provisional provenance for {model_name}"))
         }
@@ -105,6 +108,16 @@ dir.create(aggregate_dir, recursive = TRUE, showWarnings = FALSE)
 all_rows <- list()
 all_completeness <- list()
 qualitative_outputs <- list()
+vary_k_limits <- list(
+  Y_reconstruction = c(0.067, 0.145),
+  X_reconstruction_locations = c(0.055, 0.14),
+  Beta1_locations = c(0, 0.035)
+)
+metric_titles <- c(
+  Y_reconstruction = "RMSE Y",
+  X_reconstruction_locations = "RMSE X",
+  Beta1_locations = "RMSE beta"
+)
 
 ## Load, validate, and plot every family ----
 for (family in families) {
@@ -118,6 +131,7 @@ for (family in families) {
   family_options <- lapply(option_files, fromJSON, simplifyVector = TRUE)
   expected <- validate_family_files(path_list, family, family_options, cfg)
   loaded <- load_all_quantitiative_results(path_list, family)
+  if (is.null(loaded$submitted_normalized_rmse)) stop("submitted manuscript metric is missing")
   varying <- family_options[[1]]$test_options$varying_options
   if (!identical(loaded$varying_options, varying)) stop("loaded varying option mismatch")
 
@@ -164,10 +178,9 @@ for (family in families) {
   legend(
     "center",
     legend = loaded$model_labels,
-    col = loaded$model_colors,
-    lty = 1,
-    lwd = 2,
-    pch = 15,
+    col = "black",
+    pt.bg = loaded$model_colors,
+    pch = 22,
     pt.cex = 1.5,
     horiz = TRUE,
     bty = "n"
@@ -178,8 +191,8 @@ for (family in families) {
     data_plot <- loaded$rmse[[metric]][final_component, , drop = FALSE]
     pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)
     plot.aggregated_data(
-      loaded, data_plot, glue::glue("1D: {family}"),
-      "Provisional submitted-paper normalized RMSE",
+      loaded, data_plot, metric_titles[[metric]], "RMSE",
+      limits = if (family == "vary_k") vary_k_limits[[metric]] else NULL,
       plots_catalog = list(
         boxplots = TRUE, lines = FALSE, logx = FALSE,
         loglog = FALSE, normalized = FALSE
@@ -201,7 +214,7 @@ write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALS
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)
 write_json(
   list(
-    schema_version = 3L,
+    schema_version = 4L,
     suite = test_suite,
     requested = requested,
     families = families,
@@ -218,7 +231,9 @@ write_json(
     competitors = paper_model_catalog()$names,
     NSR_X_final_component = 3,
     NSR_Y = 0.1,
-    metric_status = "provisional_submitted_paper_formula"
+    metric_status = "provisional_source_figure_metric",
+    submitted_metric_status = "provisional_submitted_paper_formula",
+    vary_k_display_limits = vary_k_limits
   ),
   file.path(aggregate_dir, "paper_run_status.json"),
   auto_unbox = TRUE,

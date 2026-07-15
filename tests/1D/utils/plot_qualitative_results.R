@@ -18,36 +18,72 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
   selected <- selected[order(vapply(selected, function(x) x$dimensions$source_k, integer(1)))]
 
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
-  pdf(file.path(image_dir, "qualitative_beta.pdf"), width = 11, height = 5)
+  pdf(file.path(image_dir, "qualitative_beta.pdf"), width = 11, height = 6)
   on.exit(dev.off(), add = TRUE)
-  par(mfrow = c(1, 2), mar = c(4, 4, 3, 1))
+  layout(matrix(c(1, 2, 3, 3), nrow = 2, byrow = TRUE), heights = c(4, 1))
 
-  for (options in selected) {
+  for (panel in seq_along(selected)) {
+    options <- selected[[panel]]
     batch_dir <- file.path(path_list$results, "vary_k", options$name_test, "batch_1")
     data <- readRDS(file.path(batch_dir, "generated_data.rds"))
-    estimates <- lapply(options$model_names, function(model_name) {
+    truth <- normalize_beta_shape(data$truth$Beta_reference[, 1])[, 1]
+    estimates <- setNames(lapply(options$model_names, function(model_name) {
       model <- load_fitted_model(
         file.path(batch_dir, glue::glue("batch_1_fitted_model_{model_name}.RData")),
         model_name
       )
-      model$results$Beta_evaluation[[options$model$n_comp]][, 1]
-    })
-    values <- c(data$truth$Beta_reference[, 1], unlist(estimates, use.names = FALSE))
+      raw_evaluation <- model$results$Beta_evaluation[[options$model$n_comp]][, 1]
+      sign <- if (source_figure_rmse(normalize_beta_shape(raw_evaluation), truth) >
+                    source_figure_rmse(-normalize_beta_shape(raw_evaluation), truth)) -1 else 1
+      list(
+        evaluation = sign * normalize_beta_shape(raw_evaluation)[, 1],
+        locations = sign * model$results$Beta_locations[[options$model$n_comp]][, 1] /
+          norm(as.matrix(raw_evaluation), "F")
+      )
+    }), options$model_names)
+    values <- c(truth, unlist(lapply(estimates, `[[`, "evaluation"), use.names = FALSE))
+
+    par(mar = c(4, 4, 3, 1))
 
     plot(
-      data$evaluation[, 1], data$truth$Beta_reference[, 1],
-      type = "l", lwd = 2, lty = 2, col = "black", ylim = range(values),
-      xlab = "t", ylab = expression(beta(t)),
-      main = glue::glue("k = {options$dimensions$source_k}")
+      data$evaluation[, 1], truth,
+      type = "n", ylim = range(values), yaxt = "n",
+      xlab = "t", ylab = if (panel == 1L) expression(beta[1]) else "",
+      main = bquote(k == .(options$dimensions$source_k))
     )
-    for (i in seq_along(estimates)) {
-      lines(data$evaluation[, 1], estimates[[i]], col = options$model_colors[i], lwd = 1.5)
+    grid(col = "grey90", lty = 3)
+    lines(data$evaluation[, 1], truth, col = "black", lty = 2, lwd = 1.5)
+
+    mv <- estimates$MV_PLS$locations
+    lines(data$locations[, 1], mv, col = "grey70", lty = 2, lwd = 1)
+    points(data$locations[, 1], mv, col = "grey70", pch = 16, cex = 0.3)
+
+    colors <- setNames(options$model_colors, options$model_names)
+    for (model_name in c("B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS")) {
+      lines(
+        data$evaluation[, 1], estimates[[model_name]]$evaluation,
+        col = colors[[model_name]], lwd = if (model_name %in% c("B_fPLS_smooth", "R1_fPLS")) 2 else 1
+      )
     }
-    legend(
-      "topright", legend = c("Truth", options$model_labels),
-      col = c("black", options$model_colors), lty = c(2, rep(1, length(estimates))),
-      lwd = c(2, rep(1.5, length(estimates))), cex = 0.65, bty = "n"
-    )
   }
+
+  options <- selected[[1]]
+  colors <- setNames(options$model_colors, options$model_names)
+  labels <- setNames(options$model_labels, options$model_names)
+  legend_order <- c("MV_PLS", "R1_fPLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS")
+  par(mar = rep(0, 4))
+  plot.new()
+  legend(
+    "center",
+    legend = c("Ground Truth", labels[legend_order]),
+    col = c("black", "grey70", colors[legend_order[-1]]),
+    lty = c(2, 2, rep(1, 4)),
+    lwd = c(1.5, 1, 2, 1, 2, 1),
+    pch = c(NA, 16, rep(NA, 4)),
+    pt.cex = 0.7,
+    ncol = 2,
+    cex = 0.8,
+    bty = "n"
+  )
   TRUE
 }

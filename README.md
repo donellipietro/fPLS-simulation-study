@@ -63,6 +63,9 @@ execution strategy, batch files, result loading, telemetry, aggregation, and
 quantitative plotting. Each family produces three metric PDFs and a standalone
 `legend.pdf`. Production 1D `vary_k` also creates the `k=11/101` qualitative
 beta comparison; production 2D `vary_n` creates the representative beta maps.
+Boxplots use the submitted black-outline style. The 1D `vary_k` plots retain
+the submitted figure ranges, and its qualitative beta comparison normalizes
+and sign-aligns coefficient shapes before plotting.
 
 Running the same `make run_test` commands without `SMOKE_TEST=1` executes the
 full configured grids and 30 replications and creates all of those production
@@ -85,14 +88,18 @@ make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
 
 ## Provisional Contract
 
-The submitted metric formula
-`||A - A_hat||_F / (p q ||A||_F)` is implemented but remains explicitly
-provisional pending final metric acceptance. Historical lambda grids, seeds,
-location RNG adaptations, tolerance, iteration cap, and the precise meaning of
-source `k` are also provisional.
+Paper-facing plots default to the committed source-era figure metrics: ordinary
+RMSE for `Y` and `X`, and sign-aligned unit-norm shape RMSE for `beta`. The
+submitted manuscript formula `||A - A_hat||_F / (p q ||A||_F)` is retained in
+every batch evaluation as `submitted_normalized_rmse`. Both remain explicitly
+provisional because the submitted notation and source evaluator disagree.
+Historical lambda grids, seeds, location RNG adaptations, tolerance, iteration
+cap, and the precise meaning of source `k` are also provisional.
 
-The B/PB and MV comparator implementations are runnable candidates matching
-the paper definitions, not accepted reproduction evidence. Aggregation can
+The B/PB and MV comparator implementations are runnable candidates based on
+the paper definitions, not accepted reproduction evidence. In particular,
+PB-fPLS cross-validation still differs numerically from the submitted boxes and
+must not be silently retuned to match them. Aggregation can
 mark an executed smoke or production run complete only after checking every
 expected model, batch, raw output, provenance field, metric, and repetition.
 It always leaves `paper_design_complete` and `paper_results_reproduced` false

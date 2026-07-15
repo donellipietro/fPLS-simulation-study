@@ -513,11 +513,10 @@ plot.grouped_boxplots <- function(data,
     mutate(SubGroup = factor(SubGroup, levels = subgroup_levels, labels = subgroup_labels))
 
   ## Build plot
-  plot <- ggplot(data, aes(x = Group, y = Score, fill = SubGroup, color = SubGroup)) +
+  plot <- ggplot(data, aes(x = Group, y = Score, fill = SubGroup)) +
     geom_boxplot(na.rm = TRUE) +
     labs(x = group_name, y = values_name) +
-    scale_fill_manual(name = subgroup_name, values = subgroup_colors) +
-    scale_color_manual(name = subgroup_name, values = subgroup_colors)
+    scale_fill_manual(name = subgroup_name, values = subgroup_colors)
 
   ## Add limits
   if (!is.null(limits)) {
@@ -533,7 +532,7 @@ plot.grouped_boxplots <- function(data,
 
   ## Add or remove legend
   if (!LEGEND) {
-    plot <- plot + guides(fill = "none", color = "none")
+    plot <- plot + guides(fill = "none")
   }
 
   return(plot)

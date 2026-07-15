@@ -9,7 +9,7 @@ paper_model_catalog <- function() {
     labels = c(
       "MV-PLS", "B-fPLS (Regression Splines)",
       "B-fPLS (Smoothing Splines)", "PB-fPLS",
-      "R1-fPLS (GCV Calibration)"
+      "R1-fPLS"
     ),
     colors = c(
       RColorBrewer::brewer.pal(3, "Greys")[3],
@@ -114,8 +114,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       submitted_paper_models = models$names,
       family_scope = if (name_main_test == "vary_m") "submitted_supplement_family" else "submitted_main_paper_family",
       settings_status = "provisional_source_era",
-      metric_status = "provisional_submitted_paper_formula",
-      metric_formula = "frobenius_error/(nrow*ncol*frobenius_truth)",
+      metric_status = "provisional_source_figure_metric",
+      metric_formula = "Y/X: sqrt(mean((estimate-truth)^2)); beta: sign-aligned unit-norm shape RMSE",
+      submitted_metric_status = "provisional_submitted_paper_formula",
+      submitted_metric_formula = "frobenius_error/(nrow*ncol*frobenius_truth)",
       source_k_status = "historical_scenario_label_actual_basis_count_may_differ",
       comparator_status = "candidate_pending_explicit_acceptance",
       smoke_override = SMOKE_TEST,
