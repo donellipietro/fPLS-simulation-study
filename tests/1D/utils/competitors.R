@@ -170,15 +170,13 @@ fit_source_basis_coefficients <- function(X, locations, basis, Psi, penalty, lam
 }
 
 select_source_modal_gcv_lambda <- function(X, locations, basis, lambda_grid) {
-  selected <- vapply(seq_len(nrow(X)), function(i) {
-    scores <- vapply(lambda_grid, function(lambda) {
-      fit <- fda::smooth.basis(
-        locations, X[i, ], fda::fdPar(basis, Lfdobj = 2, lambda = lambda)
-      )
-      sum(fit$gcv)
-    }, numeric(1))
-    lambda_grid[which.min(scores)]
-  }, numeric(1))
+  gcv <- vapply(lambda_grid, function(lambda) {
+    fit <- fda::smooth.basis(
+      locations, t(X), fda::fdPar(basis, Lfdobj = 2, lambda = lambda)
+    )
+    as.numeric(fit$gcv)
+  }, numeric(nrow(X)))
+  selected <- lambda_grid[max.col(-gcv, ties.method = "first")]
   log_density <- stats::density(log10(selected))
   list(
     lambda = 10^log_density$x[which.max(log_density$y)],
@@ -211,16 +209,22 @@ select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp, fo
   folds <- min(as.integer(folds), n_units)
   fold_id <- sample(rep(seq_len(folds), length.out = n_units))
   cv_error <- vapply(lambda_grid, function(lambda) {
+    metric_sqrt <- as.matrix(expm::sqrtm(mass + lambda * penalty))
+    inverse_sqrt <- solve(metric_sqrt)
+    data_pls <- A %*% mass %*% inverse_sqrt
     fold_error <- vapply(seq_len(folds), function(fold) {
       train <- fold_id != fold
       validation <- !train
-      metric <- fit_source_metric_pls(
-        Y[train, , drop = FALSE], A[train, , drop = FALSE],
-        mass, penalty, lambda, n_comp
+      model <- pls::plsr(
+        Y[train, , drop = FALSE] ~ data_pls[train, , drop = FALSE],
+        ncomp = n_comp,
+        method = "oscorespls",
+        center = FALSE,
+        scale = FALSE
       )
       # Source parity: validation coefficients were not penalty-transformed.
       prediction <- predict(
-        metric$model,
+        model,
         newdata = A[validation, , drop = FALSE],
         n_comp = n_comp
       )
