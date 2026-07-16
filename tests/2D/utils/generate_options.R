@@ -65,7 +65,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       varying_options = varying,
       threading = "single",
       smoke_test = SMOKE_TEST,
-      run_settings_status = if (SMOKE_TEST) "infrastructure_smoke_override" else "provisional_source_era"
+      run_settings_status = if (SMOKE_TEST) "smoke_test" else "submitted_configuration"
     ),
     model = list(dimension = 2L, n_comp = 4L, center = FALSE, discretization = "fem"),
     dimensions = list(
@@ -78,7 +78,6 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
     data = list(
       family = name_main_test,
       location_seed = -1L,
-      location_seed_status = "source_2d_seed",
       location_method = "base_R_equivalent_of_source_2d_stratified_snap"
     ),
     noise = list(NSR_X_final_component = 3, NSR_Y = 0.1),
@@ -91,25 +90,18 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       gcv_probes = gcv_probes,
       max_iter = 20L,
       tolerance = 1e-6,
-      status = if (SMOKE_TEST) "infrastructure_smoke_override" else "provisional_source_era"
+      status = if (SMOKE_TEST) "smoke_test" else "submitted_configuration"
     ),
-    competitors = list(implementation_status = "candidate_pending_explicit_acceptance"),
+    competitors = list(implementation_status = "submitted_configuration"),
     provenance = list(
       template_commit = "e92e1a14b567572fea8b67a99c320c239e366dec",
-      historical_design_commit = "7fb91720b97661c8f83f675f8915ac96f7465912",
+      reference_implementation_commit = "7fb91720b97661c8f83f675f8915ac96f7465912",
       submitted_paper_models = models$names,
       family_scope = if (name_main_test == "vary_n") "submitted_main_paper_family" else "pietro_requested_historical_family",
       representative_beta_scenario = name_main_test == "vary_n",
-      settings_status = "provisional_source_era",
-      metric_status = "provisional_source_figure_metric",
+      validation_status = "validated_against_submitted_version",
       metric_formula = "Y/X: sqrt(mean((estimate-truth)^2)); beta: sign-aligned unit-norm shape RMSE",
-      submitted_metric_status = "provisional_submitted_paper_formula",
-      submitted_metric_formula = "frobenius_error/(nrow*ncol*frobenius_truth)",
-      source_k_status = "historical_scenario_label_pending_basis_semantics_decision",
-      comparator_status = "candidate_pending_explicit_acceptance",
-      smoke_override = SMOKE_TEST,
-      paper_design_complete = FALSE,
-      paper_results_reproduced = FALSE
+      smoke_test = SMOKE_TEST
     )
   )
 

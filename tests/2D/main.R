@@ -52,6 +52,18 @@ sink(
 )
 cat(run_message)
 
+batch_matches_options <- function(file, options, batch_index) {
+  if (!file.exists(file)) return(FALSE)
+  data <- readRDS(file)
+  same <- function(left, right) isTRUE(all.equal(left, right))
+  same(data$data_seed, batch_index) &&
+    same(data$dimensions$n_stat_units, options$dimensions$n_stat_units) &&
+    same(data$dimensions$n_locs_requested, options$dimensions$n_locs) &&
+    same(data$dimensions$source_k, options$dimensions$source_k) &&
+    same(data$noise$requested_NSR_X_final_component, options$noise$NSR_X_final_component) &&
+    same(data$noise$requested_NSR_Y, options$noise$NSR_Y)
+}
+
 ## Run every repetition ----
 for (batch_index in seq_len(test_options$test_options$n_reps)) {
   cat(glue::glue("\nBatch {batch_index}:\n", .trim = FALSE))
@@ -66,7 +78,9 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
     path_list$batch,
     glue::glue("batch_{batch_index}_fitted_model_{test_options$model_names}.RData")
   )
-  if (!FORCE_FIT && !FORCE_EVALUATE && all(file.exists(c(data_file, evaluation_file, model_files)))) {
+  if (!FORCE_FIT && !FORCE_EVALUATE &&
+      all(file.exists(c(evaluation_file, model_files))) &&
+      batch_matches_options(data_file, test_options, batch_index)) {
     cat("- Existing complete batch; skipped\n")
     next
   }

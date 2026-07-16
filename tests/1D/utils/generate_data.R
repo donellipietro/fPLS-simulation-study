@@ -197,11 +197,10 @@ generate_fpls_data <- function(test_options, data_seed) {
       requested_NSR_Y = test_options$noise$NSR_Y
     ),
     provenance = list(
-      generator = "committed paper design port",
-      historical_design_commit = test_options$provenance$historical_design_commit,
-      settings_status = test_options$provenance$settings_status,
-      location_method = test_options$data$location_method,
-      location_seed_status = test_options$data$location_seed_status
+      generator = "submitted paper design",
+      reference_implementation_commit = test_options$provenance$reference_implementation_commit,
+      validation_status = test_options$provenance$validation_status,
+      location_method = test_options$data$location_method
     )
   )
 }

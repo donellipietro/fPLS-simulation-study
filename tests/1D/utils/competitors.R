@@ -78,7 +78,6 @@ competitor_provenance <- function(model_name, test_options, data) {
       data_seed = data$data_seed,
       model = model_name,
       comparator_implementation = "historical_corrected_competitor_port",
-      comparator_status = test_options$provenance$comparator_status,
       run_settings_status = test_options$test_options$run_settings_status,
       fda_version = as.character(utils::packageVersion("fda")),
       pls_version = as.character(utils::packageVersion("pls")),

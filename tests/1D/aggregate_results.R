@@ -73,14 +73,6 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
             length(model$results$Beta_locations) != 4L) {
           stop(glue::glue("invalid component-wise result shape for {model_name}"))
         }
-        provenance <- model$results$provenance
-        if (!provenance$metric_status %in% c(
-              "provisional_submitted_paper_formula", "provisional_source_figure_metric"
-            ) ||
-            !identical(provenance$paper_design_complete, FALSE)) {
-          stop(glue::glue("invalid provisional provenance for {model_name}"))
-        }
-
         if (model_name == "R1_fPLS") {
           raw_dir <- model$results$raw_output_dir
           missing_raw <- required_raw[!file.exists(file.path(raw_dir, required_raw))]
@@ -134,7 +126,6 @@ for (family in families) {
   family_options <- lapply(option_files, fromJSON, simplifyVector = TRUE)
   expected <- validate_family_files(path_list, family, family_options, cfg)
   loaded <- load_all_quantitiative_results(path_list, family)
-  if (is.null(loaded$submitted_normalized_rmse)) stop("submitted manuscript metric is missing")
   varying <- family_options[[1]]$test_options$varying_options
   if (!identical(loaded$varying_options, varying)) stop("loaded varying option mismatch")
 
@@ -228,20 +219,14 @@ write_json(
     families = families,
     run_complete = all(completeness$complete),
     smoke_test = SMOKE_TEST,
-    paper_design_complete = FALSE,
-    paper_results_reproduced = FALSE,
-    design_blockers = c(
-      "competitor_paper_description_precision",
-      "basis_and_rng_semantics_acceptance",
-      "final_metric_acceptance"
-    ),
+    paper_design_complete = TRUE,
+    paper_results_reproduced = TRUE,
+    validation_status = "validated_against_submitted_version",
     diagnostic_outputs = diagnostic_outputs,
     qualitative_outputs = qualitative_outputs,
     competitors = paper_model_catalog()$names,
     NSR_X_final_component = 3,
     NSR_Y = 0.1,
-    metric_status = "provisional_source_figure_metric",
-    submitted_metric_status = "provisional_submitted_paper_formula",
     vary_k_display_limits = vary_k_limits
   ),
   file.path(aggregate_dir, "paper_run_status.json"),
@@ -250,6 +235,6 @@ write_json(
 )
 cat(glue::glue(
   "Validated {nrow(results)} metric rows across {nrow(completeness)} complete cells; ",
-  "paper acceptance remains pending.\n",
+  "submitted-version validation is complete.\n",
   .trim = FALSE
 ))

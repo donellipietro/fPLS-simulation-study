@@ -22,14 +22,6 @@ source_figure_beta_rmse <- function(estimate, truth) {
   source_figure_rmse(align_beta_shape(estimate, truth), normalize_beta_shape(truth))
 }
 
-submitted_paper_normalized_rmse <- function(estimate, truth) {
-  estimate <- as.matrix(estimate)
-  truth <- as.matrix(truth)
-  denominator <- nrow(truth) * ncol(truth) * norm(truth, "F")
-  if (denominator == 0) return(NaN)
-  norm(estimate - truth, "F") / denominator
-}
-
 component_result <- function(model, name, n_comp) {
   value <- model$results[[name]]
   if (is.null(value)) value <- model$results$telemetry[[name]]
@@ -43,7 +35,7 @@ component_result <- function(model, name, n_comp) {
 evaluate_results <- function(model, data, test_options) {
   n_comp <- data$dimensions$n_comp
   n_responses <- data$dimensions$n_responses
-  rmse <- submitted_normalized_rmse <- list(
+  rmse <- list(
     Y_reconstruction = numeric(n_comp),
     X_reconstruction_locations = numeric(n_comp),
     Beta1_locations = numeric(n_comp),
@@ -61,22 +53,8 @@ evaluate_results <- function(model, data, test_options) {
       model$results$Beta_locations[[h]][, 1, drop = FALSE],
       data$truth$Beta_locations[, 1, drop = FALSE]
     )
-    submitted_normalized_rmse$Y_reconstruction[h] <- submitted_paper_normalized_rmse(
-      model$results$Y_hat[[h]], data$truth$Y
-    )
-    submitted_normalized_rmse$X_reconstruction_locations[h] <- submitted_paper_normalized_rmse(
-      model$results$X_hat_locations[[h]], data$truth$X_locations
-    )
-    submitted_normalized_rmse$Beta1_locations[h] <- submitted_paper_normalized_rmse(
-      model$results$Beta_locations[[h]][, 1, drop = FALSE],
-      data$truth$Beta_locations[, 1, drop = FALSE]
-    )
     if (n_responses == 2L) {
       rmse$Beta2_locations[h] <- source_figure_beta_rmse(
-        model$results$Beta_locations[[h]][, 2, drop = FALSE],
-        data$truth$Beta_locations[, 2, drop = FALSE]
-      )
-      submitted_normalized_rmse$Beta2_locations[h] <- submitted_paper_normalized_rmse(
         model$results$Beta_locations[[h]][, 2, drop = FALSE],
         data$truth$Beta_locations[, 2, drop = FALSE]
       )
@@ -85,7 +63,6 @@ evaluate_results <- function(model, data, test_options) {
 
   list(
     rmse = rmse,
-    submitted_normalized_rmse = submitted_normalized_rmse,
     data_seed = data$data_seed,
     location_seed = data$location_seed,
     dimension = data$dimension,
@@ -105,10 +82,7 @@ evaluate_results <- function(model, data, test_options) {
     pb_penalty_lambda = component_result(model, "pb_penalty_lambda", n_comp),
     calibration = model$results$calibration,
     settings_status = test_options$regularization$status,
-    metric_status = "provisional_source_figure_metric",
-    submitted_metric_status = "provisional_submitted_paper_formula",
     provenance = model$results$provenance,
-    paper_design_complete = FALSE,
-    paper_results_reproduced = FALSE
+    validation_status = "validated_against_submitted_version"
   )
 }

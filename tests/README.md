@@ -35,6 +35,9 @@ through the shared testbench group utility. Suite code owns only scientific
 options, generation, model adaptation, evaluation, validation, and report
 composition. Root code retains the canonical testbench framework.
 
+- [1D suite](1D/README.md): curve-based experiments and submitted 1D comparators.
+- [2D suite](2D/README.md): spatial experiments comparing multivariate PLS and R1-fPLS.
+
 ```bash
 make run_test TEST_SUITE=1D TEST_NAME=vary_k
 make run_test TEST_SUITE=2D TEST_NAME=vary_n

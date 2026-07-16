@@ -62,7 +62,6 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
       data_seed = data$data_seed,
       location_seed = data$location_seed,
       location_method = test_options$data$location_method,
-      location_seed_status = test_options$data$location_seed_status,
       source_k = test_options$dimensions$source_k,
       n_stat_units = data$dimensions$n_stat_units,
       n_locations = data$dimensions$n_locs,
