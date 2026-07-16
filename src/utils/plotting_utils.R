@@ -488,7 +488,7 @@ plot.grouped_boxplots <- function(data,
                                   group_name = "Components", group_labels = NULL,
                                   subgroup_name = "Models", subgroup_labels = NULL, subgroup_colors = NULL,
                                   values_name = "Score", limits = NULL,
-                                  DIVIDERS = TRUE, LEGEND = TRUE) {
+                                  DIVIDERS = TRUE, LEGEND = TRUE, EXPAND_Y = TRUE) {
 
   ## Data integrity check
   if (!("Group" %in% names(data))) stop("The dataframe must contain a column named 'Group'")
@@ -520,7 +520,10 @@ plot.grouped_boxplots <- function(data,
 
   ## Add limits
   if (!is.null(limits)) {
-    plot <- plot + scale_y_continuous(limits = limits)
+    plot <- plot + scale_y_continuous(
+      limits = limits,
+      expand = if (EXPAND_Y) waiver() else expansion(mult = 0)
+    )
   }
 
   ## Add dividers
@@ -796,12 +799,13 @@ plot.grouped_violins <- function(data,
 #   * values_names: y-axis label passed to the plotting helpers
 #   * order: optional integer vector to reorder varying_options (default: 1:k)
 #   * limits: optional y-axis limits c(ymin, ymax) for value scales
+#   * horizontal_lines: optional y values drawn as dashed reference lines
 #   * plots_catalog: list of toggles {boxplots, lines, logx, loglog, normalized}
 # - Desc:
 #   Builds per-group panels of aggregated results over the first varying option,
 #   conditioning on all remaining varying options. For each combination, it can
 #   render boxplots and/or line plots (linear, log-x, log-log, normalized).
-plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, values_names, order = NULL, limits = NULL, plots_catalog = NULL) {
+plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, values_names, order = NULL, limits = NULL, plots_catalog = NULL, horizontal_lines = NULL) {
 
   ## Get model-related properties
   model_names  <- loaded_results$model_names
@@ -924,8 +928,20 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
           subgroup_labels = model_labels[match(valid_models, model_names)],
           subgroup_colors = model_colors[match(valid_models, model_names)],
           limits = limits,
-          LEGEND = FALSE
+          LEGEND = FALSE,
+          EXPAND_Y = is.null(horizontal_lines)
         ) + std_plot_settings()
+        if (!is.null(horizontal_lines)) {
+          boxplot_list[[j]] <- boxplot_list[[j]] +
+            ggplot2::geom_hline(
+              yintercept = horizontal_lines,
+              linetype = "dashed", color = "grey50", linewidth = 1.2
+            ) +
+            ggplot2::theme(
+              panel.border = ggplot2::element_blank(),
+              axis.line = ggplot2::element_line(color = "black")
+            )
+        }
       }
 
       ## Lines (linear x)

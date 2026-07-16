@@ -81,17 +81,20 @@ positive_log10_table <- function(table, model_names) {
 #   * values_name: y-axis label
 # - Desc:
 #   Writes a standard aggregate plot when finite values are available.
-write_diagnostic_plot <- function(loaded, data, file, title, values_name) {
+write_diagnostic_plot <- function(loaded, data, file, title, values_name,
+                                  limits = NULL, horizontal_lines = NULL) {
   if (!finite_model_values(data, loaded$model_names)) return(FALSE)
 
   pdf(file, width = 8, height = 5)
   on.exit(dev.off(), add = TRUE)
   plot.aggregated_data(
     loaded, data, title, values_name,
+    limits = limits,
     plots_catalog = list(
       boxplots = TRUE, lines = FALSE, logx = FALSE,
       loglog = FALSE, normalized = FALSE
-    )
+    ),
+    horizontal_lines = horizontal_lines
   )
   TRUE
 }
@@ -105,7 +108,8 @@ write_diagnostic_plot <- function(loaded, data, file, title, values_name) {
 #   * image_dir: directory for family plot output
 # - Desc:
 #   Writes telemetry/lambda CSV rows and family diagnostic plots.
-write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
+write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir,
+                                     lambda_limits) {
   scalar_diagnostics <- c(
     execution_time = "Execution time (s)",
     peak_ram_mib = "Peak RAM (MiB)",
@@ -156,10 +160,12 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
 
   for (name in c("direction_lambda", "loading_lambda")) {
     plot_data <- positive_log10_table(loaded[[name]], loaded$model_names)
+    limits <- lambda_limits[[name]]
     plot_status[[name]] <- write_diagnostic_plot(
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
-      component_diagnostics[[name]], "log10(lambda)"
+      component_diagnostics[[name]], "log10(lambda)",
+      limits = limits, horizontal_lines = limits
     )
   }
   for (name in names(selected_lambda_diagnostics)) {
@@ -168,10 +174,12 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
       next
     }
     plot_data <- positive_log10_table(loaded[[name]], loaded$model_names)
+    limits <- lambda_limits[[name]]
     plot_status[[name]] <- write_diagnostic_plot(
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
-      selected_lambda_diagnostics[[name]], "log10(lambda)"
+      selected_lambda_diagnostics[[name]], "log10(lambda)",
+      limits = limits, horizontal_lines = limits
     )
   }
 
