@@ -64,11 +64,12 @@ The submitted paper and corrected implementation agree on the competitor
 families but require more precise wording in four places. Source `k` is the
 number of spline breakpoints and produces `k + 2` cubic B-spline basis
 functions. The smoothing-spline B-fPLS lambda is the kernel-density mode on
-the log10 scale of per-curve GCV optima. PB-fPLS uses the `10^(-9:2)` penalty
-grid with five-fold CV in untransformed source-basis coefficient space. Exact
-fold assignments are retained with every fit. The suite fixes the component cap
-to produce component-wise trajectories, so it tunes the PB penalty at that
-fixed cap rather than performing the paper's separate component-count selection.
+the log10 scale of per-curve GCV optima. R1-fPLS, B-fPLS smoothing, and
+PB-fPLS all use the shared `10^(-9:2)` grid. PB-fPLS uses five-fold CV in
+untransformed source-basis coefficient space. Exact fold assignments are
+retained with every fit. The suite fixes the component cap to produce
+component-wise trajectories, so it tunes the PB penalty at that fixed cap
+rather than performing the paper's separate component-count selection.
 The reported beta curves also use the corrected source's coefficient-space
 projection rather than being reconstructed from the fitted response.
 
