@@ -66,7 +66,7 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
 
     colors <- setNames(options$model_colors, options$model_names)
     for (model_name in c(
-      "B_fPLS", "B_fPLS_smooth", "PB_fPLS_submitted", "PB_fPLS_paper", "R1_fPLS"
+      "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS"
     )) {
       lines(
         data$evaluation[observed_support, 1],
@@ -80,7 +80,7 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
   colors <- setNames(options$model_colors, options$model_names)
   labels <- setNames(options$model_labels, options$model_names)
   legend_order <- c(
-    "MV_PLS", "R1_fPLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS_submitted", "PB_fPLS_paper"
+    "MV_PLS", "R1_fPLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS"
   )
   par(mar = rep(0, 4))
   plot.new()
@@ -88,9 +88,9 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
     "center",
     legend = c("Ground Truth", labels[legend_order]),
     col = c("black", "grey70", colors[legend_order[-1]]),
-    lty = c(2, 2, rep(1, 5)),
-    lwd = c(1.5, 1, 2, 1, 2, 1, 1),
-    pch = c(NA, 16, rep(NA, 5)),
+    lty = c(2, 2, rep(1, 4)),
+    lwd = c(1.5, 1, 2, 1, 2, 1),
+    pch = c(NA, 16, rep(NA, 4)),
     pt.cex = 0.9,
     ncol = 2,
     cex = 0.8,

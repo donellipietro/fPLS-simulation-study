@@ -61,16 +61,14 @@ with orthogonal-scores PLS, the source B-spline coefficient representation,
 and the source coefficient-function projection.
 
 The submitted paper and corrected implementation agree on the competitor
-families but require more precise wording in five places. Source `k` is the
+families but require more precise wording in four places. Source `k` is the
 number of spline breakpoints and produces `k + 2` cubic B-spline basis
 functions. The smoothing-spline B-fPLS lambda is the kernel-density mode on
-the log10 scale of per-curve GCV optima. The paired PB-fPLS comparison uses the
-same `10^(-9:2)` penalty grid: the submitted-source selector retains five folds
-and untransformed validation coefficients, while the paper selector uses ten
-folds and penalty-transformed validation coefficients. Exact fold assignments
-are retained with every fit. The suite fixes the component cap to produce
-component-wise trajectories, so it tunes the PB penalty at that fixed cap rather
-than performing the paper's separate component-count selection.
+the log10 scale of per-curve GCV optima. PB-fPLS uses the `10^(-9:2)` penalty
+grid with five-fold CV in untransformed source-basis coefficient space. Exact
+fold assignments are retained with every fit. The suite fixes the component cap
+to produce component-wise trajectories, so it tunes the PB penalty at that
+fixed cap rather than performing the paper's separate component-count selection.
 The reported beta curves also use the corrected source's coefficient-space
 projection rather than being reconstructed from the fitted response.
 

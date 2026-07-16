@@ -239,7 +239,7 @@ select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp,
 }
 
 fit_functional_competitor <- function(model_name, data, test_options) {
-  pb_models <- c("PB_fPLS_submitted", "PB_fPLS_paper")
+  pb_models <- "PB_fPLS"
   if (!model_name %in% c("B_fPLS", "B_fPLS_smooth", pb_models)) {
     stop(glue::glue("Unknown functional competitor: {model_name}"))
   }
@@ -272,20 +272,11 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     data$X, data$locations[, 1], basis, Psi, penalty, smoothing$lambda
   )
 
-  pb_settings <- switch(
-    model_name,
-    PB_fPLS_submitted = list(
-      folds = test_options$competitors$pb_submitted_cv_folds,
-      validation_space = "untransformed",
-      calibration = "submitted_five_fold_cv_penalty"
-    ),
-    PB_fPLS_paper = list(
-      folds = test_options$competitors$pb_paper_cv_folds,
-      validation_space = "penalty_transformed",
-      calibration = "paper_ten_fold_cv_penalty"
-    ),
-    NULL
-  )
+  pb_settings <- if (identical(model_name, "PB_fPLS")) list(
+    folds = test_options$competitors$pb_cv_folds,
+    validation_space = "untransformed",
+    calibration = "submitted_five_fold_cv_penalty"
+  ) else NULL
   component_lambda <- 0
   cv <- list(cv_error = numeric(), fold_id = integer())
   if (!is.null(pb_settings)) {

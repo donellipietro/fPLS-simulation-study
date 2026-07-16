@@ -6,18 +6,15 @@
 paper_model_catalog <- function() {
   list(
     names = c(
-      "MV_PLS", "B_fPLS", "B_fPLS_smooth",
-      "PB_fPLS_submitted", "PB_fPLS_paper", "R1_fPLS"
+      "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS"
     ),
     labels = c(
       "MV-PLS", "B-fPLS (Regression Splines)",
-      "B-fPLS (Smoothing Splines)", "PB-fPLS (Submitted CV)",
-      "PB-fPLS (Paper CV)",
-      "R1-fPLS"
+      "B-fPLS (Smoothing Splines)", "PB-fPLS", "R1-fPLS"
     ),
     colors = c(
       RColorBrewer::brewer.pal(3, "Greys")[3],
-      RColorBrewer::brewer.pal(9, "RdPu")[c(4, 6, 8, 9)],
+      RColorBrewer::brewer.pal(9, "RdPu")[c(4, 6, 9)],
       RColorBrewer::brewer.pal(3, "Blues")[3]
     )
   )
@@ -109,9 +106,8 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       basis_k = competitor_basis_k,
       smoothing_lambda_grid = lambda_grid,
       pb_lambda_grid = pb_lambda_grid,
-      pb_submitted_cv_folds = 5L,
-      pb_paper_cv_folds = 10L,
-      implementation_status = "paired_pb_cv_comparison_pending_full_validation"
+      pb_cv_folds = 5L,
+      implementation_status = "submitted_source"
     ),
     provenance = list(
       template_commit = "e92e1a14b567572fea8b67a99c320c239e366dec",
@@ -125,9 +121,9 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       submitted_metric_status = "provisional_submitted_paper_formula",
       submitted_metric_formula = "frobenius_error/(nrow*ncol*frobenius_truth)",
       source_k_status = "historical_scenario_label_actual_basis_count_may_differ",
-      comparator_status = "paired_pb_cv_comparison_pending_full_validation",
+      comparator_status = "submitted_source",
       beta_mapping = "historical_corrected_source_projection",
-      pb_cv_status = "submitted_five_fold_untransformed_vs_paper_ten_fold_transformed_fixed_component_trajectory",
+      pb_cv_status = "submitted_five_fold_untransformed_fixed_component_trajectory",
       smoke_override = SMOKE_TEST,
       paper_design_complete = FALSE,
       paper_results_reproduced = FALSE
