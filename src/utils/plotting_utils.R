@@ -4,6 +4,11 @@
 #         and point visualization over 2D domains or meshes.
 # = ========================================================================== =
 
+cool_to_warm_extended_palette <- c(
+  "#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#F7F7F7",
+  "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"
+)
+
 
 ## Function: std_plot_settings
 # - Args:
@@ -392,6 +397,7 @@ plot.field_points <- function(locations, f, boundary = NULL,
 #   * limits: optional numeric range for color scaling
 #   * breaks: optional numeric vector for contour levels
 #   * colormap: string, Viridis palette option
+#   * palette: optional continuous colour vector
 #   * discrete: logical, whether to use discrete colormap
 #   * ISOLINES: logical, whether to draw contour isolines
 #   * LEGEND: logical, whether to display the legend
@@ -400,7 +406,8 @@ plot.field_points <- function(locations, f, boundary = NULL,
 #   Supports contour overlays, color limits, and boundary visualization.
 plot.field_tile <- function(nodes, f, boundary = NULL,
                             limits = NULL, breaks = NULL, colormap = "D",
-                            discrete = FALSE, ISOLINES = FALSE, LEGEND = FALSE) {
+                            palette = NULL, discrete = FALSE,
+                            ISOLINES = FALSE, LEGEND = FALSE) {
 
   ## Handle null input
   if (is.null(f)) {
@@ -447,7 +454,9 @@ plot.field_tile <- function(nodes, f, boundary = NULL,
       h <- breaks[2] - breaks[1]
       limits <- limits + c(-h, h)
     }
-    if (is.null(limits)) {
+    if (!is.null(palette)) {
+      plot <- plot + scale_fill_gradientn(colours = palette, limits = limits)
+    } else if (is.null(limits)) {
       plot <- plot + scale_fill_viridis(option = colormap)
     } else {
       plot <- plot + scale_fill_viridis(option = colormap, limits = limits)

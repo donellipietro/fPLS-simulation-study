@@ -28,26 +28,35 @@ plot_representative_beta_2d <- function(path_list, family_options, image_dir) {
     )
     model$results$Beta_evaluation[[options$model$n_comp]]
   })
-  axis <- sort(unique(data$evaluation[, 1]))
+  boundary <- data.frame(
+    long = c(0, 1, 1, 0, 0),
+    lat = c(0, 0, 1, 1, 0)
+  )
 
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
   pdf(file.path(image_dir, "beta_representative.pdf"), width = 10, height = 7)
   on.exit(dev.off(), add = TRUE)
-  par(mfrow = c(2, 3), mar = c(3, 3, 3, 1))
+  plots <- list()
 
   for (response in seq_len(2L)) {
+    truth <- normalize_beta_shape(data$truth$Beta_reference[, response])[, 1]
     fields <- c(
-      list(data$truth$Beta_reference[, response]),
-      lapply(estimates, function(value) value[, response])
+      list(truth),
+      lapply(estimates, function(value) {
+        align_beta_shape(value[, response], truth)[, 1]
+      })
     )
-    limits <- range(unlist(fields, use.names = FALSE))
+    limits <- range(truth)
     labels <- c("Truth", options$model_labels)
     for (i in seq_along(fields)) {
-      z <- matrix(fields[[i]], nrow = length(axis), ncol = length(axis))
-      image(axis, axis, z, col = hcl.colors(40, "Blue-Red 3"), zlim = limits,
-            xlab = "x", ylab = "y", main = glue::glue("beta{response}: {labels[i]}"))
-      contour(axis, axis, z, add = TRUE, drawlabels = FALSE, col = "grey30")
+      plots[[length(plots) + 1L]] <- plot.field_tile(
+        data$evaluation, fields[[i]], boundary = boundary, limits = limits,
+        palette = cool_to_warm_extended_palette, ISOLINES = TRUE
+      ) +
+        labs(title = glue::glue("beta{response}: {labels[i]}")) +
+        std_plot_settings_fields()
     }
   }
+  gridExtra::grid.arrange(grobs = plots, nrow = 2)
   TRUE
 }

@@ -59,9 +59,22 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
   path_list$batch <- config_path(path_list$results, glue::glue("batch_{batch_index}"))
   mkdir(path_list$batch)
 
+  data_file <- file.path(path_list$batch, "generated_data.rds")
+  evaluation_file <- file.path(
+    path_list$batch, glue::glue("batch_{batch_index}_results_evaluation.RData")
+  )
+  model_files <- file.path(
+    path_list$batch,
+    glue::glue("batch_{batch_index}_fitted_model_{test_options$model_names}.RData")
+  )
+  if (!FORCE_FIT && !FORCE_EVALUATE && all(file.exists(c(data_file, evaluation_file, model_files)))) {
+    cat("- Existing complete batch; skipped\n")
+    next
+  }
+
   cat("- Generate data\n")
   data <- generate_fpls_data(test_options, data_seed = batch_index)
-  saveRDS(data, file.path(path_list$batch, "generated_data.rds"))
+  saveRDS(data, data_file)
   if (batch_index == 1L) {
     saveRDS(data, file.path(path_list$data, glue::glue("{test_options$name_test}.rds")))
     if (name_main_test == "vary_k" && test_options$dimensions$source_k == 11L) {

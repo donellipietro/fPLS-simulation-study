@@ -24,6 +24,7 @@ source("src/utils/plotting_utils.R")
 source("src/utils/diagnostic_plot_utils.R")
 source("tests/2D/config.R")
 source("tests/2D/utils/generate_options.R")
+source("tests/2D/utils/models_evaluation.R")
 source("tests/2D/utils/plot_qualitative_results.R")
 
 validate_family_files <- function(path_list, family, family_options, cfg) {
