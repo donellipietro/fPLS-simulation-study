@@ -90,14 +90,12 @@ competitor_provenance <- function(model_name, test_options, data) {
 finish_r_model <- function(model_name, raw, elapsed, cpu_seconds, peak_ram_mib,
                            n_basis, calibration, selected_lambda, provenance) {
   n_comp <- length(raw$Y_hat)
-  lambdas <- matrix(rep(selected_lambda, n_comp), ncol = 1L)
-  raw$direction_lambdas <- lambdas
-  raw$loading_lambdas <- lambdas
+  raw$direction_lambdas <- matrix(NaN, n_comp, 1L)
+  raw$loading_lambdas <- matrix(NaN, n_comp, 1L)
   raw$n_basis <- as.integer(n_basis)
   raw$execution_time <- elapsed
   raw$peak_ram_mib <- peak_ram_mib
   raw$cpu_seconds <- cpu_seconds
-  raw$cpu_usage_percent <- if (elapsed > 0) 100 * cpu_seconds / elapsed else 0
   raw$setup_seconds <- 0
   raw$fit_seconds <- elapsed
   raw$output_seconds <- 0
@@ -332,9 +330,11 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     X_mean_locations = matrix(0, 1L, ncol(data$X)),
     Y_mean = matrix(0, 1L, ncol(data$Y)),
     smoothing_lambda = smoothing$lambda,
+    pre_smoothing_lambda = if (model_name == "B_fPLS_smooth") smoothing$lambda else NA_real_,
     smoothing_lambdas_by_curve = smoothing$selected_by_curve,
     smoothing_log10_density_mode = smoothing$log10_density_mode,
     component_lambda = component_lambda,
+    pb_penalty_lambda = if (model_name == "PB_fPLS") component_lambda else NA_real_,
     cv_error = cv$cv_error,
     cv_fold_id = cv$fold_id,
     cv_rng = if (model_name == "PB_fPLS") {

@@ -21,6 +21,7 @@ source("src/utils/directories.R")
 source("src/utils/options.R")
 source("src/utils/load_results_utils.R")
 source("src/utils/plotting_utils.R")
+source("src/utils/diagnostic_plot_utils.R")
 source("tests/1D/config.R")
 source("tests/1D/utils/generate_options.R")
 source("tests/1D/utils/models_evaluation.R")
@@ -107,6 +108,8 @@ aggregate_dir <- file.path(cfg$PATH_RESULTS, test_suite, "aggregate", requested)
 dir.create(aggregate_dir, recursive = TRUE, showWarnings = FALSE)
 all_rows <- list()
 all_completeness <- list()
+all_diagnostics <- list()
+diagnostic_outputs <- list()
 qualitative_outputs <- list()
 vary_k_limits <- list(
   Y_reconstruction = c(0.067, 0.145),
@@ -170,6 +173,9 @@ for (family in families) {
 
   image_dir <- file.path(cfg$PATH_IMAGES, test_suite, family)
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
+  diagnostics <- write_family_diagnostics(loaded, family, aggregate_dir, image_dir)
+  all_diagnostics[[family]] <- diagnostics$rows
+  diagnostic_outputs[[family]] <- diagnostics$plots
 
   ## Create the standard standalone model legend
   pdf(file.path(image_dir, "legend.pdf"), width = 14, height = 1.5, bg = "white")
@@ -210,11 +216,13 @@ for (family in families) {
 ## Write validated aggregate outputs ----
 results <- do.call(rbind, all_rows)
 completeness <- do.call(rbind, all_completeness)
+diagnostics <- do.call(rbind, all_diagnostics)
 write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALSE)
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)
+write.csv(diagnostics, file.path(aggregate_dir, "all_diagnostics.csv"), row.names = FALSE)
 write_json(
   list(
-    schema_version = 4L,
+    schema_version = 5L,
     suite = test_suite,
     requested = requested,
     families = families,
@@ -227,6 +235,7 @@ write_json(
       "basis_and_rng_semantics_acceptance",
       "final_metric_acceptance"
     ),
+    diagnostic_outputs = diagnostic_outputs,
     qualitative_outputs = qualitative_outputs,
     competitors = paper_model_catalog()$names,
     NSR_X_final_component = 3,

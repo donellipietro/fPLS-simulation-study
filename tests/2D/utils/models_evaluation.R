@@ -30,6 +30,16 @@ submitted_paper_normalized_rmse <- function(estimate, truth) {
   norm(estimate - truth, "F") / denominator
 }
 
+component_result <- function(model, name, n_comp) {
+  value <- model$results[[name]]
+  if (is.null(value)) value <- model$results$telemetry[[name]]
+  if (is.null(value)) return(rep(NaN, n_comp))
+  value <- as.numeric(value)
+  if (length(value) == 1L) return(rep(value, n_comp))
+  if (length(value) != n_comp) return(rep(NaN, n_comp))
+  value
+}
+
 evaluate_results <- function(model, data, test_options) {
   n_comp <- data$dimensions$n_comp
   n_responses <- data$dimensions$n_responses
@@ -86,10 +96,10 @@ evaluate_results <- function(model, data, test_options) {
     execution_time = model$results$execution_time,
     peak_ram_mib = model$results$peak_ram_mib,
     cpu_seconds = model$results$cpu_seconds,
-    cpu_usage_percent = model$results$cpu_usage_percent,
     setup_seconds = model$results$setup_seconds,
     fit_seconds = model$results$fit_seconds,
     output_seconds = model$results$output_seconds,
+    iteration_count = component_result(model, "iteration_counts", n_comp),
     direction_lambda = model$results$direction_lambdas[, 1],
     loading_lambda = model$results$loading_lambdas[, 1],
     calibration = model$results$calibration,

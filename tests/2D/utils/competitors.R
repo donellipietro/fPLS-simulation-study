@@ -89,7 +89,6 @@ finish_r_model <- function(model_name, raw, elapsed, cpu_seconds, peak_ram_mib,
   raw$execution_time <- elapsed
   raw$peak_ram_mib <- peak_ram_mib
   raw$cpu_seconds <- cpu_seconds
-  raw$cpu_usage_percent <- if (elapsed > 0) 100 * cpu_seconds / elapsed else 0
   raw$setup_seconds <- 0
   raw$fit_seconds <- elapsed
   raw$output_seconds <- 0
