@@ -19,8 +19,8 @@ The scientific code is divided into two self-contained testbench suites.
 | `vary_n` | `n = 50, 100, 200` | `m = 200`; R1 `k = 51`; B/PB `k = 11` |
 | `vary_m` | `m = 50, 100, 200` | `n = 100`; R1 `k = 51`; B/PB `k = 11` |
 
-Models, in paper plotting order: MV-PLS, B-fPLS with regression splines,
-B-fPLS with smoothing splines, PB-fPLS, and R1-fPLS.
+Models: MV-PLS, B-fPLS with regression splines, B-fPLS with smoothing splines,
+PB-fPLS with the submitted-source and paper CV selectors, and R1-fPLS.
 
 ### `2D`
 
@@ -64,13 +64,13 @@ The submitted paper and corrected implementation agree on the competitor
 families but require more precise wording in five places. Source `k` is the
 number of spline breakpoints and produces `k + 2` cubic B-spline basis
 functions. The smoothing-spline B-fPLS lambda is the kernel-density mode on
-the log10 scale of per-curve GCV optima. PB-fPLS uses five folds inherited
-from the RNG state immediately after each batch's data generation; the exact
-fold assignments are retained with every fit. Finally, source PB validation
-passes the untransformed basis-coefficient matrix to the prediction method
-for a model fitted in the penalty-transformed space. That last source-era
-detail is reproduced for figure fidelity and remains a methodological point
-to state or revise explicitly, not something the migration silently changes.
+the log10 scale of per-curve GCV optima. The paired PB-fPLS comparison uses the
+same `10^(-9:2)` penalty grid: the submitted-source selector retains five folds
+and untransformed validation coefficients, while the paper selector uses ten
+folds and penalty-transformed validation coefficients. Exact fold assignments
+are retained with every fit. The suite fixes the component cap to produce
+component-wise trajectories, so it tunes the PB penalty at that fixed cap rather
+than performing the paper's separate component-count selection.
 The reported beta curves also use the corrected source's coefficient-space
 projection rather than being reconstructed from the fitted response.
 

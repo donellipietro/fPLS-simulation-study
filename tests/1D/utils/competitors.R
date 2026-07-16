@@ -202,7 +202,8 @@ fit_source_metric_pls <- function(Y, A, mass, penalty, lambda, n_comp) {
   )
 }
 
-select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp, folds) {
+select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp,
+                                    folds, validation_space) {
   n_units <- nrow(A)
   folds <- min(as.integer(folds), n_units)
   fold_id <- sample(rep(seq_len(folds), length.out = n_units))
@@ -220,11 +221,15 @@ select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp, fo
         center = FALSE,
         scale = FALSE
       )
-      # Source parity: validation coefficients were not penalty-transformed.
+      validation_X <- if (validation_space == "penalty_transformed") {
+        data_pls[validation, , drop = FALSE]
+      } else {
+        A[validation, , drop = FALSE]
+      }
       prediction <- predict(
         model,
-        newdata = A[validation, , drop = FALSE],
-        n_comp = n_comp
+        newdata = validation_X,
+        ncomp = seq_len(n_comp)
       )
       mean((Y[validation, , drop = FALSE] - prediction[, , n_comp])^2)
     }, numeric(1))
@@ -234,7 +239,8 @@ select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp, fo
 }
 
 fit_functional_competitor <- function(model_name, data, test_options) {
-  if (!model_name %in% c("B_fPLS", "B_fPLS_smooth", "PB_fPLS")) {
+  pb_models <- c("PB_fPLS_submitted", "PB_fPLS_paper")
+  if (!model_name %in% c("B_fPLS", "B_fPLS_smooth", pb_models)) {
     stop(glue::glue("Unknown functional competitor: {model_name}"))
   }
   if (data$dimension != 1L || ncol(data$Y) != 1L) {
@@ -266,12 +272,26 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     data$X, data$locations[, 1], basis, Psi, penalty, smoothing$lambda
   )
 
+  pb_settings <- switch(
+    model_name,
+    PB_fPLS_submitted = list(
+      folds = test_options$competitors$pb_submitted_cv_folds,
+      validation_space = "untransformed",
+      calibration = "submitted_five_fold_cv_penalty"
+    ),
+    PB_fPLS_paper = list(
+      folds = test_options$competitors$pb_paper_cv_folds,
+      validation_space = "penalty_transformed",
+      calibration = "paper_ten_fold_cv_penalty"
+    ),
+    NULL
+  )
   component_lambda <- 0
   cv <- list(cv_error = numeric(), fold_id = integer())
-  if (identical(model_name, "PB_fPLS")) {
+  if (!is.null(pb_settings)) {
     cv <- select_source_pb_lambda(
       data$Y, A, mass, penalty, test_options$competitors$pb_lambda_grid,
-      test_options$model$n_comp, test_options$competitors$cv_folds
+      test_options$model$n_comp, pb_settings$folds, pb_settings$validation_space
     )
     component_lambda <- cv$lambda
   }
@@ -334,14 +354,14 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     smoothing_lambdas_by_curve = smoothing$selected_by_curve,
     smoothing_log10_density_mode = smoothing$log10_density_mode,
     component_lambda = component_lambda,
-    pb_penalty_lambda = if (model_name == "PB_fPLS") component_lambda else NA_real_,
+    pb_penalty_lambda = if (!is.null(pb_settings)) component_lambda else NA_real_,
     cv_error = cv$cv_error,
     cv_fold_id = cv$fold_id,
-    cv_rng = if (model_name == "PB_fPLS") {
-      "source_rng_state_after_data_generation"
+    cv_rng = if (!is.null(pb_settings)) {
+      "rng_state_after_data_generation"
     } else NA_character_,
-    cv_validation_space = if (model_name == "PB_fPLS") {
-      "source_untransformed_basis_coefficients"
+    cv_validation_space = if (!is.null(pb_settings)) {
+      glue::glue("{pb_settings$validation_space}_basis_coefficients")
     } else NA_character_,
     basis_k_source = basis_k,
     beta_mapping = "historical_corrected_source_projection",
@@ -351,7 +371,7 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     model_name,
     B_fPLS = "regression_spline",
     B_fPLS_smooth = "per_curve_gcv_log10_density_mode",
-    PB_fPLS = "source_five_fold_cv_penalty"
+    pb_settings$calibration
   )
   finish_r_model(
     model_name, raw, elapsed, cpu_seconds, r_peak_memory_mb(),
