@@ -3,7 +3,8 @@
 # - Desc: Helpers for simulation diagnostic rows and plots.
 # = ========================================================================== =
 
-lambda_log10_limits <- c(-9, 2)
+lambda_log10_grid <- -9:2
+lambda_log10_limits <- range(lambda_log10_grid)
 
 ## Function: finite_model_values
 # - Args:
@@ -83,7 +84,8 @@ positive_log10_table <- function(table, model_names) {
 # - Desc:
 #   Writes a standard aggregate plot when finite values are available.
 write_diagnostic_plot <- function(loaded, data, file, title, values_name,
-                                  limits = NULL, horizontal_lines = NULL) {
+                                  limits = NULL, horizontal_lines = NULL,
+                                  y_breaks = NULL) {
   if (!finite_model_values(data, loaded$model_names)) return(FALSE)
 
   pdf(file, width = 8, height = 5)
@@ -95,7 +97,8 @@ write_diagnostic_plot <- function(loaded, data, file, title, values_name,
       boxplots = TRUE, lines = FALSE, logx = FALSE,
       loglog = FALSE, normalized = FALSE
     ),
-    horizontal_lines = horizontal_lines
+    horizontal_lines = horizontal_lines,
+    y_breaks = y_breaks
   )
   TRUE
 }
@@ -164,7 +167,8 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
       component_diagnostics[[name]], "log10(lambda)",
-      limits = limits, horizontal_lines = limits
+      limits = limits, horizontal_lines = limits,
+      y_breaks = lambda_log10_grid
     )
   }
   for (name in names(selected_lambda_diagnostics)) {
@@ -178,7 +182,8 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
       selected_lambda_diagnostics[[name]], "log10(lambda)",
-      limits = limits, horizontal_lines = limits
+      limits = limits, horizontal_lines = limits,
+      y_breaks = lambda_log10_grid
     )
   }
 

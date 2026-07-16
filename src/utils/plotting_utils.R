@@ -488,7 +488,8 @@ plot.grouped_boxplots <- function(data,
                                   group_name = "Components", group_labels = NULL,
                                   subgroup_name = "Models", subgroup_labels = NULL, subgroup_colors = NULL,
                                   values_name = "Score", limits = NULL,
-                                  DIVIDERS = TRUE, LEGEND = TRUE, EXPAND_Y = TRUE) {
+                                  DIVIDERS = TRUE, LEGEND = TRUE, EXPAND_Y = TRUE,
+                                  Y_BREAKS = NULL) {
 
   ## Data integrity check
   if (!("Group" %in% names(data))) stop("The dataframe must contain a column named 'Group'")
@@ -520,10 +521,17 @@ plot.grouped_boxplots <- function(data,
 
   ## Add limits
   if (!is.null(limits)) {
-    plot <- plot + scale_y_continuous(
-      limits = limits,
-      expand = if (EXPAND_Y) waiver() else expansion(mult = 0)
-    )
+    if (is.null(Y_BREAKS)) {
+      plot <- plot + scale_y_continuous(
+        limits = limits,
+        expand = if (EXPAND_Y) waiver() else expansion(mult = 0)
+      )
+    } else {
+      plot <- plot + scale_y_continuous(
+        limits = limits, breaks = Y_BREAKS, minor_breaks = NULL,
+        expand = if (EXPAND_Y) waiver() else expansion(mult = 0)
+      )
+    }
   }
 
   ## Add dividers
@@ -800,12 +808,13 @@ plot.grouped_violins <- function(data,
 #   * order: optional integer vector to reorder varying_options (default: 1:k)
 #   * limits: optional y-axis limits c(ymin, ymax) for value scales
 #   * horizontal_lines: optional y values drawn as dashed reference lines
+#   * y_breaks: optional y-axis tick locations
 #   * plots_catalog: list of toggles {boxplots, lines, logx, loglog, normalized}
 # - Desc:
 #   Builds per-group panels of aggregated results over the first varying option,
 #   conditioning on all remaining varying options. For each combination, it can
 #   render boxplots and/or line plots (linear, log-x, log-log, normalized).
-plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, values_names, order = NULL, limits = NULL, plots_catalog = NULL, horizontal_lines = NULL) {
+plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, values_names, order = NULL, limits = NULL, plots_catalog = NULL, horizontal_lines = NULL, y_breaks = NULL) {
 
   ## Get model-related properties
   model_names  <- loaded_results$model_names
@@ -876,8 +885,8 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
     ## Handle 1D case (only one varying option)
     if (length(options_grid_selected) == 0) {
       combinations_options <- data.frame(dummy = 1)
-      labels_rows <- ""
-      labels_cols <- ""
+      labels_rows <- NULL
+      labels_cols <- NULL
     } else {
       mg <- do.call(expand.grid, options_grid_selected)
       combinations_options <- do.call(data.frame, lapply(mg, as.vector))
@@ -929,7 +938,8 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
           subgroup_colors = model_colors[match(valid_models, model_names)],
           limits = limits,
           LEGEND = FALSE,
-          EXPAND_Y = is.null(horizontal_lines)
+          EXPAND_Y = is.null(horizontal_lines),
+          Y_BREAKS = y_breaks
         ) + std_plot_settings()
         if (!is.null(horizontal_lines)) {
           boxplot_list[[j]] <- boxplot_list[[j]] +
