@@ -79,7 +79,7 @@ competitor_provenance <- function(model_name, test_options, data) {
   )
 }
 
-finish_r_model <- function(model_name, raw, elapsed, cpu_seconds, peak_ram_mib,
+finish_r_model <- function(model_name, raw, elapsed, peak_ram_mib,
                            n_basis, calibration, selected_lambda, provenance) {
   n_comp <- length(raw$Y_hat)
   lambdas <- matrix(rep(selected_lambda, n_comp), ncol = 1L)
@@ -88,7 +88,6 @@ finish_r_model <- function(model_name, raw, elapsed, cpu_seconds, peak_ram_mib,
   raw$n_basis <- as.integer(n_basis)
   raw$execution_time <- elapsed
   raw$peak_ram_mib <- peak_ram_mib
-  raw$cpu_seconds <- cpu_seconds
   raw$setup_seconds <- 0
   raw$fit_seconds <- elapsed
   raw$output_seconds <- 0
@@ -102,7 +101,6 @@ finish_r_model <- function(model_name, raw, elapsed, cpu_seconds, peak_ram_mib,
     n_components = n_comp,
     selected_lambda = selected_lambda,
     wall_seconds = elapsed,
-    cpu_seconds = cpu_seconds,
     peak_ram_mib = peak_ram_mib,
     provenance = provenance
   )
@@ -120,14 +118,12 @@ finish_r_model <- function(model_name, raw, elapsed, cpu_seconds, peak_ram_mib,
 fit_mv_pls_competitor <- function(data, test_options) {
   invisible(gc(reset = TRUE))
   wall_start <- proc.time()[["elapsed"]]
-  cpu_start <- sum(proc.time()[c("user.self", "sys.self")])
   fit <- fit_rank_one_pls(data$Y, data$X, test_options$model$n_comp)
 
   beta_evaluation <- lapply(fit$Beta, function(beta) {
     nearest_evaluation(data$locations, data$evaluation, beta)
   })
   elapsed <- proc.time()[["elapsed"]] - wall_start
-  cpu_seconds <- sum(proc.time()[c("user.self", "sys.self")]) - cpu_start
   raw <- list(
     X_space_directions = fit$X_space_directions,
     X_space_directions_locations = fit$X_space_directions,
@@ -146,7 +142,7 @@ fit_mv_pls_competitor <- function(data, test_options) {
     Y_mean = matrix(0, 1L, ncol(data$Y))
   )
   finish_r_model(
-    "MV_PLS", raw, elapsed, cpu_seconds, r_peak_memory_mb(),
+    "MV_PLS", raw, elapsed, r_peak_memory_mb(),
     ncol(data$X), "none", 0,
     competitor_provenance("MV_PLS", test_options, data)
   )

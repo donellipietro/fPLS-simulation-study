@@ -3,6 +3,7 @@
 # - Desc: Helpers for simulation diagnostic rows and plots.
 # = ========================================================================== =
 
+lambda_log10_limits <- c(-9, 2)
 
 ## Function: finite_model_values
 # - Args:
@@ -108,12 +109,10 @@ write_diagnostic_plot <- function(loaded, data, file, title, values_name,
 #   * image_dir: directory for family plot output
 # - Desc:
 #   Writes telemetry/lambda CSV rows and family diagnostic plots.
-write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir,
-                                     lambda_limits) {
+write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
   scalar_diagnostics <- c(
     execution_time = "Execution time (s)",
-    peak_ram_mib = "Peak RAM (MiB)",
-    cpu_seconds = "CPU time (s)"
+    peak_ram_mib = "Peak RAM (MiB)"
   )
   component_diagnostics <- c(
     iteration_count = "Iteration count",
@@ -160,7 +159,7 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir,
 
   for (name in c("direction_lambda", "loading_lambda")) {
     plot_data <- positive_log10_table(loaded[[name]], loaded$model_names)
-    limits <- lambda_limits[[name]]
+    limits <- lambda_log10_limits
     plot_status[[name]] <- write_diagnostic_plot(
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
@@ -174,7 +173,7 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir,
       next
     }
     plot_data <- positive_log10_table(loaded[[name]], loaded$model_names)
-    limits <- lambda_limits[[name]]
+    limits <- lambda_log10_limits
     plot_status[[name]] <- write_diagnostic_plot(
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),

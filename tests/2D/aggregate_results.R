@@ -162,13 +162,7 @@ for (family in families) {
 
   image_dir <- file.path(cfg$PATH_IMAGES, test_suite, family)
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
-  lambda_limits <- list(
-    direction_lambda = log10(range(family_options[[1]]$regularization$lambda_grid)),
-    loading_lambda = log10(range(family_options[[1]]$regularization$lambda_grid))
-  )
-  diagnostics <- write_family_diagnostics(
-    loaded, family, aggregate_dir, image_dir, lambda_limits
-  )
+  diagnostics <- write_family_diagnostics(loaded, family, aggregate_dir, image_dir)
   all_diagnostics[[family]] <- diagnostics$rows
   diagnostic_outputs[[family]] <- diagnostics$plots
 

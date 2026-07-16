@@ -95,7 +95,6 @@ evaluate_results <- function(model, data, test_options) {
     n_basis = model$results$n_basis,
     execution_time = model$results$execution_time,
     peak_ram_mib = model$results$peak_ram_mib,
-    cpu_seconds = model$results$cpu_seconds,
     setup_seconds = model$results$setup_seconds,
     fit_seconds = model$results$fit_seconds,
     output_seconds = model$results$output_seconds,

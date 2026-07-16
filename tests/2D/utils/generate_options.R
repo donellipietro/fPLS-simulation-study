@@ -28,7 +28,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   }
 
   models <- paper_model_catalog()
-  lambda_grid <- if (SMOKE_TEST) c(1e-4, 1e-2) else 10^seq(-9, 2, by = 0.1)
+  lambda_grid <- 10^(-9:2)
   n_reps <- if (SMOKE_TEST) 1L else 30L
   gcv_probes <- if (SMOKE_TEST) 5L else 100L
 

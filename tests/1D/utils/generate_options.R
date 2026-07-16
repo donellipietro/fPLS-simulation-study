@@ -75,7 +75,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       varying_options = varying,
       threading = "single",
       smoke_test = SMOKE_TEST,
-      run_settings_status = if (SMOKE_TEST) "infrastructure_smoke_override" else "provisional_source_era"
+      run_settings_status = if (SMOKE_TEST) "infrastructure_smoke_override" else "validated_against_submitted_version"
     ),
     model = list(dimension = 1L, n_comp = 4L, center = FALSE, discretization = "spline"),
     dimensions = list(
@@ -100,7 +100,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       gcv_probes = gcv_probes,
       max_iter = 20L,
       tolerance = 1e-6,
-      status = if (SMOKE_TEST) "infrastructure_smoke_override" else "provisional_source_era"
+      status = if (SMOKE_TEST) "infrastructure_smoke_override" else "validated_against_submitted_version"
     ),
     competitors = list(
       basis_k = competitor_basis_k,
@@ -115,7 +115,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       submitted_paper_models = c("MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS"),
       models_in_run = models$names,
       family_scope = if (name_main_test == "vary_m") "submitted_supplement_family" else "submitted_main_paper_family",
-      settings_status = "provisional_source_era",
+      settings_status = "validated_against_submitted_version",
       metric_status = "provisional_source_figure_metric",
       metric_formula = "Y/X: sqrt(mean((estimate-truth)^2)); beta: sign-aligned unit-norm shape RMSE",
       submitted_metric_status = "provisional_submitted_paper_formula",

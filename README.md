@@ -107,7 +107,7 @@ The standard testbench owns configuration, cloning, compilation, queues,
 execution strategy, batch files, result loading, telemetry, aggregation, and
 quantitative plotting. Each family produces three metric PDFs and a standalone
 `legend.pdf`. Aggregation also writes diagnostic CSVs plus PDFs for execution
-time, peak RAM, CPU time, and selected lambdas. Direction/loading lambda plots
+time, peak RAM, and selected lambdas. Direction/loading lambda plots
 are native R1-fPLS only; 1D competitor plots report their actual B-smoothing or
 PB-fPLS penalty lambda. Iteration-count rows are retained and plotted only once
 finite counts are available. Production 1D `vary_k` also creates the `k=11/101`

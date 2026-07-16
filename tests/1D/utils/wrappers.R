@@ -185,7 +185,6 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
         raw_output_dir = raw_dir,
         execution_time = telemetry$wall_seconds,
         peak_ram_mib = run_stats$peak_ram_mib,
-        cpu_seconds = telemetry$cpu_seconds,
         setup_seconds = telemetry$setup_seconds,
         fit_seconds = telemetry$fit_seconds,
         output_seconds = telemetry$output_seconds,
