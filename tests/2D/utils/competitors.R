@@ -79,11 +79,11 @@ competitor_provenance <- function(model_name, test_options, data) {
 }
 
 finish_r_model <- function(model_name, raw, elapsed, peak_ram_mib,
-                           n_basis, calibration, selected_lambda, provenance) {
+                           n_basis, calibration, selected_lambda, provenance,
+                           tolerance = NA_real_, max_iter = NA_integer_) {
   n_comp <- length(raw$Y_hat)
-  lambdas <- matrix(rep(selected_lambda, n_comp), ncol = 1L)
-  raw$direction_lambdas <- lambdas
-  raw$loading_lambdas <- lambdas
+  raw$direction_lambdas <- matrix(NaN, n_comp, 1L)
+  raw$loading_lambdas <- matrix(NaN, n_comp, 1L)
   raw$n_basis <- as.integer(n_basis)
   raw$execution_time <- elapsed
   raw$peak_ram_mib <- peak_ram_mib
@@ -92,13 +92,21 @@ finish_r_model <- function(model_name, raw, elapsed, peak_ram_mib,
   raw$output_seconds <- 0
   raw$calibration <- calibration
   raw$provenance <- provenance
+  if (identical(model_name, "MV_PLS")) {
+    raw$iteration_counts <- rep(0, n_comp)
+    raw$monotone <- rep(TRUE, n_comp)
+    raw$hit_max_iter <- rep(FALSE, n_comp)
+    raw$finite_solution <- rep(TRUE, n_comp)
+  }
   raw$telemetry <- list(
-    schema_version = 1L,
+    schema_version = 3L,
     model = model_name,
     calibration = calibration,
     n_basis = as.integer(n_basis),
     n_components = n_comp,
     selected_lambda = selected_lambda,
+    tolerance = tolerance,
+    max_iter = max_iter,
     wall_seconds = elapsed,
     peak_ram_mib = peak_ram_mib,
     provenance = provenance

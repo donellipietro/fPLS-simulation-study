@@ -87,7 +87,8 @@ competitor_provenance <- function(model_name, test_options, data) {
 }
 
 finish_r_model <- function(model_name, raw, elapsed, peak_ram_mib,
-                           n_basis, calibration, selected_lambda, provenance) {
+                           n_basis, calibration, selected_lambda, provenance,
+                           tolerance = NA_real_, max_iter = NA_integer_) {
   n_comp <- length(raw$Y_hat)
   raw$direction_lambdas <- matrix(NaN, n_comp, 1L)
   raw$loading_lambdas <- matrix(NaN, n_comp, 1L)
@@ -99,13 +100,21 @@ finish_r_model <- function(model_name, raw, elapsed, peak_ram_mib,
   raw$output_seconds <- 0
   raw$calibration <- calibration
   raw$provenance <- provenance
+  if (identical(model_name, "MV_PLS")) {
+    raw$iteration_counts <- rep(0, n_comp)
+    raw$monotone <- rep(TRUE, n_comp)
+    raw$hit_max_iter <- rep(FALSE, n_comp)
+    raw$finite_solution <- rep(TRUE, n_comp)
+  }
   raw$telemetry <- list(
-    schema_version = 1L,
+    schema_version = 3L,
     model = model_name,
     calibration = calibration,
     n_basis = as.integer(n_basis),
     n_components = n_comp,
     selected_lambda = selected_lambda,
+    tolerance = tolerance,
+    max_iter = max_iter,
     wall_seconds = elapsed,
     peak_ram_mib = peak_ram_mib,
     provenance = provenance
@@ -178,7 +187,8 @@ select_source_modal_gcv_lambda <- function(X, locations, basis, lambda_grid) {
   )
 }
 
-fit_source_metric_pls <- function(Y, A, mass, penalty, lambda, n_comp) {
+fit_source_metric_pls <- function(Y, A, mass, penalty, lambda, n_comp,
+                                  tolerance, max_iter) {
   metric_sqrt <- as.matrix(expm::sqrtm(mass + lambda * penalty))
   inverse_sqrt <- solve(metric_sqrt)
   data_pls <- A %*% mass %*% inverse_sqrt
@@ -187,7 +197,9 @@ fit_source_metric_pls <- function(Y, A, mass, penalty, lambda, n_comp) {
     ncomp = n_comp,
     method = "oscorespls",
     center = FALSE,
-    scale = FALSE
+    scale = FALSE,
+    tol = tolerance,
+    maxit = max_iter
   )
   list(
     model = model,
@@ -198,7 +210,7 @@ fit_source_metric_pls <- function(Y, A, mass, penalty, lambda, n_comp) {
 }
 
 select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp,
-                                    folds, validation_space) {
+                                    folds, validation_space, tolerance, max_iter) {
   n_units <- nrow(A)
   folds <- min(as.integer(folds), n_units)
   fold_id <- sample(rep(seq_len(folds), length.out = n_units))
@@ -214,7 +226,9 @@ select_source_pb_lambda <- function(Y, A, mass, penalty, lambda_grid, n_comp,
         ncomp = n_comp,
         method = "oscorespls",
         center = FALSE,
-        scale = FALSE
+        scale = FALSE,
+        tol = tolerance,
+        maxit = max_iter
       )
       validation_X <- if (validation_space == "penalty_transformed") {
         data_pls[validation, , drop = FALSE]
@@ -276,13 +290,15 @@ fit_functional_competitor <- function(model_name, data, test_options) {
   if (!is.null(pb_settings)) {
     cv <- select_source_pb_lambda(
       data$Y, A, mass, penalty, test_options$competitors$pb_lambda_grid,
-      test_options$model$n_comp, pb_settings$folds, pb_settings$validation_space
+      test_options$model$n_comp, pb_settings$folds, pb_settings$validation_space,
+      test_options$regularization$tolerance, test_options$regularization$max_iter
     )
     component_lambda <- cv$lambda
   }
 
   metric <- fit_source_metric_pls(
-    data$Y, A, mass, penalty, component_lambda, test_options$model$n_comp
+    data$Y, A, mass, penalty, component_lambda, test_options$model$n_comp,
+    test_options$regularization$tolerance, test_options$regularization$max_iter
   )
   fit <- metric$model
   scores <- as.matrix(fit$scores)
@@ -361,6 +377,8 @@ fit_functional_competitor <- function(model_name, data, test_options) {
     model_name, raw, elapsed, r_peak_memory_mb(),
     ncol(Psi), calibration,
     if (model_name == "B_fPLS_smooth") smoothing$lambda else component_lambda,
-    competitor_provenance(model_name, test_options, data)
+    competitor_provenance(model_name, test_options, data),
+    test_options$regularization$tolerance,
+    test_options$regularization$max_iter
   )
 }

@@ -31,7 +31,8 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
   expected <- list()
   required_raw <- c(
     "params.json", "telemetry.json", "X.csv", "Y.csv", "locations.csv",
-    "x_space_directions_coefficients.csv", "y_hat_h4.csv", "beta_evaluation_h4.csv"
+    "x_space_directions_coefficients.csv", "y_hat_h4.csv", "beta_evaluation_h4.csv",
+    "component_diagnostics.csv", paste0("objective_history_h", 1:4, ".csv")
   )
 
   for (options in family_options) {
@@ -56,8 +57,9 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
         stop(glue::glue("incomplete batch files for {options$name_test}/batch_{batch_index}"))
       }
       data <- readRDS(data_file)
-      if (data$noise$requested_NSR_X_final_component != 3 ||
-          data$noise$requested_NSR_Y != 0.1) {
+      if (!grepl("NSR", family) &&
+          (data$noise$requested_NSR_X_final_component != 3 ||
+           data$noise$requested_NSR_Y != 0.1)) {
         stop("batch does not use the paper-facing severe-noise slice")
       }
 
@@ -73,12 +75,17 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
             length(model$results$Beta_locations) != 4L) {
           stop(glue::glue("invalid component-wise result shape for {model_name}"))
         }
-        if (model_name == "R1_fPLS") {
+        if (model_name %in% c("R1_fPLS", "fPCR")) {
           raw_dir <- model$results$raw_output_dir
-          missing_raw <- required_raw[!file.exists(file.path(raw_dir, required_raw))]
+          model_required_raw <- c(
+            required_raw,
+            if (model_name == "fPCR") "fpca_lambdas.csv" else character()
+          )
+          missing_raw <- model_required_raw[!file.exists(file.path(raw_dir, model_required_raw))]
           if (length(missing_raw)) stop("native raw output is incomplete")
           telemetry <- fromJSON(file.path(raw_dir, "telemetry.json"))
-          if (!identical(telemetry$mode, "native_fdaPDE_cpp") ||
+          if (!identical(telemetry$model, model_name) ||
+              !identical(telemetry$mode, "native_fdaPDE_cpp") ||
               !identical(telemetry$provenance$outer_branch, cfg$FDAPDE_CPP_BRANCH)) {
             stop("native telemetry provenance does not match the active profile")
           }
@@ -208,20 +215,28 @@ for (family in families) {
 results <- do.call(rbind, all_rows)
 completeness <- do.call(rbind, all_completeness)
 diagnostics <- do.call(rbind, all_diagnostics)
+baseline_families <- c("vary_k", "vary_n", "vary_m")
+has_review_extensions <- any(!families %in% baseline_families)
 write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALSE)
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)
 write.csv(diagnostics, file.path(aggregate_dir, "all_diagnostics.csv"), row.names = FALSE)
 write_json(
   list(
-    schema_version = 5L,
+    schema_version = 6L,
     suite = test_suite,
     requested = requested,
     families = families,
     run_complete = all(completeness$complete),
     smoke_test = SMOKE_TEST,
     paper_design_complete = TRUE,
-    paper_results_reproduced = TRUE,
-    validation_status = "validated_against_submitted_version",
+    paper_results_reproduced = all(families %in% baseline_families),
+    submitted_baseline_validated = TRUE,
+    review_extensions_included = has_review_extensions,
+    validation_status = if (SMOKE_TEST) "smoke_test" else if (has_review_extensions) {
+      "review_extension_run_complete"
+    } else {
+      "validated_against_submitted_version"
+    },
     diagnostic_outputs = diagnostic_outputs,
     qualitative_outputs = qualitative_outputs,
     competitors = paper_model_catalog()$names,
@@ -234,7 +249,6 @@ write_json(
   pretty = TRUE
 )
 cat(glue::glue(
-  "Validated {nrow(results)} metric rows across {nrow(completeness)} complete cells; ",
-  "submitted-version validation is complete.\n",
+  "Validated {nrow(results)} metric rows across {nrow(completeness)} complete cells.\n",
   .trim = FALSE
 ))

@@ -5,14 +5,17 @@ source_figure_rmse <- function(estimate, truth) {
 normalize_beta_shape <- function(value) {
   value <- as.matrix(value)
   value_norm <- norm(value, "F")
-  if (value_norm == 0) return(value * NaN)
+  if (!is.finite(value_norm) || value_norm == 0) return(value * NaN)
   value / value_norm
 }
 
 align_beta_shape <- function(estimate, truth) {
   estimate <- normalize_beta_shape(estimate)
   truth <- normalize_beta_shape(truth)
-  if (source_figure_rmse(estimate, truth) > source_figure_rmse(-estimate, truth)) {
+  positive_error <- source_figure_rmse(estimate, truth)
+  negative_error <- source_figure_rmse(-estimate, truth)
+  if (is.finite(positive_error) && is.finite(negative_error) &&
+      positive_error > negative_error) {
     estimate <- -estimate
   }
   estimate
@@ -76,11 +79,16 @@ evaluate_results <- function(model, data, test_options) {
     fit_seconds = model$results$fit_seconds,
     output_seconds = model$results$output_seconds,
     iteration_count = component_result(model, "iteration_counts", n_comp),
+    monotone = component_result(model, "monotone", n_comp),
+    objective = component_result(model, "objective", n_comp),
+    hit_max_iter = component_result(model, "hit_max_iter", n_comp),
+    finite_solution = component_result(model, "finite_solution", n_comp),
     direction_lambda = model$results$direction_lambdas[, 1],
     loading_lambda = model$results$loading_lambdas[, 1],
+    fpca_lambda = component_result(model, "fpca_lambdas", n_comp),
     calibration = model$results$calibration,
     settings_status = test_options$regularization$status,
     provenance = model$results$provenance,
-    validation_status = "validated_against_submitted_version"
+    validation_status = test_options$provenance$validation_status
   )
 }

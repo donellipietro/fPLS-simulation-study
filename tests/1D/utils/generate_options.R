@@ -1,20 +1,21 @@
 # = ========================================================================== =
 # - Script: generate_options.R
-# - Desc: Generates the three severe-noise 1D paper experiment families.
+# - Desc: Generates the 1D paper and noise-robustness experiment families.
 # = ========================================================================== =
 
 paper_model_catalog <- function() {
   list(
     names = c(
-      "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS"
+      "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "fPCR", "R1_fPLS"
     ),
     labels = c(
       "MV-PLS", "B-fPLS (Regression Splines)",
-      "B-fPLS (Smoothing Splines)", "PB-fPLS", "R1-fPLS"
+      "B-fPLS (Smoothing Splines)", "PB-fPLS", "fPCR", "R1-fPLS"
     ),
     colors = c(
       RColorBrewer::brewer.pal(3, "Greys")[3],
       RColorBrewer::brewer.pal(9, "RdPu")[c(4, 6, 9)],
+      RColorBrewer::brewer.pal(3, "Greens")[3],
       RColorBrewer::brewer.pal(3, "Blues")[3]
     )
   )
@@ -23,7 +24,7 @@ paper_model_catalog <- function() {
 ## Function: generate_options ----
 # - Args:
 #   * test_suite: name of the calling test suite
-#   * name_main_test: vary_k, vary_n, or vary_m
+#   * name_main_test: requested 1D experiment family
 #   * path_queue: directory where JSON option files are written
 # - Desc:
 #   Defines one explicit one-factor family and writes one JSON per level.
@@ -61,8 +62,25 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       n_locs <- if (SMOKE_TEST) 17L else c(50L, 100L, 200L)
       source_k <- if (SMOKE_TEST) 11L else 51L
       competitor_basis_k <- 11L
+    },
+    vary_NSRX = {
+      varying <- "NSR_X_final_component"
+      n_stat_units <- if (SMOKE_TEST) 12L else 100L
+      n_locs <- if (SMOKE_TEST) 17L else 200L
+      source_k <- if (SMOKE_TEST) 11L else 51L
+      competitor_basis_k <- 11L
+    },
+    vary_NSRY = {
+      varying <- "NSR_Y"
+      n_stat_units <- if (SMOKE_TEST) 12L else 100L
+      n_locs <- if (SMOKE_TEST) 17L else 200L
+      source_k <- if (SMOKE_TEST) 11L else 51L
+      competitor_basis_k <- 11L
     }
   )
+
+  NSR_X_final_component <- if (name_main_test == "vary_NSRX") c(1, 3, 5, 10) else 3
+  NSR_Y <- if (name_main_test == "vary_NSRY") c(0.01, 0.1, 0.5, 1) else 0.1
 
   ## Explicit scientific and execution options ----
   options <- list(
@@ -89,7 +107,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       location_seed = 0L,
       location_method = "jittered_grid_nearest_unique"
     ),
-    noise = list(NSR_X_final_component = 3, NSR_Y = 0.1),
+    noise = list(
+      NSR_X_final_component = NSR_X_final_component,
+      NSR_Y = NSR_Y
+    ),
     regularization = list(
       calibration = "gcv",
       fixed_direction_lambda = 1e-9,
@@ -97,8 +118,8 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       lambda_grid = lambda_grid,
       gcv_seed = 0L,
       gcv_probes = gcv_probes,
-      max_iter = 20L,
-      tolerance = 1e-6,
+      max_iter = 1000L,
+      tolerance = 1e-8,
       status = if (SMOKE_TEST) "smoke_test" else "submitted_configuration"
     ),
     competitors = list(
@@ -121,7 +142,13 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   )
 
   name_fun <- function(opts_i, comb_row) {
-    glue::glue("{name_main_test}_{varying}_{sprintf('%04d', as.integer(comb_row[[varying]]))}")
+    value <- comb_row[[varying]]
+    level <- if (grepl("NSR", varying)) {
+      gsub("[.]", "p", format(value, scientific = FALSE, trim = TRUE))
+    } else {
+      sprintf("%04d", as.integer(value))
+    }
+    glue::glue("{name_main_test}_{varying}_{level}")
   }
   options_list <- explode_options(options, by = varying, name_fun = name_fun)
   if (name_main_test == "vary_k") {

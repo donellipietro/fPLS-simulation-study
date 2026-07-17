@@ -1,7 +1,40 @@
 # = ========================================================================== =
 # - Script: fit_and_evaluate.R
-# - Desc: Fits and evaluates every requested 1D paper model for one batch.
+# - Desc: Fits and evaluates every requested 1D model for one batch.
 # = ========================================================================== =
+
+native_model_matches_options <- function(model, model_name, test_options) {
+  if (!model_name %in% c("R1_fPLS", "fPCR")) {
+    telemetry <- model$results$telemetry
+    return(isTRUE(telemetry$schema_version == 3L) &&
+             (model_name == "MV_PLS" ||
+                (isTRUE(all.equal(telemetry$tolerance, test_options$regularization$tolerance)) &&
+                 isTRUE(all.equal(telemetry$max_iter, test_options$regularization$max_iter)))))
+  }
+  if (identical(test_options$regularization$calibration, "multivariate")) {
+    return(identical(model$MODE, "MV_PLS") &&
+             isTRUE(model$results$telemetry$schema_version == 3L))
+  }
+  telemetry <- model$results$telemetry
+  if (is.null(telemetry)) return(FALSE)
+  same <- function(left, right) isTRUE(all.equal(left, right))
+  same(telemetry$schema_version, 3L) &&
+    identical(telemetry$model, model_name) &&
+    identical(telemetry$calibration, test_options$regularization$calibration) &&
+    same(telemetry$n_components, test_options$model$n_comp) &&
+    same(telemetry$max_iter, test_options$regularization$max_iter) &&
+    same(telemetry$tolerance, test_options$regularization$tolerance) &&
+    same(as.numeric(telemetry$lambda_grid), test_options$regularization$lambda_grid) &&
+    (telemetry$calibration != "fixed" || if (model_name == "fPCR") {
+      same(telemetry$fixed_loading_lambda, test_options$regularization$fixed_loading_lambda)
+    } else {
+      same(telemetry$fixed_direction_lambda, test_options$regularization$fixed_direction_lambda) &&
+        same(telemetry$fixed_loading_lambda, test_options$regularization$fixed_loading_lambda)
+    }) &&
+    (model_name != "R1_fPLS" || telemetry$calibration != "gcv" ||
+       (same(telemetry$gcv_probes, test_options$regularization$gcv_probes) &&
+        same(telemetry$gcv_seed, test_options$regularization$gcv_seed)))
+}
 
 fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_options) {
   results_evaluation <- list()
@@ -17,10 +50,14 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
     )
     object_name <- glue::glue("model_{model_name}")
 
-    if (file.exists(model_file) && !FORCE_FIT) {
+    reuse_model <- FALSE
+    if (file.exists(model_file) && !FORCE_FIT &&
+        !isTRUE(test_options$force_refit_batch)) {
       load(model_file)
       model <- get(object_name)
-    } else {
+      reuse_model <- native_model_matches_options(model, model_name, test_options)
+    }
+    if (!reuse_model) {
       cat(glue::glue("- Fitting model: {model_name} ... ", .trim = FALSE))
       model_start <- Sys.time()
       model <- fit_model(model_name, domain, data, path_list, test_options)

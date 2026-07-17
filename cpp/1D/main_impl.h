@@ -7,10 +7,10 @@
 
 #include <chrono>
 #include <cmath>
-#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -32,12 +32,13 @@ std::string output_file(const std::filesystem::path& output_dir, const std::stri
     return (output_dir / name).string();
 }
 
+#include "../include/fpcr_driver.h"
+
 template <typename Domain, typename Space, typename DirectionPenalty, typename LoadingPenalty>
 int run_fpls(
   const json& params, Domain& domain, Space& space, DirectionPenalty&& direction_penalty,
   LoadingPenalty&& loading_penalty, const char* discretization) {
     const auto wall_start = std::chrono::steady_clock::now();
-    const std::clock_t cpu_start = std::clock();
 
     const int n_comp = params.at("n_comp").get<int>();
     const int max_iter = params.at("max_iter").get<int>();
@@ -115,6 +116,28 @@ int run_fpls(
     write_csv(output_file(output_dir, "x_mean_locations.csv"), matrix_t::Zero(1, X.cols()));
     write_csv(output_file(output_dir, "y_mean.csv"), matrix_t::Zero(1, Y.cols()));
 
+    matrix_t component_diagnostics(n_comp, 6);
+    for (int h = 0; h < n_comp; ++h) {
+        const auto& history = model.direction_objective_history()[h];
+        Eigen::Map<const matrix_t> history_matrix(history.data(), history.size(), 1);
+        write_csv(
+          output_file(output_dir, "objective_history_h" + std::to_string(h + 1) + ".csv"),
+          history_matrix);
+        component_diagnostics(h, 0) = h + 1;
+        component_diagnostics(h, 1) = model.direction_iterations()[h];
+        component_diagnostics(h, 2) = model.direction_monotone()[h] ? 1.0 : 0.0;
+        component_diagnostics(h, 3) = history.empty() ?
+          std::numeric_limits<double>::quiet_NaN() : history.back();
+        component_diagnostics(h, 4) = model.direction_iterations()[h] >= max_iter ? 1.0 : 0.0;
+        component_diagnostics(h, 5) =
+          !history.empty() && std::isfinite(history.back()) ? 1.0 : 0.0;
+    }
+    write_csv(
+      output_file(output_dir, "component_diagnostics.csv"), component_diagnostics,
+      std::vector<std::string>{
+        "component", "iterations", "monotone", "objective", "hit_max_iter", "finite_solution"
+      });
+
     json component_files = json::array();
     for (int h = 1; h <= n_comp; ++h) {
         const std::string suffix = "_h" + std::to_string(h) + ".csv";
@@ -139,12 +162,9 @@ int run_fpls(
     const double fit_seconds = std::chrono::duration<double>(fit_end - setup_end).count();
     const double output_seconds = std::chrono::duration<double>(output_end - fit_end).count();
     const double wall_seconds = std::chrono::duration<double>(output_end - wall_start).count();
-    const double cpu_seconds = static_cast<double>(std::clock() - cpu_start) / CLOCKS_PER_SEC;
-    const double cpu_usage_percent = wall_seconds > 0 ? 100.0 * cpu_seconds / wall_seconds : 0.0;
-
     std::ofstream telemetry(output_file(output_dir, "telemetry.json"));
     telemetry << json {
-      {"schema_version", 1},
+      {"schema_version", 3},
       {"model", "R1_fPLS"},
       {"mode", "native_fdaPDE_cpp"},
       {"discretization", discretization},
@@ -161,13 +181,16 @@ int run_fpls(
       {"tolerance", tolerance},
       {"gcv_probes", gcv_probes},
       {"gcv_seed", gcv_seed},
+      {"lambda_grid", lambda_grid},
+      {"fixed_direction_lambda", fixed_direction_lambda},
+      {"fixed_loading_lambda", fixed_loading_lambda},
       {"setup_seconds", setup_seconds},
       {"fit_seconds", fit_seconds},
       {"output_seconds", output_seconds},
       {"wall_seconds", wall_seconds},
-      {"cpu_seconds", cpu_seconds},
-      {"cpu_usage_percent", cpu_usage_percent},
-      {"iteration_counts_available", false},
+      {"iteration_counts_available", true},
+      {"iteration_counts", model.direction_iterations()},
+      {"monotone", model.direction_monotone()},
       {"component_files", component_files},
       {"provenance", params.at("provenance")}
     }.dump(2) << '\n';
@@ -194,6 +217,9 @@ int fpls_simulation_main(int argc, char* argv[]) {
     const auto penalty = integral(domain)(dxx(f) * dxx(v));
     ZeroField<1> forcing;
     const auto load = integral(domain)(forcing * v);
+    if (params.value("model", std::string("R1_fPLS")) == "fPCR") {
+        return run_fpcr(params, domain, space, bs_ls_elliptic(penalty, load), "spline");
+    }
     return run_fpls(
       params, domain, space, bs_ls_elliptic(penalty, load),
       bs_ls_elliptic(penalty, load), "spline");

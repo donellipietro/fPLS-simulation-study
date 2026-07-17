@@ -2,5 +2,10 @@
 #include "main_impl.h"
 
 int main(int argc, char* argv[]) {
-    return fpls_simulation_main(argc, argv);
+    try {
+        return fpls_simulation_main(argc, argv);
+    } catch (const std::exception& error) {
+        std::cerr << "fPLS simulation failed: " << error.what() << '\n';
+        return 2;
+    }
 }

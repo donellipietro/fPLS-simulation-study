@@ -2,7 +2,7 @@
 # - Test: fPLS paper simulation on a 1D support
 # - Desc: Runs one option through all paper-facing 1D models and batches.
 # - Args:
-#   [1] name_main_test: vary_k, vary_n, or vary_m
+#   [1] name_main_test: one configured 1D family or group
 #   [2] file_options: one generated JSON option file
 # = ========================================================================== =
 
@@ -59,10 +59,21 @@ batch_matches_options <- function(file, options, batch_index) {
   same <- function(left, right) isTRUE(all.equal(left, right))
   same(data$data_seed, batch_index) &&
     same(data$dimensions$n_stat_units, options$dimensions$n_stat_units) &&
+    same(data$dimensions$n_comp, options$model$n_comp) &&
     same(data$dimensions$n_locs_requested, options$dimensions$n_locs) &&
     same(data$dimensions$source_k, options$dimensions$source_k) &&
+    same(nrow(data$evaluation), options$dimensions$n_reference_points) &&
     same(data$noise$requested_NSR_X_final_component, options$noise$NSR_X_final_component) &&
     same(data$noise$requested_NSR_Y, options$noise$NSR_Y)
+}
+
+models_match_options <- function(files, names, options) {
+  all(mapply(function(file, model_name) {
+    if (!file.exists(file)) return(FALSE)
+    object_name <- glue::glue("model_{model_name}")
+    load(file)
+    native_model_matches_options(get(object_name), model_name, options)
+  }, files, names))
 }
 
 ## Run every repetition ----
@@ -79,24 +90,32 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
     path_list$batch,
     glue::glue("batch_{batch_index}_fitted_model_{test_options$model_names}.RData")
   )
+  data_current <- batch_matches_options(data_file, test_options, batch_index)
   if (!FORCE_FIT && !FORCE_EVALUATE &&
-      all(file.exists(c(evaluation_file, model_files))) &&
-      batch_matches_options(data_file, test_options, batch_index)) {
+      file.exists(evaluation_file) &&
+      models_match_options(model_files, test_options$model_names, test_options) &&
+      data_current) {
     cat("- Existing complete batch; skipped\n")
     next
   }
 
-  cat("- Generate data\n")
-  data <- generate_fpls_data(test_options, data_seed = batch_index)
-  saveRDS(data, data_file)
-  if (batch_index == 1L) {
-    saveRDS(data, file.path(path_list$data, glue::glue("{test_options$name_test}.rds")))
-    if (name_main_test == "vary_k" && test_options$dimensions$source_k == 11L) {
-      write_data_illustration(data, file.path(path_list$images, "data_1D.pdf"))
+  if (data_current) {
+    cat("- Reuse generated data\n")
+    data <- readRDS(data_file)
+  } else {
+    cat("- Generate data\n")
+    data <- generate_fpls_data(test_options, data_seed = batch_index)
+    saveRDS(data, data_file)
+    if (batch_index == 1L) {
+      saveRDS(data, file.path(path_list$data, glue::glue("{test_options$name_test}.rds")))
+      if (name_main_test == "vary_k" && test_options$dimensions$source_k == 11L) {
+        write_data_illustration(data, file.path(path_list$images, "data_1D.pdf"))
+      }
     }
   }
 
   test_options$batch_index <- batch_index
+  test_options$force_refit_batch <- !data_current
   cat("- Fit models\n")
   fit_and_evaluate_models(
     path_list = path_list,

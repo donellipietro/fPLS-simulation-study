@@ -4,10 +4,88 @@
 #         and point visualization over 2D domains or meshes.
 # = ========================================================================== =
 
-cool_to_warm_extended_palette <- c(
-  "#053061", "#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#F7F7F7",
-  "#FDDBC7", "#F4A582", "#D6604D", "#B2182B", "#67001F"
+.plotting_utils_dir <- tryCatch(
+  dirname(normalizePath(sys.frame(1)$ofile, mustWork = FALSE)),
+  error = function(e) file.path("src", "utils")
 )
+.paraview_colormaps_file <- file.path(.plotting_utils_dir, "paraview_colormaps.json")
+if (!file.exists(.paraview_colormaps_file)) {
+  .paraview_colormaps_file <- file.path("src", "utils", "paraview_colormaps.json")
+}
+.paraview_colormaps_cache <- NULL
+
+paraview_colormap_names <- function() {
+  names(paraview_colormaps())
+}
+
+paraview_colormaps <- function() {
+  if (!is.null(.paraview_colormaps_cache)) return(.paraview_colormaps_cache)
+  if (!file.exists(.paraview_colormaps_file)) {
+    stop(glue::glue("ParaView colormap preset file not found: {.paraview_colormaps_file}"))
+  }
+
+  presets <- jsonlite::fromJSON(.paraview_colormaps_file, simplifyVector = FALSE)
+  maps <- lapply(presets, function(preset) {
+    if (!is.null(preset$RGBPoints)) {
+      points <- matrix(as.numeric(preset$RGBPoints), ncol = 4, byrow = TRUE)
+      colours <- grDevices::rgb(points[, 2], points[, 3], points[, 4])
+      values <- points[, 1]
+      span <- range(values)
+      values <- if (diff(span) == 0) NULL else (values - span[1]) / diff(span)
+    } else if (!is.null(preset$IndexedColors)) {
+      points <- matrix(as.numeric(preset$IndexedColors), ncol = 3, byrow = TRUE)
+      colours <- grDevices::rgb(points[, 1], points[, 2], points[, 3])
+      values <- NULL
+    } else {
+      colours <- character()
+      values <- NULL
+    }
+    list(name = preset$Name, colours = colours, values = values)
+  })
+  names(maps) <- vapply(maps, function(map) map$name, character(1))
+
+  .paraview_colormaps_cache <<- maps
+  maps
+}
+
+paraview_colormap <- function(name = "Cool to Warm (Extended)", n = NULL,
+                              reverse = FALSE, values = FALSE) {
+  maps <- paraview_colormaps()
+  key <- names(maps)[tolower(names(maps)) == tolower(name)][1]
+  if (is.na(key)) {
+    stop(glue::glue(
+      "Unknown ParaView colormap: {name}. Available colormaps: ",
+      "{glue::glue_collapse(paraview_colormap_names(), sep = ', ')}"
+    ))
+  }
+
+  colours <- maps[[key]]$colours
+  map_values <- maps[[key]]$values
+  if (!is.null(n)) {
+    colours <- grDevices::colorRampPalette(colours)(n)
+    map_values <- NULL
+  }
+  if (reverse) {
+    colours <- rev(colours)
+    map_values <- if (!is.null(map_values)) rev(1 - map_values) else NULL
+  }
+
+  if (values) {
+    return(list(colours = colours, values = map_values))
+  }
+  colours
+}
+
+as_ggplot_palette <- function(palette) {
+  if (is.null(palette)) return(NULL)
+  if (is.list(palette)) return(palette)
+  if (length(palette) == 1L && !grepl("^#", palette)) {
+    return(paraview_colormap(palette, values = TRUE))
+  }
+  list(colours = palette, values = NULL)
+}
+
+cool_to_warm_extended_palette <- paraview_colormap("Cool to Warm (Extended)")
 
 
 ## Function: std_plot_settings
@@ -397,7 +475,7 @@ plot.field_points <- function(locations, f, boundary = NULL,
 #   * limits: optional numeric range for color scaling
 #   * breaks: optional numeric vector for contour levels
 #   * colormap: string, Viridis palette option
-#   * palette: optional continuous colour vector
+#   * palette: optional colour vector, palette list, or ParaView palette name
 #   * discrete: logical, whether to use discrete colormap
 #   * ISOLINES: logical, whether to draw contour isolines
 #   * LEGEND: logical, whether to display the legend
@@ -454,8 +532,13 @@ plot.field_tile <- function(nodes, f, boundary = NULL,
       h <- breaks[2] - breaks[1]
       limits <- limits + c(-h, h)
     }
+    palette <- as_ggplot_palette(palette)
     if (!is.null(palette)) {
-      plot <- plot + scale_fill_gradientn(colours = palette, limits = limits)
+      plot <- plot + scale_fill_gradientn(
+        colours = palette$colours,
+        values = palette$values,
+        limits = limits
+      )
     } else if (is.null(limits)) {
       plot <- plot + scale_fill_viridis(option = colormap)
     } else {
@@ -510,7 +593,13 @@ plot.grouped_boxplots <- function(data,
   ## Extract labels
   groups_levels <- unique(data$Group)
   subgroup_levels <- unique(data$SubGroup)
-  if (is.null(group_labels)) group_labels <- groups_levels
+  if (is.null(group_labels)) {
+    group_labels <- if (is.numeric(groups_levels)) {
+      trimws(formatC(groups_levels, format = "g", digits = 4))
+    } else {
+      groups_levels
+    }
+  }
   if (is.null(subgroup_labels)) subgroup_labels <- subgroup_levels
 
   ## Assign colors
@@ -930,7 +1019,11 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
       if (nrow(data_plot_trimmed) == 0) next
 
       ## Remove models with all-NaN results
-      valid_models <- model_names[!apply(data_plot_trimmed[, model_names], 2, function(x) all(is.nan(x)))]
+      valid_models <- model_names[apply(
+        data_plot_trimmed[, model_names, drop = FALSE],
+        2,
+        function(x) any(is.finite(x))
+      )]
       if (length(valid_models) == 0) next
 
       ## Aggregate with median per x (Group)

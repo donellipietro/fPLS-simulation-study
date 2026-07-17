@@ -112,15 +112,22 @@ write_diagnostic_plot <- function(loaded, data, file, title, values_name,
 #   * image_dir: directory for family plot output
 # - Desc:
 #   Writes telemetry/lambda CSV rows and family diagnostic plots.
-write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
+write_family_diagnostics <- function(
+    loaded, family, aggregate_dir, image_dir,
+    lambda_limits = lambda_log10_limits, lambda_breaks = lambda_log10_grid) {
   scalar_diagnostics <- c(
     execution_time = "Execution time (s)",
     peak_ram_mib = "Peak RAM (MiB)"
   )
   component_diagnostics <- c(
     iteration_count = "Iteration count",
+    monotone = "Monotonic fit",
+    hit_max_iter = "Reached iteration cap",
+    finite_solution = "Finite solution",
+    objective = "Final objective",
     direction_lambda = "Direction lambda",
-    loading_lambda = "Loading lambda"
+    loading_lambda = "Loading lambda",
+    fpca_lambda = "fPCA lambda"
   )
   selected_lambda_diagnostics <- c(
     pre_smoothing_lambda = "B-fPLS smoothing lambda",
@@ -159,16 +166,35 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
     component_diagnostics[["iteration_count"]],
     component_diagnostics[["iteration_count"]]
   )
+  plot_status$monotone <- write_diagnostic_plot(
+    loaded, loaded$monotone,
+    file.path(image_dir, "monotone.pdf"),
+    component_diagnostics[["monotone"]], "Monotonic fit (1 = yes)",
+    limits = c(0, 1)
+  )
+  for (name in c("hit_max_iter", "finite_solution")) {
+    plot_status[[name]] <- write_diagnostic_plot(
+      loaded, loaded[[name]],
+      file.path(image_dir, glue::glue("{name}.pdf")),
+      component_diagnostics[[name]], paste0(component_diagnostics[[name]], " (1 = yes)"),
+      limits = c(0, 1)
+    )
+  }
+  plot_status$objective <- write_diagnostic_plot(
+    loaded, loaded$objective,
+    file.path(image_dir, "objective.pdf"),
+    component_diagnostics[["objective"]],
+    component_diagnostics[["objective"]]
+  )
 
-  for (name in c("direction_lambda", "loading_lambda")) {
+  for (name in c("direction_lambda", "loading_lambda", "fpca_lambda")) {
     plot_data <- positive_log10_table(loaded[[name]], loaded$model_names)
-    limits <- lambda_log10_limits
     plot_status[[name]] <- write_diagnostic_plot(
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
       component_diagnostics[[name]], "log10(lambda)",
-      limits = limits, horizontal_lines = limits,
-      y_breaks = lambda_log10_grid
+      limits = lambda_limits, horizontal_lines = lambda_limits,
+      y_breaks = lambda_breaks
     )
   }
   for (name in names(selected_lambda_diagnostics)) {
@@ -177,13 +203,12 @@ write_family_diagnostics <- function(loaded, family, aggregate_dir, image_dir) {
       next
     }
     plot_data <- positive_log10_table(loaded[[name]], loaded$model_names)
-    limits <- lambda_log10_limits
     plot_status[[name]] <- write_diagnostic_plot(
       loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
       selected_lambda_diagnostics[[name]], "log10(lambda)",
-      limits = limits, horizontal_lines = limits,
-      y_breaks = lambda_log10_grid
+      limits = lambda_limits, horizontal_lines = lambda_limits,
+      y_breaks = lambda_breaks
     )
   }
 

@@ -8,7 +8,7 @@ TEST_SUITE <- "fPLS paper simulation 2D"
 test_suite <- "2D"
 
 ## Tests included in the grouped all target ----
-test_groups <- list(all = c("vary_k", "vary_n", "vary_m"))
+test_groups <- list(all = c("vary_k", "vary_n", "vary_m", "vary_NSRX", "vary_NSRY", "vary_H"))
 
 ## Fit and evaluation controls ----
 FORCE_FIT <- FALSE

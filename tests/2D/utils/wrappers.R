@@ -30,8 +30,8 @@ check_matrix_shape <- function(value, rows, cols, label) {
   }
 }
 
-fit_native_fpls <- function(model_name, data, path_list, test_options) {
-  if (!identical(model_name, "R1_fPLS")) {
+fit_native_model <- function(model_name, data, path_list, test_options) {
+  if (!model_name %in% c("R1_fPLS", "fPCR")) {
     stop(glue::glue("The model {model_name} does not exist"))
   }
 
@@ -62,6 +62,7 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
       data_seed = data$data_seed,
       location_seed = data$location_seed,
       location_method = test_options$data$location_method,
+      model = model_name,
       source_k = test_options$dimensions$source_k,
       n_stat_units = data$dimensions$n_stat_units,
       n_locations = data$dimensions$n_locs,
@@ -75,6 +76,7 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
     )
   )
   params <- list(
+    model = model_name,
     n_comp = test_options$model$n_comp,
     center = test_options$model$center,
     calibration = test_options$regularization$calibration,
@@ -127,6 +129,13 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
   n_comp <- test_options$model$n_comp
   n_basis <- telemetry$n_basis
   n_evaluation <- nrow(data$evaluation)
+  component_diagnostics <- suppressWarnings(read.csv(
+    file.path(raw_dir, "component_diagnostics.csv"),
+    check.names = FALSE
+  ))
+  if (!identical(component_diagnostics$component, seq_len(n_comp))) {
+    stop("invalid component diagnostics")
+  }
 
   raw <- list(
     X_space_directions = read_cpp_matrix(file.path(raw_dir, "x_space_directions_coefficients.csv")),
@@ -140,7 +149,20 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
     direction_lambdas = read_cpp_matrix(file.path(raw_dir, "direction_lambdas.csv")),
     loading_lambdas = read_cpp_matrix(file.path(raw_dir, "loading_lambdas.csv")),
     X_mean_locations = read_cpp_matrix(file.path(raw_dir, "x_mean_locations.csv")),
-    Y_mean = read_cpp_matrix(file.path(raw_dir, "y_mean.csv"))
+    Y_mean = read_cpp_matrix(file.path(raw_dir, "y_mean.csv")),
+    fpca_lambdas = if (identical(model_name, "fPCR")) {
+      read_cpp_matrix(file.path(raw_dir, "fpca_lambdas.csv"))
+    } else {
+      matrix(NaN, n_comp, 1L)
+    },
+    iteration_counts = component_diagnostics$iterations,
+    monotone = component_diagnostics$monotone,
+    objective = component_diagnostics$objective,
+    hit_max_iter = component_diagnostics$hit_max_iter,
+    finite_solution = component_diagnostics$finite_solution,
+    objective_history = lapply(seq_len(n_comp), function(h) {
+      as.numeric(read_cpp_matrix(file.path(raw_dir, glue::glue("objective_history_h{h}.csv"))))
+    })
   )
   check_matrix_shape(raw$X_space_directions, n_basis, n_comp, "X directions")
   check_matrix_shape(raw$X_space_directions_locations, n_locs, n_comp, "located X directions")
@@ -154,6 +176,10 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
   check_matrix_shape(raw$loading_lambdas, n_comp, 1L, "loading lambdas")
   check_matrix_shape(raw$X_mean_locations, 1L, n_locs, "X mean")
   check_matrix_shape(raw$Y_mean, 1L, n_responses, "Y mean")
+  check_matrix_shape(raw$fpca_lambdas, n_comp, 1L, "fPCA lambdas")
+  if (!isTRUE(all.equal(as.numeric(telemetry$iteration_counts), raw$iteration_counts))) {
+    stop("telemetry and component iteration counts do not agree")
+  }
 
   raw$Y_hat <- vector("list", n_comp)
   raw$X_hat_locations <- vector("list", n_comp)
@@ -175,7 +201,7 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
   }
 
   list(
-    MODE = "R1_fPLS",
+    MODE = model_name,
     results = c(
       raw,
       list(
@@ -198,8 +224,12 @@ fit_native_fpls <- function(model_name, data, path_list, test_options) {
 ## Function: fit_model ----
 # - Desc: Standard testbench wrapper signature for native and MV-PLS fits.
 fit_model <- function(model_name, domain, data, path_list, test_options) {
-  if (identical(model_name, "R1_fPLS")) {
-    return(fit_native_fpls(model_name, data, path_list, test_options))
+  if (identical(model_name, "R1_fPLS") &&
+      identical(test_options$regularization$calibration, "multivariate")) {
+    return(fit_mv_pls_competitor(data, test_options))
+  }
+  if (model_name %in% c("R1_fPLS", "fPCR")) {
+    return(fit_native_model(model_name, data, path_list, test_options))
   }
   if (identical(model_name, "MV_PLS")) {
     return(fit_mv_pls_competitor(data, test_options))

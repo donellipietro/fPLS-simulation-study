@@ -12,6 +12,7 @@
 # generated outputs and root links
 /results
 /images
+/reports
 /logs
 /queue
 /data

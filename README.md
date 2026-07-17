@@ -1,170 +1,102 @@
 # fPLS Simulation Study
 
-This repository ports the submitted fPLS simulations to the current
-`fdaPDE-test-bench` architecture and the outer `fdaPDE-cpp` branch
-`develop_fPLS`. It was generated from testbench commit `e92e1a1` with fresh
-Git history; its generic framework is aligned through canonical commit
-`868cf48`. All generated dependencies, builds, data, queues, logs, results, and
-images remain repository-local and ignored.
+This repository contains the submitted fPLS simulation design and the
+additional experiments prepared for peer review. It follows the
+`fdaPDE-test-bench` architecture through canonical `stable` commit `167e8c2`
+and uses the native `fdaPDE-cpp` implementation directly. The obsolete
+fPLS-R fitting bridge is not used.
+
+Generated dependencies, builds, data, queues, logs, results, figures, and
+local reports remain repository-local and ignored.
 
 ## Test Suites
 
-The scientific code is divided into two self-contained testbench suites.
-
-### `1D`
-
-| Test | Production levels | Fixed setting |
+| Suite | Families | Purpose |
 | --- | --- | --- |
-| `vary_k` | `k = 5, 11, 21, 51, 101` | `n = 100`, `m = 200` |
-| `vary_n` | `n = 50, 100, 200` | `m = 200`; R1 `k = 51`; B/PB `k = 11` |
-| `vary_m` | `m = 50, 100, 200` | `n = 100`; R1 `k = 51`; B/PB `k = 11` |
+| `1D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY` | Submitted curve simulations plus noise-sensitivity and fPCR comparisons |
+| `2D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY`, `vary_H` | Submitted spatial simulations plus noise and component-prefix comparisons |
+| `GCV` | sensitivity, competitor, large-sample, and near-zero-lambda families | Review diagnostics for tuning behavior, cost, and numerical stability |
+| `2D-predictive-order` | `all` | Experimental comparison of variance-ordered fPCR and response-relevant fPLS components |
 
-Models: MV-PLS, B-fPLS with regression splines, B-fPLS with smoothing splines,
-PB-fPLS with the submitted-source and paper CV selectors, and R1-fPLS.
+Each suite has a scientific README under `tests/<suite>/README.md`. The
+standard 1D and 2D families use 30 replications in production. The GCV and
+predictive-order suites are review extensions and remain separate from the
+submitted-design validation.
 
-### `2D`
+## Methods
 
-| Test | Production levels | Fixed setting |
-| --- | --- | --- |
-| `vary_k` | `k = 25, 100, 400, 900, 1600, 2500` | `n = 100`, `m = 1600` |
-| `vary_n` | `n = 50, 100, 200` | `k = 900`, `m = 1600` |
-| `vary_m` | `m = 900, 1600, 2400` | `n = 100`, `k = 900` |
+The one-dimensional comparisons include MV-PLS, fPCR, B-fPLS with regression
+splines, B-fPLS with smoothing splines, PB-fPLS, and R1-fPLS. The spatial and
+predictive-order comparisons use MV-PLS, fPCR, and R1-fPLS.
 
-Models: MV-PLS and R1-fPLS. The submitted paper restricts B-fPLS and PB-fPLS
-to scalar responses on one-dimensional supports. The 2D `vary_n` family and
-its `n = 100`, `k = 900`, `m = 1600` beta scenario are submitted-paper
-experiments. The requested 2D `vary_k` and `vary_m` families are retained and
-explicitly labeled as Pietro-requested historical families.
+R1-fPLS and fPCR call `<fdaPDE/models.h>` through direct C++ drivers. Thin R
+wrappers serialize inputs, invoke `cpp/run.sh`, validate outputs, and return
+the standard testbench model object. Competitor code is adapted from the
+corrected submitted implementation at historical design commit `7fb9172`.
 
-Every production option fixes final-component `NSR_X = 3`, `NSR_Y = 0.1`,
-and 30 replications. Historical NSR Cartesian products are not generated.
+All iterative fits use `tol = 1e-8` and `max_iter = 1000`; native GCV uses
+seed `0`. R1-fPLS and PB-fPLS use the shared `10^(-9:2)` grid. B-fPLS with
+smoothing splines retains its original `10^seq(-9, 2, by = 0.1)` grid.
 
-## Native Integration
+## Native Dependency
 
-`cpp/1D/main.cpp` and `cpp/2D/main.cpp` call `<fdaPDE/models.h>` directly and
-compile through the standard suite-selected target. Their thin suite-local R
-wrappers serialize inputs, call `cpp/run.sh`, validate outputs, and return the
-standard testbench model object. No historical R fitting bridge is used.
+Runtime profiles select the repository-local fdaPDE clone on branch
+`develop_fPLS`. The review implementation is available at:
 
-Native fits preserve CSV inputs, parameters, every component-wise output,
-selected lambdas, telemetry, and outer/core commit provenance under the
-standard batch result directory. R competitors preserve their component-wise
-fits, calibration details, telemetry, and provenance in the same batch cache.
+- outer fdaPDE-cpp: `ecbf23ef37571174c438ab68c3d21d7ecd5cf18f`
+- fdaPDE/core gitlink: `1b75249a7b49ccee72cb94207a9dc5daaa21848c`
 
-## Competitor Provenance
-
-The fdaPDE-R fitting bridge remains archaeology and is not used. MV-PLS and
-the B-fPLS/PB-fPLS competitors are adapted from Pietro's corrected competitor
-implementation at historical design commit `7fb9172`, while retaining the
-standard testbench model and batch contracts. The adaptation uses `pls::plsr`
-with orthogonal-scores PLS, the source B-spline coefficient representation,
-and the source coefficient-function projection.
-
-The submitted paper and corrected implementation agree on the competitor
-families but require more precise wording in four places. Source `k` is the
-number of spline breakpoints and produces `k + 2` cubic B-spline basis
-functions. The smoothing-spline B-fPLS lambda is the kernel-density mode on
-the log10 scale of per-curve GCV optima. R1-fPLS and PB-fPLS use the shared
-`10^(-9:2)` grid; B-fPLS smoothing retains its original production grid,
-`10^seq(-9, 2, by = 0.1)`. PB-fPLS uses five-fold CV in untransformed
-source-basis coefficient space. Exact fold assignments are retained with every
-fit. The suite fixes the component cap to produce component-wise trajectories,
-so it tunes the PB penalty at that fixed cap rather than performing the paper's
-separate component-count selection.
-The reported beta curves also use the corrected source's coefficient-space
-projection rather than being reconstructed from the fitted response.
+Native telemetry records both commits for every fit. R competitors record the
+versions of the scientific packages used by their implementation.
 
 ## Workflow
 
+Prepare the selected runtime profile:
+
 ```bash
 make build PROFILE=macbook
+```
+
+Run reduced plumbing checks:
+
+```bash
 SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
 SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
+SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=all
+SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
 ```
 
-Runtime profiles are selected in `config.R`: `macbook` runs locally,
-`hpc-slurm` uses Apptainer/Singularity and Slurm, and `windows` runs from WSL2
-through Docker Desktop. The Windows profile uses
-`aldoclemente/fdapde-docker:latest` by default and requires Docker integration
-with the active WSL2 distribution:
+Omit `SMOKE_TEST=1` for the complete configured experiment. Individual
+families can replace `all`. Matching complete batches are skipped, and
+matching generated data are reused when a fit or evaluation must be refreshed.
 
-```bash
-make build PROFILE=windows
-SMOKE_TEST=1 make run_test PROFILE=windows TEST_SUITE=1D TEST_NAME=all
-```
+The available profiles are `macbook`, `windows`, and `hpc-slurm`. The active
+profile owns compilers, dependency locations, execution strategy, threading,
+and scheduler resources; suite configuration owns the scientific design.
 
-Profiles use their configured `PATH_FDAPDE_CPP`, repository, and outer branch.
-To compile against an existing initialized checkout without modifying its Git
-state, set the path and disable managed preparation for the build:
+## Outputs
 
-```bash
-TESTBENCH_PATH_FDAPDE_CPP=/absolute/path/to/fdaPDE-cpp \
-TESTBENCH_FDAPDE_CPP_MANAGED=false \
-make build PROFILE=macbook
-```
+Batch results retain component-wise reconstructions, regression-coefficient
+estimates, selected penalties, objective histories, iteration counts,
+monotonicity flags, execution time, peak RAM, and implementation provenance.
+Aggregation validates the expected option cells and replications before
+writing quantitative figures, diagnostic CSV files, qualitative comparisons,
+and a standalone `legend.pdf` for each family.
 
-The standard testbench owns configuration, cloning, compilation, queues,
-execution strategy, batch files, result loading, telemetry, aggregation, and
-quantitative plotting. Each family produces three metric PDFs and a standalone
-`legend.pdf`. Aggregation also writes diagnostic CSVs plus PDFs for execution
-time, peak RAM, and selected lambdas. Direction/loading lambda plots
-are native R1-fPLS only; 1D competitor plots report their actual B-smoothing or
-PB-fPLS penalty lambda. Iteration-count rows are retained and plotted only once
-finite counts are available. Production 1D `vary_k` also creates the `k=11/101`
-qualitative beta comparison; production 2D `vary_n` creates the representative
-beta maps.
-Detailed batch and model progress is retained in the per-option files under
-`logs/<suite>/<family>/`; parallel terminal output remains concise.
-Boxplots use the submitted black-outline style. The 1D `vary_k` plots retain
-the submitted figure ranges, and its qualitative beta comparison normalizes
-and sign-aligns coefficient shapes before plotting. MV-PLS is shown at its
-observed vertices, functional curves are restricted to the observed support,
-and `data_1D.pdf` uses the submitted pink-to-purple palette.
+The primary metrics compare response and predictor reconstructions with their
+noise-free truths. The beta metric is a sign-aligned, Frobenius-normalized
+shape error. The 2D qualitative maps use the ParaView `Cool to Warm (Extended)`
+palette, include the domain boundary, and share the truth range within each
+row.
 
-Running the same `make run_test` commands without `SMOKE_TEST=1` executes the
-full configured grids and 30 replications and creates all of those production
-figures. They remain candidate paper-facing outputs, not accepted paper
-reproductions, until the competitor-description, basis/RNG, metric, and
-numerical-matching decisions below are resolved.
+## Validation Status
 
-Cached fit paths do not encode smoke mode. Before switching this working copy
-from smoke to production, clean each family through the standard target:
+The submitted 1D and 2D behavior has been validated against the submitted
+simulation study. Production review runs are complete for the GCV,
+noise-sensitivity, component-prefix, and predictive-order extensions. The
+near-zero-lambda family is a numerical diagnostic: non-finite fits are
+recorded as failed observations rather than treated as successful estimates.
 
-```bash
-make clean_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
-make clean_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
-make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
-make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
-```
-
-`clean_test` resolves suite groups and removes their generated data, images,
-results, grouped aggregate output, temporary files, and logs. `make clean`
-preserves the active `.env`; only confirmed `make distclean` removes it.
-
-## Provisional Contract
-
-Paper-facing plots default to the committed source-era figure metrics: ordinary
-RMSE for `Y` and `X`, and sign-aligned unit-norm shape RMSE for `beta`. The
-submitted manuscript formula `||A - A_hat||_F / (p q ||A||_F)` is retained in
-every batch evaluation as `submitted_normalized_rmse`. Both remain explicitly
-provisional because the submitted notation and source evaluator disagree.
-Historical lambda grids, seeds, location RNG adaptations, tolerance, iteration
-cap, and the precise meaning of source `k` are also provisional.
-
-The B/PB implementation now reproduces Pietro's corrected source mechanics
-rather than a paper-definition reimplementation. This resolves the previous
-custom PB behavior, but it does not by itself validate the paper's current
-method description: basis-count semantics, inherited fold RNG, validation
-space, and the source coefficient projection remain explicit source-era
-details. Aggregation can mark an executed smoke or production run complete
-only after checking every expected model, batch, raw output, provenance field,
-metric, and repetition. It always leaves `paper_design_complete` and
-`paper_results_reproduced` false until the scientific wording, final metric,
-and numerical matching are accepted.
-
-## Excluded Scope
-
-No application data or analysis, `test0`, full NSR cross-products, population
-convergence, fPCA/fPCR revision benchmark, GCV-cost experiment, timing-only
-benchmark, scaling report, near-zero-lambda diagnostic, or NSR-only revision
-test is included.
+Generated production outputs are intentionally not versioned. Scientific
+claims and paper-facing selections must therefore cite the retained aggregate
+status and provenance from the corresponding completed run.

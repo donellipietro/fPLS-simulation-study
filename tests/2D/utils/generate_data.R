@@ -97,7 +97,8 @@ reference_index <- function(reference, locations) {
 generate_fpls_data <- function(test_options, data_seed) {
   dimension <- test_options$model$dimension
   n_units <- test_options$dimensions$n_stat_units
-  n_comp <- test_options$model$n_comp
+  n_fit_comp <- test_options$model$n_comp
+  n_comp <- test_options$data$n_signal_components
   n_locs_requested <- test_options$dimensions$n_locs
   if (dimension != 2L) stop("the 2D suite requires model dimension 2")
 
@@ -180,7 +181,8 @@ generate_fpls_data <- function(test_options, data_seed) {
     location_seed = test_options$data$location_seed,
     dimensions = list(
       n_stat_units = n_units,
-      n_comp = n_comp,
+      n_comp = n_fit_comp,
+      n_signal_components = n_comp,
       n_locs_requested = n_locs_requested,
       n_locs = nrow(locations),
       n_responses = n_responses,

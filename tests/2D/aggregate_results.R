@@ -29,21 +29,22 @@ source("tests/2D/utils/plot_qualitative_results.R")
 
 validate_family_files <- function(path_list, family, family_options, cfg) {
   expected <- list()
-  required_raw <- c(
-    "params.json", "telemetry.json", "X.csv", "Y.csv", "locations.csv",
-    "x_space_directions_coefficients.csv", "y_hat_h4.csv", "beta_evaluation_h4.csv"
-  )
-
   for (options in family_options) {
     varying <- options$test_options$varying_options
     level <- as.numeric(resolve_option_value(varying, options))
-    expected[[options$name_test]] <- data.frame(
+    expected_levels <- if (family == "vary_H") seq_len(options$model$n_comp) else level
+    expected[[options$name_test]] <- transform(
+      expand.grid(
+        level = expected_levels,
+        model = options$model_names,
+        stringsAsFactors = FALSE
+      ),
       family = family,
-      level = level,
-      model = options$model_names,
-      expected_repetitions = options$test_options$n_reps,
-      stringsAsFactors = FALSE
+      expected_repetitions = options$test_options$n_reps
     )
+    expected[[options$name_test]] <- expected[[options$name_test]][
+      c("family", "level", "model", "expected_repetitions")
+    ]
 
     for (batch_index in seq_len(options$test_options$n_reps)) {
       batch_dir <- file.path(path_list$results, family, options$name_test,
@@ -56,8 +57,9 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
         stop(glue::glue("incomplete batch files for {options$name_test}/batch_{batch_index}"))
       }
       data <- readRDS(data_file)
-      if (data$noise$requested_NSR_X_final_component != 3 ||
-          any(data$noise$requested_NSR_Y != 0.1)) {
+      if (!grepl("NSR", family) &&
+          (data$noise$requested_NSR_X_final_component != 3 ||
+           any(data$noise$requested_NSR_Y != 0.1))) {
         stop("batch does not use the paper-facing severe-noise slice")
       }
 
@@ -68,17 +70,31 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
         )
         if (!file.exists(model_file)) stop(glue::glue("missing fitted model: {model_file}"))
         model <- load_fitted_model(model_file, model_name)
-        if (length(model$results$Y_hat) != 4L ||
-            length(model$results$X_hat_locations) != 4L ||
-            length(model$results$Beta_locations) != 4L) {
+        if (length(model$results$Y_hat) != options$model$n_comp ||
+            length(model$results$X_hat_locations) != options$model$n_comp ||
+            length(model$results$Beta_locations) != options$model$n_comp) {
           stop(glue::glue("invalid component-wise result shape for {model_name}"))
         }
-        if (model_name == "R1_fPLS") {
+        if (model_name %in% c("R1_fPLS", "fPCR")) {
           raw_dir <- model$results$raw_output_dir
-          missing_raw <- required_raw[!file.exists(file.path(raw_dir, required_raw))]
+          n_comp <- options$model$n_comp
+          required_raw <- c(
+            "params.json", "telemetry.json", "X.csv", "Y.csv", "locations.csv",
+            "x_space_directions_coefficients.csv",
+            glue::glue("y_hat_h{n_comp}.csv"),
+            glue::glue("beta_evaluation_h{n_comp}.csv"),
+            "component_diagnostics.csv",
+            paste0("objective_history_h", seq_len(n_comp), ".csv")
+          )
+          model_required_raw <- c(
+            required_raw,
+            if (model_name == "fPCR") "fpca_lambdas.csv" else character()
+          )
+          missing_raw <- model_required_raw[!file.exists(file.path(raw_dir, model_required_raw))]
           if (length(missing_raw)) stop("native raw output is incomplete")
           telemetry <- fromJSON(file.path(raw_dir, "telemetry.json"))
-          if (!identical(telemetry$mode, "native_fdaPDE_cpp") ||
+          if (!identical(telemetry$model, model_name) ||
+              !identical(telemetry$mode, "native_fdaPDE_cpp") ||
               !identical(telemetry$provenance$outer_branch, cfg$FDAPDE_CPP_BRANCH)) {
             stop("native telemetry provenance does not match the active profile")
           }
@@ -119,8 +135,30 @@ for (family in families) {
   varying <- family_options[[1]]$test_options$varying_options
   if (!identical(loaded$varying_options, varying)) stop("loaded varying option mismatch")
 
-  metrics <- c("X_reconstruction_locations", "Beta1_locations", "Beta2_locations")
-  final_component <- loaded$rmse$Y_reconstruction$Group == 4L
+  if (family == "vary_H") {
+    for (metric in names(loaded$rmse)) {
+      loaded$rmse[[metric]]$n_comp <- as.integer(as.character(loaded$rmse[[metric]]$Group))
+      loaded$rmse[[metric]]$Group <- 1L
+    }
+    for (name in c(
+      "iteration_count", "monotone", "objective",
+      "hit_max_iter", "finite_solution",
+      "direction_lambda", "loading_lambda", "fpca_lambda"
+    )) {
+      loaded[[name]]$n_comp <- as.integer(as.character(loaded[[name]]$Group))
+      loaded[[name]]$Group <- 1L
+    }
+  }
+
+  metrics <- c(
+    if (family == "vary_H") "Y_reconstruction" else character(),
+    "X_reconstruction_locations", "Beta1_locations", "Beta2_locations"
+  )
+  final_component <- if (family == "vary_H") {
+    rep(TRUE, nrow(loaded$rmse$Y_reconstruction))
+  } else {
+    loaded$rmse$Y_reconstruction$Group == 4L
+  }
   family_rows <- do.call(rbind, lapply(metrics, function(metric) {
     table <- loaded$rmse[[metric]][final_component, , drop = FALSE]
     levels <- as.numeric(table[[varying]])
@@ -197,22 +235,30 @@ for (family in families) {
 results <- do.call(rbind, all_rows)
 completeness <- do.call(rbind, all_completeness)
 diagnostics <- do.call(rbind, all_diagnostics)
+baseline_families <- c("vary_k", "vary_n", "vary_m")
+has_review_extensions <- any(!families %in% baseline_families)
 write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALSE)
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)
 write.csv(diagnostics, file.path(aggregate_dir, "all_diagnostics.csv"), row.names = FALSE)
 write_json(
   list(
-    schema_version = 5L,
+    schema_version = 6L,
     suite = test_suite,
     requested = requested,
     families = families,
     run_complete = all(completeness$complete),
     smoke_test = SMOKE_TEST,
     paper_design_complete = TRUE,
-    paper_results_reproduced = TRUE,
-    validation_status = "validated_against_submitted_version",
+    paper_results_reproduced = all(families %in% baseline_families),
+    submitted_baseline_validated = TRUE,
+    review_extensions_included = has_review_extensions,
+    validation_status = if (SMOKE_TEST) "smoke_test" else if (has_review_extensions) {
+      "review_extension_run_complete"
+    } else {
+      "validated_against_submitted_version"
+    },
     family_scope = setNames(
-      ifelse(families == "vary_n", "submitted_main_paper_family", "pietro_requested_historical_family"),
+      ifelse(families %in% baseline_families, "submitted_baseline_family", "review_extension"),
       families
     ),
     diagnostic_outputs = diagnostic_outputs,
@@ -226,7 +272,6 @@ write_json(
   pretty = TRUE
 )
 cat(glue::glue(
-  "Validated {nrow(results)} metric rows across {nrow(completeness)} complete cells; ",
-  "submitted-version validation is complete.\n",
+  "Validated {nrow(results)} metric rows across {nrow(completeness)} complete cells.\n",
   .trim = FALSE
 ))
