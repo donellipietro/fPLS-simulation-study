@@ -2,7 +2,7 @@
 
 This repository contains the submitted fPLS simulation design and the
 additional experiments prepared for peer review. It follows the
-`fdaPDE-test-bench` architecture through canonical `stable` commit `167e8c2`
+`fdaPDE-test-bench` architecture through canonical `stable` commit `89ba803`
 and uses the native `fdaPDE-cpp` implementation directly. The obsolete
 fPLS-R fitting bridge is not used.
 
@@ -70,9 +70,15 @@ Omit `SMOKE_TEST=1` for the complete configured experiment. Individual
 families can replace `all`. Matching complete batches are skipped, and
 matching generated data are reused when a fit or evaluation must be refreshed.
 
-The available profiles are `macbook`, `windows`, and `hpc-slurm`. The active
-profile owns compilers, dependency locations, execution strategy, threading,
-and scheduler resources; suite configuration owns the scientific design.
+The available profiles are `macbook`, `windows`, `hpc-slurm`, and
+`hpc-torque`. The active profile owns compilers, dependency locations,
+execution strategy, threading, and scheduler resources; suite configuration
+owns the scientific design.
+
+The `hpc-torque` profile submits compilation and test jobs through Torque/PBS.
+Its resource requests can be overridden with the `PBS_*` and
+`PBS_COMPILE_*` variables; set `PBS_DRY_RUN=1` or `PBS_COMPILE_DRY_RUN=1` to
+preview submissions without scheduling jobs.
 
 ## Outputs
 
