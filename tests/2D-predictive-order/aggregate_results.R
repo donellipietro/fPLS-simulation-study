@@ -203,19 +203,14 @@ ggsave(
 
 write_json(
   list(
-    schema_version = 1L,
+    schema_version = 2L,
     suite = test_suite,
     requested = requested,
     families = "vary_H",
     run_complete = all(completeness$complete),
     smoke_test = SMOKE_TEST,
-    experimental = TRUE,
     n_signal_components = 10L,
     predictive_components = c(9L, 10L),
-    interpretation = paste(
-      "fPCR orders components by X variance; fPLS can prioritize the two",
-      "low-variance components that generate Y"
-    ),
     diagnostic_outputs = diagnostics$plots
   ),
   file.path(aggregate_dir, "run_status.json"),
@@ -223,6 +218,6 @@ write_json(
   pretty = TRUE
 )
 cat(glue::glue(
-  "Validated {nrow(rows)} metric rows across {nrow(completeness)} complete cells.\n",
+  "Wrote {nrow(rows)} metric rows across {nrow(completeness)} complete cells.\n",
   .trim = FALSE
 ))

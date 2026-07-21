@@ -1,7 +1,7 @@
 # fPLS Simulation Study
 
-This repository contains the submitted fPLS simulation design and the
-additional experiments prepared for peer review. It follows the
+This repository contains the submitted fPLS simulation design and additional
+diagnostic experiments. It follows the
 `fdaPDE-test-bench` architecture through canonical `stable` commit `89ba803`
 and uses the native `fdaPDE-cpp` implementation directly. The obsolete
 fPLS-R fitting bridge is not used.
@@ -15,13 +15,12 @@ local reports remain repository-local and ignored.
 | --- | --- | --- |
 | `1D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY` | Submitted curve simulations plus noise-sensitivity and fPCR comparisons |
 | `2D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY`, `vary_H` | Submitted spatial simulations plus noise and component-prefix comparisons |
-| `GCV` | sensitivity, competitor, large-sample, and near-zero-lambda families | Review diagnostics for tuning behavior, cost, and numerical stability |
+| `GCV` | sensitivity, competitor, large-sample, and near-zero-lambda families | Tuning behavior, cost, and numerical-stability diagnostics |
 | `2D-predictive-order` | `all` | Experimental comparison of variance-ordered fPCR and response-relevant fPLS components |
 
 Each suite has a scientific README under `tests/<suite>/README.md`. The
 standard 1D and 2D families use 30 replications in production. The GCV and
-predictive-order suites are review extensions and remain separate from the
-submitted-design validation.
+predictive-order suites are separate diagnostic experiments.
 
 ## Methods
 
@@ -41,7 +40,7 @@ smoothing splines retains its original `10^seq(-9, 2, by = 0.1)` grid.
 ## Native Dependency
 
 Runtime profiles select the repository-local fdaPDE clone on branch
-`develop_fPLS`. The review implementation is available at:
+`develop_fPLS`. The native implementation is available at:
 
 - outer fdaPDE-cpp: `ecbf23ef37571174c438ab68c3d21d7ecd5cf18f`
 - fdaPDE/core gitlink: `1b75249a7b49ccee72cb94207a9dc5daaa21848c`
@@ -95,14 +94,11 @@ shape error. The 2D qualitative maps use the ParaView `Cool to Warm (Extended)`
 palette, include the domain boundary, and share the truth range within each
 row.
 
-## Validation Status
+## Generated Outputs
 
-The submitted 1D and 2D behavior has been validated against the submitted
-simulation study. Production review runs are complete for the GCV,
-noise-sensitivity, component-prefix, and predictive-order extensions. The
-near-zero-lambda family is a numerical diagnostic: non-finite fits are
+The near-zero-lambda family is a numerical diagnostic: non-finite fits are
 recorded as failed observations rather than treated as successful estimates.
-
-Generated production outputs are intentionally not versioned. Scientific
-claims and paper-facing selections must therefore cite the retained aggregate
-status and provenance from the corresponding completed run.
+Generated production outputs are intentionally not versioned. Aggregate
+`run_status.json` files retain operational completion, smoke-mode, output, and
+configuration metadata; paper-facing claims and acceptance decisions belong to
+the project integration record rather than these run artifacts.

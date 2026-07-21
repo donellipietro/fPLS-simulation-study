@@ -231,47 +231,32 @@ for (family in families) {
   }
 }
 
-## Write validated aggregate outputs ----
+## Write aggregate outputs ----
 results <- do.call(rbind, all_rows)
 completeness <- do.call(rbind, all_completeness)
 diagnostics <- do.call(rbind, all_diagnostics)
-baseline_families <- c("vary_k", "vary_n", "vary_m")
-has_review_extensions <- any(!families %in% baseline_families)
 write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALSE)
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)
 write.csv(diagnostics, file.path(aggregate_dir, "all_diagnostics.csv"), row.names = FALSE)
 write_json(
   list(
-    schema_version = 6L,
+    schema_version = 7L,
     suite = test_suite,
     requested = requested,
     families = families,
     run_complete = all(completeness$complete),
     smoke_test = SMOKE_TEST,
-    paper_design_complete = TRUE,
-    paper_results_reproduced = all(families %in% baseline_families),
-    submitted_baseline_validated = TRUE,
-    review_extensions_included = has_review_extensions,
-    validation_status = if (SMOKE_TEST) "smoke_test" else if (has_review_extensions) {
-      "review_extension_run_complete"
-    } else {
-      "validated_against_submitted_version"
-    },
-    family_scope = setNames(
-      ifelse(families %in% baseline_families, "submitted_baseline_family", "review_extension"),
-      families
-    ),
     diagnostic_outputs = diagnostic_outputs,
     qualitative_outputs = qualitative_outputs,
     competitors = paper_model_catalog()$names,
     NSR_X_final_component = 3,
     NSR_Y = 0.1
   ),
-  file.path(aggregate_dir, "paper_run_status.json"),
+  file.path(aggregate_dir, "run_status.json"),
   auto_unbox = TRUE,
   pretty = TRUE
 )
 cat(glue::glue(
-  "Validated {nrow(results)} metric rows across {nrow(completeness)} complete cells.\n",
+  "Wrote {nrow(results)} metric rows across {nrow(completeness)} complete cells.\n",
   .trim = FALSE
 ))

@@ -149,7 +149,6 @@ generate_fpls_data <- function(test_options, data_seed) {
     ),
     provenance = list(
       generator = "experimental predictive-component ordering design",
-      validation_status = test_options$provenance$validation_status,
       location_method = test_options$data$location_method
     )
   )

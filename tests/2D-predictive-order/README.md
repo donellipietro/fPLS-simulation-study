@@ -2,8 +2,7 @@
 
 This experimental suite isolates the difference between components ordered by
 predictor variance and components ordered by relevance to the response. It is
-kept separate from the submitted 2D suite and is not yet a paper-validation
-test.
+kept separate from the submitted 2D suite.
 
 ## Scientific Design
 

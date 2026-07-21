@@ -89,8 +89,6 @@ evaluate_results <- function(model, data, test_options) {
     pre_smoothing_lambda = component_result(model, "pre_smoothing_lambda", n_comp),
     pb_penalty_lambda = component_result(model, "pb_penalty_lambda", n_comp),
     calibration = model$results$calibration,
-    settings_status = test_options$regularization$status,
-    provenance = model$results$provenance,
-    validation_status = test_options$provenance$validation_status
+    provenance = model$results$provenance
   )
 }

@@ -41,8 +41,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       n_reps = n_reps,
       varying_options = "n_comp",
       threading = "single",
-      smoke_test = SMOKE_TEST,
-      run_settings_status = "experimental_predictive_order"
+      smoke_test = SMOKE_TEST
     ),
     model = list(dimension = 2L, n_comp = 10L, center = FALSE, discretization = "fem"),
     dimensions = list(
@@ -70,13 +69,9 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       gcv_seed = 0L,
       gcv_probes = if (SMOKE_TEST) 5L else 100L,
       max_iter = 1000L,
-      tolerance = 1e-8,
-      status = "experimental_predictive_order"
+      tolerance = 1e-8
     ),
-    competitors = list(implementation_status = "review_comparison"),
     provenance = list(
-      purpose = "compare_variance_ordered_fPCR_with_response_ordered_fPLS",
-      validation_status = "experimental_not_yet_review_ready",
       metric_formula = paste(
         "Y/X: sqrt(mean((estimate-truth)^2));",
         "beta: sign-aligned unit-norm shape RMSE"

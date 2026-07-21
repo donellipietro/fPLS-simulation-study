@@ -164,7 +164,6 @@ fit_native_model <- function(model_name, data, path_list, test_options) {
       NSR_X_final_component = test_options$noise$NSR_X_final_component,
       NSR_Y = test_options$noise$NSR_Y,
       runtime_profile = Sys.getenv("TESTBENCH_PROFILE", unset = "unknown"),
-      run_settings_status = test_options$test_options$run_settings_status,
       outer_branch = cfg$FDAPDE_CPP_BRANCH,
       outer_commit = outer_commit,
       core_commit = core_commit

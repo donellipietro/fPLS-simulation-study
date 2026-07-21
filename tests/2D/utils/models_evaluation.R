@@ -87,8 +87,6 @@ evaluate_results <- function(model, data, test_options) {
     loading_lambda = model$results$loading_lambdas[, 1],
     fpca_lambda = component_result(model, "fpca_lambdas", n_comp),
     calibration = model$results$calibration,
-    settings_status = test_options$regularization$status,
-    provenance = model$results$provenance,
-    validation_status = test_options$provenance$validation_status
+    provenance = model$results$provenance
   )
 }

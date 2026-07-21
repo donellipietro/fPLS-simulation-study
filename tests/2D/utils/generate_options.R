@@ -87,8 +87,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       n_reps = n_reps,
       varying_options = varying,
       threading = "single",
-      smoke_test = SMOKE_TEST,
-      run_settings_status = if (SMOKE_TEST) "smoke_test" else "submitted_configuration"
+      smoke_test = SMOKE_TEST
     ),
     model = list(dimension = 2L, n_comp = n_comp, center = FALSE, discretization = "fem"),
     dimensions = list(
@@ -116,17 +115,12 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       gcv_seed = 0L,
       gcv_probes = gcv_probes,
       max_iter = 1000L,
-      tolerance = 1e-8,
-      status = if (SMOKE_TEST) "smoke_test" else "submitted_configuration"
+      tolerance = 1e-8
     ),
-    competitors = list(implementation_status = "submitted_configuration"),
     provenance = list(
       template_commit = "e92e1a14b567572fea8b67a99c320c239e366dec",
       reference_implementation_commit = "7fb91720b97661c8f83f675f8915ac96f7465912",
-      submitted_paper_models = models$names,
-      family_scope = if (name_main_test == "vary_n") "submitted_main_paper_family" else "pietro_requested_historical_family",
       representative_beta_scenario = name_main_test == "vary_n",
-      validation_status = "validated_against_submitted_version",
       metric_formula = "Y/X: sqrt(mean((estimate-truth)^2)); beta: sign-aligned unit-norm shape RMSE",
       smoke_test = SMOKE_TEST
     )

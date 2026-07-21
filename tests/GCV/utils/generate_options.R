@@ -93,8 +93,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       n_reps = n_reps,
       varying_options = varying,
       threading = "single",
-      smoke_test = SMOKE_TEST,
-      run_settings_status = "review_diagnostic"
+      smoke_test = SMOKE_TEST
     ),
     model = list(dimension = 1L, n_comp = 4L, center = FALSE, discretization = "spline"),
     dimensions = list(
@@ -121,25 +120,21 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       gcv_seed = 0L,
       gcv_probes = gcv_probes,
       max_iter = 1000L,
-      tolerance = 1e-8,
-      status = "review_diagnostic"
+      tolerance = 1e-8
     ),
     competitors = list(
       basis_k = 11L,
       smoothing_lambda_grid = if (SMOKE_TEST) c(1e-4, 1e-2) else 10^seq(-9, 2, by = 0.1),
       pb_lambda_grid = coarse_lambda_grid,
-      pb_cv_folds = 5L,
-      implementation_status = "submitted_configuration"
+      pb_cv_folds = 5L
     ),
     provenance = list(
-      purpose = "review_GCV_and_numerical_stability_diagnostics",
       models_in_run = models$names,
       comparator_scope = if (competitor_reference) {
         "own_calibration_reference_at_fixed_DGP"
       } else {
         "R1_fPLS_common_lambda_sweep"
       },
-      validation_status = "review_diagnostic",
       smoke_test = SMOKE_TEST
     )
   )

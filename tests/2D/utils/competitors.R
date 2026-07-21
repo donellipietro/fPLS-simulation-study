@@ -72,8 +72,7 @@ competitor_provenance <- function(model_name, test_options, data) {
       batch_index = test_options$batch_index,
       data_seed = data$data_seed,
       model = model_name,
-      comparator_implementation = "candidate_paper_definition",
-      run_settings_status = test_options$test_options$run_settings_status
+      comparator_implementation = "candidate_paper_definition"
     )
   )
 }

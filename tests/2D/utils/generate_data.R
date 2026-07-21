@@ -211,7 +211,6 @@ generate_fpls_data <- function(test_options, data_seed) {
     provenance = list(
       generator = "submitted paper design",
       reference_implementation_commit = test_options$provenance$reference_implementation_commit,
-      validation_status = test_options$provenance$validation_status,
       location_method = test_options$data$location_method
     )
   )
