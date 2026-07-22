@@ -4,17 +4,19 @@
 # = ========================================================================== =
 
 native_model_matches_options <- function(model, model_name, test_options) {
+  timing_current <- identical(model$results$telemetry$timing_scope, "fit_pipeline_v1")
   if (!model_name %in% c("R1_fPLS", "fPCR")) {
-    return(isTRUE(model$results$telemetry$schema_version == 3L))
+    return(isTRUE(model$results$telemetry$schema_version == 3L) && timing_current)
   }
   if (identical(test_options$regularization$calibration, "multivariate")) {
     return(identical(model$MODE, "MV_PLS") &&
-             isTRUE(model$results$telemetry$schema_version == 3L))
+             isTRUE(model$results$telemetry$schema_version == 3L) && timing_current)
   }
   telemetry <- model$results$telemetry
   if (is.null(telemetry)) return(FALSE)
   same <- function(left, right) isTRUE(all.equal(left, right))
-  same(telemetry$schema_version, 3L) &&
+  timing_current &&
+    same(telemetry$schema_version, 3L) &&
     identical(telemetry$model, model_name) &&
     identical(telemetry$calibration, test_options$regularization$calibration) &&
     same(telemetry$n_components, test_options$model$n_comp) &&
@@ -55,11 +57,14 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
     }
     if (!reuse_model) {
       cat(glue::glue("- Fitting model: {model_name} ... ", .trim = FALSE))
-      model_start <- Sys.time()
+      model_start <- proc.time()[["elapsed"]]
       model <- fit_model(model_name, domain, data, path_list, test_options)
-      model_elapsed <- Sys.time() - model_start
+      model_elapsed <- proc.time()[["elapsed"]] - model_start
+      model$results$fit_seconds <- model_elapsed
+      model$results$telemetry$fit_seconds <- model_elapsed
+      model$results$telemetry$timing_scope <- "fit_pipeline_v1"
       cat(glue::glue(
-        "finished after {model_elapsed} {attr(model_elapsed, 'units')}\n",
+        "finished after {round(model_elapsed, 3)} secs\n",
         .trim = FALSE
       ))
       assign(object_name, model)

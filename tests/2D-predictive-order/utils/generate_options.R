@@ -29,7 +29,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   }
 
   models <- predictive_order_model_catalog()
-  score_variance <- seq(1, 0.1, by = -0.1)
+  score_sd <- exp(seq(0, log(0.25), length.out = 10L))
   n_reps <- if (SMOKE_TEST) 1L else 30L
 
   options <- list(
@@ -45,22 +45,22 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
     ),
     model = list(dimension = 2L, n_comp = 10L, center = FALSE, discretization = "fem"),
     dimensions = list(
-      n_stat_units = if (SMOKE_TEST) 60L else 200L,
-      n_locs = if (SMOKE_TEST) 64L else 900L,
-      source_k = if (SMOKE_TEST) 49L else 400L,
-      mesh_nodes_per_axis = if (SMOKE_TEST) 7L else 20L,
-      n_reference_per_axis = if (SMOKE_TEST) 10L else 40L
+      n_stat_units = if (SMOKE_TEST) 12L else 100L,
+      n_locs = if (SMOKE_TEST) 36L else 1600L,
+      source_k = if (SMOKE_TEST) 25L else 900L,
+      mesh_nodes_per_axis = if (SMOKE_TEST) 5L else 30L,
+      n_reference_per_axis = if (SMOKE_TEST) 10L else 80L
     ),
     data = list(
       family = name_main_test,
-      design_version = 2L,
+      design_version = 4L,
       n_signal_components = 10L,
       predictive_components = c(9L, 10L),
-      score_variance = score_variance,
-      location_seed = 0L,
-      location_method = "stratified_reference_grid_snap"
+      score_variance = score_sd^2,
+      location_seed = -1L,
+      location_method = "base_R_equivalent_of_source_2d_stratified_snap"
     ),
-    noise = list(NSR_X_final_component = 0.01, NSR_Y = 0.01),
+    noise = list(NSR_X_final_component = 3, NSR_Y = 0.1),
     regularization = list(
       calibration = "gcv",
       fixed_direction_lambda = 1e-9,

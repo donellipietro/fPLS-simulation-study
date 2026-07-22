@@ -84,6 +84,9 @@ preview submissions without scheduling jobs.
 Batch results retain component-wise reconstructions, regression-coefficient
 estimates, selected penalties, objective histories, iteration counts,
 monotonicity flags, execution time, peak RAM, and implementation provenance.
+`fit_seconds` measures the same wrapper-level fit pipeline for every method:
+method-specific preprocessing and tuning, fitting, reconstruction, and result
+loading, excluding data generation and accuracy evaluation.
 Aggregation validates the expected option cells and replications before
 writing quantitative figures, diagnostic CSV files, qualitative comparisons,
 and a standalone `legend.pdf` for each family.

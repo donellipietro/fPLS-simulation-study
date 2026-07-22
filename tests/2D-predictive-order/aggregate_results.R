@@ -31,6 +31,78 @@ load_model <- function(file, model_name) {
   env[[glue::glue("model_{model_name}")]]
 }
 
+center_columns <- function(values) {
+  sweep(as.matrix(values), 2L, colMeans(values), "-")
+}
+
+proportion_variance_explained <- function(observed, fitted) {
+  total <- sum(center_columns(observed)^2)
+  value <- 1 - sum((as.matrix(observed) - as.matrix(fitted))^2) / total
+  if (!is.finite(value)) stop("non-finite explained-variance diagnostic")
+  value
+}
+
+proportion_cross_covariance_explained <- function(X, Y, X_fitted, Y_fitted) {
+  observed <- crossprod(center_columns(X), center_columns(Y)) / (nrow(X) - 1L)
+  fitted <- crossprod(center_columns(X_fitted), center_columns(Y_fitted)) /
+    (nrow(X_fitted) - 1L)
+  total <- sum(observed^2)
+  value <- 1 - sum((observed - fitted)^2) / total
+  if (!is.finite(value)) stop("non-finite explained-cross-covariance diagnostic")
+  value
+}
+
+collect_explained_structure <- function(path_list, options) {
+  rows <- list()
+  row_index <- 0L
+  for (batch_index in seq_len(options$test_options$n_reps)) {
+    batch_dir <- file.path(
+      path_list$results, "vary_H", options$name_test, glue::glue("batch_{batch_index}")
+    )
+    data <- readRDS(file.path(batch_dir, "generated_data.rds"))
+    for (model_name in options$model_names) {
+      model <- load_model(
+        file.path(batch_dir, glue::glue("batch_{batch_index}_fitted_model_{model_name}.RData")),
+        model_name
+      )
+      values <- do.call(rbind, lapply(seq_len(options$model$n_comp), function(h) {
+        c(
+          X_variance_explained = proportion_variance_explained(
+            data$X, model$results$X_hat_locations[[h]]
+          ),
+          Y_variance_explained = proportion_variance_explained(
+            data$Y, model$results$Y_hat[[h]]
+          ),
+          XY_cross_covariance_explained = proportion_cross_covariance_explained(
+            data$X, data$Y, model$results$X_hat_locations[[h]], model$results$Y_hat[[h]]
+          )
+        )
+      }))
+      row_index <- row_index + 1L
+      rows[[row_index]] <- data.frame(
+        batch = batch_index,
+        n_comp = rep(seq_len(nrow(values)), each = ncol(values)),
+        model = model_name,
+        metric = rep(colnames(values), times = nrow(values)),
+        value = as.numeric(t(values)),
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+  do.call(rbind, rows)
+}
+
+structure_plot_data <- function(rows, metric, model_names) {
+  values <- rows[rows$metric == metric, c("batch", "n_comp", "model", "value")]
+  wide <- reshape(values, idvar = c("batch", "n_comp"), timevar = "model", direction = "wide")
+  names(wide) <- sub("^value[.]", "", names(wide))
+  for (model_name in model_names) {
+    if (is.null(wide[[model_name]])) wide[[model_name]] <- NaN
+  }
+  wide <- wide[order(wide$n_comp, wide$batch), c("n_comp", model_names)]
+  data.frame(Group = 1L, n_comp = wide$n_comp, wide[model_names] * 100)
+}
+
 ## Select and validate the requested family ----
 args <- commandArgs(trailingOnly = TRUE)
 requested <- if (length(args)) args[1] else name_main_test_default
@@ -70,9 +142,10 @@ for (batch_index in seq_len(options$test_options$n_reps)) {
   }
 
   data <- readRDS(file.path(batch_dir, "generated_data.rds"))
-  if (!identical(data$design$predictive_components, c(9L, 10L)) ||
+  if (!identical(data$design$version, 4L) ||
+      !identical(data$design$predictive_components, c(9L, 10L)) ||
       any(diff(data$design$score_variance) >= 0)) {
-    stop("batch does not implement the predictive-order design")
+    stop("batch does not implement the current predictive-order setting; rerun the suite")
   }
   for (model_name in options$model_names) {
     model_file <- file.path(
@@ -107,6 +180,13 @@ image_dir <- file.path(cfg$PATH_IMAGES, test_suite, "vary_H")
 dir.create(aggregate_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
 saveRDS(loaded, file.path(aggregate_dir, "loaded_vary_H.rds"))
+
+structure_rows <- collect_explained_structure(path_list, options)
+write.csv(
+  structure_rows,
+  file.path(aggregate_dir, "explained_structure.csv"),
+  row.names = FALSE
+)
 
 ## Write metrics and verify repetition completeness ----
 metrics <- c(
@@ -157,6 +237,27 @@ for (metric in metrics) {
   plot.aggregated_data(
     loaded, loaded$rmse[[metric]],
     "Predictive component ordering", "RMSE",
+    plots_catalog = list(
+      boxplots = TRUE, lines = FALSE, logx = FALSE,
+      loglog = FALSE, normalized = FALSE
+    )
+  )
+  dev.off()
+}
+
+structure_metrics <- c(
+  X_variance_explained = "X variance explained (%)",
+  Y_variance_explained = "Y variance explained (%)",
+  XY_cross_covariance_explained = "X-Y cross-covariance explained (%)"
+)
+for (metric in names(structure_metrics)) {
+  pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)
+  plot.aggregated_data(
+    loaded,
+    structure_plot_data(structure_rows, metric, loaded$model_names),
+    "Predictive component ordering", structure_metrics[[metric]],
+    limits = c(0, 100),
+    y_breaks = seq(0, 100, 25),
     plots_catalog = list(
       boxplots = TRUE, lines = FALSE, logx = FALSE,
       loglog = FALSE, normalized = FALSE

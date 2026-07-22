@@ -56,9 +56,9 @@ rank_one_pls_truth <- function(Y, X, n_comp) {
 }
 
 square_loading <- function(points, component) {
-  nx <- c(1, 1, 2, 1)[component]
-  ny <- c(1, 2, 1, 1)[component]
-  cosine <- c(TRUE, TRUE, TRUE, FALSE)[component]
+  nx <- c(1, 1, 2, 1, 2, 2, 3, 3, 1, 1)[component]
+  ny <- c(1, 2, 1, 1, 2, 3, 1, 2, 3, 4)[component]
+  cosine <- c(TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)[component]
   if (cosine) {
     cos(pi * nx * points[, 1]) * cos(pi * ny * points[, 2])
   } else {

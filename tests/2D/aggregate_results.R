@@ -105,6 +105,79 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
   do.call(rbind, expected)
 }
 
+center_columns <- function(values) {
+  sweep(as.matrix(values), 2L, colMeans(values), "-")
+}
+
+proportion_variance_explained <- function(observed, fitted) {
+  total <- sum(center_columns(observed)^2)
+  value <- 1 - sum((as.matrix(observed) - as.matrix(fitted))^2) / total
+  if (!is.finite(value)) stop("non-finite explained-variance diagnostic")
+  value
+}
+
+proportion_cross_covariance_explained <- function(X, Y, X_fitted, Y_fitted) {
+  observed <- crossprod(center_columns(X), center_columns(Y)) / (nrow(X) - 1L)
+  fitted <- crossprod(center_columns(X_fitted), center_columns(Y_fitted)) /
+    (nrow(X_fitted) - 1L)
+  total <- sum(observed^2)
+  value <- 1 - sum((observed - fitted)^2) / total
+  if (!is.finite(value)) stop("non-finite explained-cross-covariance diagnostic")
+  value
+}
+
+collect_vary_h_structure <- function(path_list, options) {
+  rows <- list()
+  row_index <- 0L
+  for (batch_index in seq_len(options$test_options$n_reps)) {
+    batch_dir <- file.path(
+      path_list$results, "vary_H", options$name_test, glue::glue("batch_{batch_index}")
+    )
+    data <- readRDS(file.path(batch_dir, "generated_data.rds"))
+    for (model_name in options$model_names) {
+      model <- load_fitted_model(
+        file.path(batch_dir, glue::glue("batch_{batch_index}_fitted_model_{model_name}.RData")),
+        model_name
+      )
+      values <- do.call(rbind, lapply(seq_len(options$model$n_comp), function(h) {
+        c(
+          X_variance_explained = proportion_variance_explained(
+            data$X, model$results$X_hat_locations[[h]]
+          ),
+          Y_variance_explained = proportion_variance_explained(
+            data$Y, model$results$Y_hat[[h]]
+          ),
+          XY_cross_covariance_explained = proportion_cross_covariance_explained(
+            data$X, data$Y, model$results$X_hat_locations[[h]], model$results$Y_hat[[h]]
+          )
+        )
+      }))
+      row_index <- row_index + 1L
+      rows[[row_index]] <- data.frame(
+        family = "vary_H",
+        batch = batch_index,
+        n_comp = rep(seq_len(nrow(values)), each = ncol(values)),
+        model = model_name,
+        metric = rep(colnames(values), times = nrow(values)),
+        value = as.numeric(t(values)),
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+  do.call(rbind, rows)
+}
+
+structure_plot_data <- function(rows, metric, model_names) {
+  values <- rows[rows$metric == metric, c("batch", "n_comp", "model", "value")]
+  wide <- reshape(values, idvar = c("batch", "n_comp"), timevar = "model", direction = "wide")
+  names(wide) <- sub("^value[.]", "", names(wide))
+  for (model_name in model_names) {
+    if (is.null(wide[[model_name]])) wide[[model_name]] <- NaN
+  }
+  wide <- wide[order(wide$n_comp, wide$batch), c("n_comp", model_names)]
+  data.frame(Group = 1L, n_comp = wide$n_comp, wide[model_names] * 100)
+}
+
 ## Select requested families ----
 args <- commandArgs(trailingOnly = TRUE)
 requested <- if (length(args)) args[1] else name_main_test_default
@@ -119,6 +192,7 @@ all_completeness <- list()
 all_diagnostics <- list()
 diagnostic_outputs <- list()
 qualitative_outputs <- list()
+all_structure_rows <- list()
 
 ## Load, validate, and plot every family ----
 for (family in families) {
@@ -151,8 +225,7 @@ for (family in families) {
   }
 
   metrics <- c(
-    if (family == "vary_H") "Y_reconstruction" else character(),
-    "X_reconstruction_locations", "Beta1_locations", "Beta2_locations"
+    "Y_reconstruction", "X_reconstruction_locations", "Beta1_locations", "Beta2_locations"
   )
   final_component <- if (family == "vary_H") {
     rep(TRUE, nrow(loaded$rmse$Y_reconstruction))
@@ -196,6 +269,36 @@ for (family in families) {
   all_diagnostics[[family]] <- diagnostics$rows
   diagnostic_outputs[[family]] <- diagnostics$plots
 
+  if (family == "vary_H") {
+    structure_rows <- collect_vary_h_structure(path_list, family_options[[1]])
+    all_structure_rows[[family]] <- structure_rows
+    write.csv(
+      structure_rows,
+      file.path(aggregate_dir, "vary_H_explained_structure.csv"),
+      row.names = FALSE
+    )
+    structure_metrics <- c(
+      X_variance_explained = "X variance explained (%)",
+      Y_variance_explained = "Y variance explained (%)",
+      XY_cross_covariance_explained = "X-Y cross-covariance explained (%)"
+    )
+    for (metric in names(structure_metrics)) {
+      pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)
+      plot.aggregated_data(
+        loaded,
+        structure_plot_data(structure_rows, metric, loaded$model_names),
+        "2D: vary_H", structure_metrics[[metric]],
+        limits = if (metric == "XY_cross_covariance_explained") c(90, 100) else c(0, 100),
+        y_breaks = if (metric == "XY_cross_covariance_explained") seq(90, 100, 2) else seq(0, 100, 25),
+        plots_catalog = list(
+          boxplots = TRUE, lines = FALSE, logx = FALSE,
+          loglog = FALSE, normalized = FALSE
+        )
+      )
+      dev.off()
+    }
+  }
+
   ## Create the standard standalone model legend
   pdf(file.path(image_dir, "legend.pdf"), width = 6, height = 1.5, bg = "white")
   par(mar = rep(0, 4))
@@ -238,6 +341,13 @@ diagnostics <- do.call(rbind, all_diagnostics)
 write.csv(results, file.path(aggregate_dir, "all_metrics.csv"), row.names = FALSE)
 write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names = FALSE)
 write.csv(diagnostics, file.path(aggregate_dir, "all_diagnostics.csv"), row.names = FALSE)
+if (length(all_structure_rows)) {
+  write.csv(
+    do.call(rbind, all_structure_rows),
+    file.path(aggregate_dir, "all_explained_structure.csv"),
+    row.names = FALSE
+  )
+}
 write_json(
   list(
     schema_version = 7L,

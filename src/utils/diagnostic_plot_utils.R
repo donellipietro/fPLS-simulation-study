@@ -116,7 +116,7 @@ write_family_diagnostics <- function(
     loaded, family, aggregate_dir, image_dir,
     lambda_limits = lambda_log10_limits, lambda_breaks = lambda_log10_grid) {
   scalar_diagnostics <- c(
-    execution_time = "Execution time (s)",
+    fit_seconds = "Fit time (s)",
     peak_ram_mib = "Peak RAM (MiB)"
   )
   component_diagnostics <- c(
