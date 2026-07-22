@@ -4,7 +4,12 @@
 # = ========================================================================== =
 
 native_model_matches_options <- function(model, model_name, test_options) {
-  timing_current <- identical(model$results$telemetry$timing_scope, "fit_pipeline_v1")
+  native_model <- model_name %in% c("R1_fPLS", "fPCR") && identical(model$MODE, model_name)
+  timing_current <- if (native_model) {
+    identical(model$results$telemetry$timing_scope, "compute_v2")
+  } else {
+    !is.null(model$results$execution_time)
+  }
   if (!model_name %in% c("R1_fPLS", "fPCR")) {
     return(isTRUE(model$results$telemetry$schema_version == 3L) && timing_current)
   }
@@ -16,7 +21,7 @@ native_model_matches_options <- function(model, model_name, test_options) {
   if (is.null(telemetry)) return(FALSE)
   same <- function(left, right) isTRUE(all.equal(left, right))
   timing_current &&
-    same(telemetry$schema_version, 3L) &&
+    same(telemetry$schema_version, 4L) &&
     identical(telemetry$model, model_name) &&
     identical(telemetry$calibration, test_options$regularization$calibration) &&
     same(telemetry$n_components, test_options$model$n_comp) &&
@@ -57,16 +62,19 @@ fit_and_evaluate_models <- function(path_list, data, domain, batch_index, test_o
     }
     if (!reuse_model) {
       cat(glue::glue("- Fitting model: {model_name} ... ", .trim = FALSE))
-      model_start <- proc.time()[["elapsed"]]
       model <- fit_model(model_name, domain, data, path_list, test_options)
-      model_elapsed <- proc.time()[["elapsed"]] - model_start
-      model$results$fit_seconds <- model_elapsed
-      model$results$telemetry$fit_seconds <- model_elapsed
-      model$results$telemetry$timing_scope <- "fit_pipeline_v1"
+      model$results$telemetry$timing_scope <- "compute_v2"
       cat(glue::glue(
-        "finished after {round(model_elapsed, 3)} secs\n",
+        "finished after {round(model$results$fit_seconds, 3)} secs\n",
         .trim = FALSE
       ))
+      assign(object_name, model)
+      save(list = object_name, file = model_file)
+      rm(list = object_name)
+    } else if (!identical(model$results$telemetry$timing_scope, "compute_v2")) {
+      model$results$fit_seconds <- model$results$execution_time
+      model$results$telemetry$fit_seconds <- model$results$execution_time
+      model$results$telemetry$timing_scope <- "compute_v2"
       assign(object_name, model)
       save(list = object_name, file = model_file)
       rm(list = object_name)

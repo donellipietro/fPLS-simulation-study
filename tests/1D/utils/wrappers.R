@@ -67,7 +67,7 @@ failed_native_model <- function(model_name, data, test_options, raw_dir,
   }
 
   telemetry <- list(
-    schema_version = 3L,
+    schema_version = 4L,
     model = model_name,
     mode = "native_fdaPDE_cpp",
     discretization = "spline",

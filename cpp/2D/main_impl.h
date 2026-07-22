@@ -99,30 +99,22 @@ int run_fpls(
 
     const matrix_t basis_at_locations = internals::point_basis_eval(space, locations);
     const matrix_t basis_at_evaluation = internals::point_basis_eval(space, evaluation);
-    const matrix_t X_direction_locations = basis_at_locations * model.X_space_directions();
-    const matrix_t X_loading_locations = basis_at_locations * model.X_loadings();
-
-    std::filesystem::create_directories(output_dir);
-    write_csv(output_file(output_dir, "x_space_directions_coefficients.csv"), model.X_space_directions());
-    write_csv(output_file(output_dir, "x_space_directions_locations.csv"), X_direction_locations);
-    write_csv(output_file(output_dir, "y_space_directions.csv"), model.Y_space_directions());
-    write_csv(output_file(output_dir, "x_latent_scores.csv"), model.X_latent_scores());
-    write_csv(output_file(output_dir, "y_latent_scores.csv"), model.Y_latent_scores());
-    write_csv(output_file(output_dir, "x_loadings_coefficients.csv"), model.X_loadings());
-    write_csv(output_file(output_dir, "x_loadings_locations.csv"), X_loading_locations);
-    write_csv(output_file(output_dir, "y_loadings.csv"), model.Y_loadings());
-    write_csv(output_file(output_dir, "direction_lambdas.csv"), direction_lambdas);
-    write_csv(output_file(output_dir, "loading_lambdas.csv"), loading_lambdas);
-    write_csv(output_file(output_dir, "x_mean_locations.csv"), matrix_t::Zero(1, X.cols()));
-    write_csv(output_file(output_dir, "y_mean.csv"), matrix_t::Zero(1, Y.cols()));
+    const matrix_t X_directions = model.X_space_directions();
+    const matrix_t X_direction_locations = basis_at_locations * X_directions;
+    const matrix_t X_loadings = model.X_loadings();
+    const matrix_t X_loading_locations = basis_at_locations * X_loadings;
 
     matrix_t component_diagnostics(n_comp, 6);
+    std::vector<matrix_t> objective_histories(n_comp);
+    std::vector<matrix_t> Y_hat(n_comp);
+    std::vector<matrix_t> X_hat_locations(n_comp);
+    std::vector<matrix_t> beta_coefficients(n_comp);
+    std::vector<matrix_t> beta_locations(n_comp);
+    std::vector<matrix_t> beta_evaluation(n_comp);
+    json component_files = json::array();
     for (int h = 0; h < n_comp; ++h) {
         const auto& history = model.direction_objective_history()[h];
-        Eigen::Map<const matrix_t> history_matrix(history.data(), history.size(), 1);
-        write_csv(
-          output_file(output_dir, "objective_history_h" + std::to_string(h + 1) + ".csv"),
-          history_matrix);
+        objective_histories[h] = Eigen::Map<const matrix_t>(history.data(), history.size(), 1);
         component_diagnostics(h, 0) = h + 1;
         component_diagnostics(h, 1) = model.direction_iterations()[h];
         component_diagnostics(h, 2) = model.direction_monotone()[h] ? 1.0 : 0.0;
@@ -131,24 +123,16 @@ int run_fpls(
         component_diagnostics(h, 4) = model.direction_iterations()[h] >= max_iter ? 1.0 : 0.0;
         component_diagnostics(h, 5) =
           !history.empty() && std::isfinite(history.back()) ? 1.0 : 0.0;
-    }
-    write_csv(
-      output_file(output_dir, "component_diagnostics.csv"), component_diagnostics,
-      std::vector<std::string>{
-        "component", "iterations", "monotone", "objective", "hit_max_iter", "finite_solution"
-      });
 
-    json component_files = json::array();
-    for (int h = 1; h <= n_comp; ++h) {
-        const std::string suffix = "_h" + std::to_string(h) + ".csv";
-        const matrix_t beta = model.Beta(h);
-        write_csv(output_file(output_dir, "y_hat" + suffix), model.fitted(h));
-        write_csv(output_file(output_dir, "x_hat_locations" + suffix), model.reconstructed(h));
-        write_csv(output_file(output_dir, "beta_coefficients" + suffix), beta);
-        write_csv(output_file(output_dir, "beta_locations" + suffix), basis_at_locations * beta);
-        write_csv(output_file(output_dir, "beta_evaluation" + suffix), basis_at_evaluation * beta);
+        const int component = h + 1;
+        beta_coefficients[h] = model.Beta(component);
+        Y_hat[h] = model.fitted(component);
+        X_hat_locations[h] = model.reconstructed(component);
+        beta_locations[h] = basis_at_locations * beta_coefficients[h];
+        beta_evaluation[h] = basis_at_evaluation * beta_coefficients[h];
+        const std::string suffix = "_h" + std::to_string(component) + ".csv";
         component_files.push_back(json {
-          {"component", h},
+          {"component", component},
           {"y_hat", "y_hat" + suffix},
           {"x_hat_locations", "x_hat_locations" + suffix},
           {"beta_coefficients", "beta_coefficients" + suffix},
@@ -156,15 +140,52 @@ int run_fpls(
           {"beta_evaluation", "beta_evaluation" + suffix}
         });
     }
-    const auto output_end = std::chrono::steady_clock::now();
+    const auto postprocess_end = std::chrono::steady_clock::now();
+
+    std::filesystem::create_directories(output_dir);
+    write_csv(output_file(output_dir, "x_space_directions_coefficients.csv"), X_directions);
+    write_csv(output_file(output_dir, "x_space_directions_locations.csv"), X_direction_locations);
+    write_csv(output_file(output_dir, "y_space_directions.csv"), model.Y_space_directions());
+    write_csv(output_file(output_dir, "x_latent_scores.csv"), model.X_latent_scores());
+    write_csv(output_file(output_dir, "y_latent_scores.csv"), model.Y_latent_scores());
+    write_csv(output_file(output_dir, "x_loadings_coefficients.csv"), X_loadings);
+    write_csv(output_file(output_dir, "x_loadings_locations.csv"), X_loading_locations);
+    write_csv(output_file(output_dir, "y_loadings.csv"), model.Y_loadings());
+    write_csv(output_file(output_dir, "direction_lambdas.csv"), direction_lambdas);
+    write_csv(output_file(output_dir, "loading_lambdas.csv"), loading_lambdas);
+    write_csv(output_file(output_dir, "x_mean_locations.csv"), matrix_t::Zero(1, X.cols()));
+    write_csv(output_file(output_dir, "y_mean.csv"), matrix_t::Zero(1, Y.cols()));
+
+    for (int h = 0; h < n_comp; ++h) {
+        write_csv(
+          output_file(output_dir, "objective_history_h" + std::to_string(h + 1) + ".csv"),
+          objective_histories[h]);
+    }
+    write_csv(
+      output_file(output_dir, "component_diagnostics.csv"), component_diagnostics,
+      std::vector<std::string>{
+        "component", "iterations", "monotone", "objective", "hit_max_iter", "finite_solution"
+      });
+
+    for (int h = 1; h <= n_comp; ++h) {
+      const std::string suffix = "_h" + std::to_string(h) + ".csv";
+        write_csv(output_file(output_dir, "y_hat" + suffix), Y_hat[h - 1]);
+        write_csv(output_file(output_dir, "x_hat_locations" + suffix), X_hat_locations[h - 1]);
+        write_csv(output_file(output_dir, "beta_coefficients" + suffix), beta_coefficients[h - 1]);
+        write_csv(output_file(output_dir, "beta_locations" + suffix), beta_locations[h - 1]);
+        write_csv(output_file(output_dir, "beta_evaluation" + suffix), beta_evaluation[h - 1]);
+    }
+    const auto serialization_end = std::chrono::steady_clock::now();
 
     const double setup_seconds = std::chrono::duration<double>(setup_end - wall_start).count();
-    const double fit_seconds = std::chrono::duration<double>(fit_end - setup_end).count();
-    const double output_seconds = std::chrono::duration<double>(output_end - fit_end).count();
-    const double wall_seconds = std::chrono::duration<double>(output_end - wall_start).count();
+    const double solver_seconds = std::chrono::duration<double>(fit_end - setup_end).count();
+    const double postprocess_seconds = std::chrono::duration<double>(postprocess_end - fit_end).count();
+    const double fit_seconds = setup_seconds + solver_seconds + postprocess_seconds;
+    const double serialization_seconds = std::chrono::duration<double>(serialization_end - postprocess_end).count();
+    const double wall_seconds = std::chrono::duration<double>(serialization_end - wall_start).count();
     std::ofstream telemetry(output_file(output_dir, "telemetry.json"));
     telemetry << json {
-      {"schema_version", 3},
+      {"schema_version", 4},
       {"model", "R1_fPLS"},
       {"mode", "native_fdaPDE_cpp"},
       {"discretization", discretization},
@@ -185,8 +206,11 @@ int run_fpls(
       {"fixed_direction_lambda", fixed_direction_lambda},
       {"fixed_loading_lambda", fixed_loading_lambda},
       {"setup_seconds", setup_seconds},
+      {"solver_seconds", solver_seconds},
+      {"postprocess_seconds", postprocess_seconds},
       {"fit_seconds", fit_seconds},
-      {"output_seconds", output_seconds},
+      {"serialization_seconds", serialization_seconds},
+      {"output_seconds", serialization_seconds},
       {"wall_seconds", wall_seconds},
       {"iteration_counts_available", true},
       {"iteration_counts", model.direction_iterations()},
