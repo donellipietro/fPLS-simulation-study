@@ -80,7 +80,7 @@ for (family in families) {
           stop(glue::glue("incomplete native diagnostics for {options$name_test}/batch_{batch_index}"))
         }
         telemetry <- fromJSON(file.path(raw_dir, "telemetry.json"))
-        if (!identical(telemetry$schema_version, 3L) ||
+        if (!identical(telemetry$schema_version, 4L) ||
             !identical(telemetry$model, "R1_fPLS") ||
             !identical(telemetry$mode, "native_fdaPDE_cpp") ||
             !identical(telemetry$calibration, options$regularization$calibration) ||
