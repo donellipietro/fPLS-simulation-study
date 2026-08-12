@@ -32,6 +32,18 @@ std::string output_file(const std::filesystem::path& output_dir, const std::stri
     return (output_dir / name).string();
 }
 
+std::vector<double> lambda_schedule(const json& value, int n_comp, const char* name) {
+    if (value.is_number()) { return {value.get<double>()}; }
+    if (!value.is_array()) {
+        throw std::runtime_error(std::string(name) + " must be a scalar or an array");
+    }
+    const std::vector<double> schedule = value.get<std::vector<double>>();
+    if (schedule.size() != static_cast<std::size_t>(n_comp)) {
+        throw std::runtime_error(std::string(name) + " must have one value per component");
+    }
+    return schedule;
+}
+
 #include "../include/fpcr_driver.h"
 
 template <typename Domain, typename Space, typename DirectionPenalty, typename LoadingPenalty>
@@ -47,8 +59,6 @@ int run_fpls(
     const int gcv_seed = params.at("gcv_seed").get<int>();
     const std::string calibration = params.at("calibration").get<std::string>();
     const std::vector<double> lambda_grid = params.at("lambda_grid").get<std::vector<double>>();
-    const double fixed_direction_lambda = params.at("fixed_direction_lambda").get<double>();
-    const double fixed_loading_lambda = params.at("fixed_loading_lambda").get<double>();
     const std::filesystem::path output_dir(params.at("output_dir").get<std::string>());
 
     if (params.at("center").get<bool>()) {
@@ -57,6 +67,10 @@ int run_fpls(
     if (n_comp < 1 || max_iter < 1 || tolerance <= 0 || gcv_probes < 1) {
         throw std::runtime_error("invalid fPLS configuration");
     }
+    const std::vector<double> fixed_direction_lambdas = lambda_schedule(
+      params.at("fixed_direction_lambda"), n_comp, "fixed_direction_lambda");
+    const std::vector<double> fixed_loading_lambdas = lambda_schedule(
+      params.at("fixed_loading_lambda"), n_comp, "fixed_loading_lambda");
 
     const matrix_t X = read_matrix(params.at("X_file").get<std::string>());
     const matrix_t Y = read_matrix(params.at("Y_file").get<std::string>());
@@ -85,13 +99,11 @@ int run_fpls(
         direction_lambdas = model.direction_lambda();
         loading_lambdas = model.loading_lambda();
     } else if (calibration == "fixed") {
-        Eigen::Matrix<double, 1, 1> direction_lambda;
-        Eigen::Matrix<double, 1, 1> loading_lambda;
-        direction_lambda << fixed_direction_lambda;
-        loading_lambda << fixed_loading_lambda;
-        model.fit(n_comp, direction_lambda, loading_lambda, max_iter, tolerance);
-        direction_lambdas = matrix_t::Constant(n_comp, 1, fixed_direction_lambda);
-        loading_lambdas = matrix_t::Constant(n_comp, 1, fixed_loading_lambda);
+        model.fit(
+          n_comp, fixed_direction_lambdas, fixed_loading_lambdas, 0,
+          max_iter, tolerance);
+        direction_lambdas = model.direction_lambda();
+        loading_lambdas = model.loading_lambda();
     } else {
         throw std::runtime_error("calibration must be gcv or fixed");
     }
@@ -203,8 +215,8 @@ int run_fpls(
       {"gcv_probes", gcv_probes},
       {"gcv_seed", gcv_seed},
       {"lambda_grid", lambda_grid},
-      {"fixed_direction_lambda", fixed_direction_lambda},
-      {"fixed_loading_lambda", fixed_loading_lambda},
+      {"fixed_direction_lambda", params.at("fixed_direction_lambda")},
+      {"fixed_loading_lambda", params.at("fixed_loading_lambda")},
       {"setup_seconds", setup_seconds},
       {"solver_seconds", solver_seconds},
       {"postprocess_seconds", postprocess_seconds},

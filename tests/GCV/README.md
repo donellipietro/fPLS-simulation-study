@@ -8,13 +8,55 @@ It uses the submitted simulation generator and the common settings `tol = 1e-8`,
 
 The `sensitivity` family compares GCV (`lambda = -1`), the MV-PLS limit
 (`lambda = 0`), and fixed equal direction/loading penalties from `1e-9` to
-`1e2`. The fixed dimensions are `n = 100`, `m = 200`, and `k = 51`, the
+`1e-2`. The fixed dimensions are `n = 100`, `m = 200`, and `k = 51`, the
 intersection of the fixed settings in the 1D paper families.
 
 The `sensitivity_high_NSRX` family repeats that experiment with the predictor
 noise-to-signal ratio increased from `3` to `10`; the response noise remains
 `0.1`. This isolates whether GCV supplies useful regularization when the
 functional predictor is more contaminated.
+
+Both one-lambda sensitivity families evaluate each fitted prefix `h` against
+its matching noise-free `X_h`, `Y_h`, and cumulative `beta_h`. They report RMSE
+for predictor and response reconstruction, signed Frobenius cosine similarity
+for beta, and component-wise absolute cosine similarity for X directions,
+X loadings, and X scores. Components retain their sequential order without
+permutation matching.
+
+The `sensitivity_componentwise` family keeps the baseline `NSR_X = 3`, uses a
+true rank-four DGP, fits two components, and evaluates each fitted prefix
+against its matching noise-free truth. For each component, the fixed direction
+and loading penalties are constrained to be equal. Production crosses
+`lambda_1` and `lambda_2` over `10^(-9:2)`, yielding 144 fixed schedules, then
+adds one native-GCV cell and one MV-PLS cell: 146 fits per
+replicate. The option records retain both lambda coordinates.
+The fixed schedule path requires the companion `develop_fPLS` native change
+that accepts one fixed penalty block per fitted component.
+
+Aggregation saves median fixed-grid surfaces and paired, metric-specific
+GCV/MV regrets relative to the best fixed schedule for the same simulated
+replicate. This is a post-hoc truth oracle, not an implementable selector, and
+it is constrained to the tested grid with equal direction/loading penalties
+within each component. A negative reported regret is therefore possible when
+GCV or MV-PLS beats that constrained fixed grid. Fixed-only plots show `h = 1`
+box plots against `lambda_1` and `h = 2` heatmaps. A diamond marks the best
+fixed-grid median shown in each plot. Since `h = 1` is independent of
+`lambda_2`, its oracle `lambda_2` is reported as not applicable. Native GCV may
+choose direction and loading penalties independently, so its selected component
+pairs are shown in separate direction and loading plots rather than overlaid on
+the fixed surface. Prefix outputs use RMSE for predictor and response
+reconstruction, component-wise absolute cosine similarity for X directions,
+X loadings, and X scores, and signed Frobenius cosine similarity for cumulative
+beta. Components retain their sequential order without permutation matching.
+For every metric, positive regret means worse than the constrained fixed-grid
+truth oracle.
+
+Smoke mode uses one replicate and the two distinct fixed levels `1e-6` and `1`
+for each component, giving four fixed schedules plus the GCV and MV-PLS cells:
+
+```bash
+SMOKE_TEST=1 make run_test TEST_SUITE=GCV TEST_NAME=sensitivity_componentwise
+```
 
 The paired `sensitivity_competitors` and
 `sensitivity_high_NSRX_competitors` families compare MV-PLS, both B-fPLS
@@ -66,6 +108,7 @@ Run one family or the complete suite with the standard testbench commands:
 
 ```bash
 make run_test TEST_SUITE=GCV TEST_NAME=sensitivity
+make run_test TEST_SUITE=GCV TEST_NAME=sensitivity_componentwise
 make run_test TEST_SUITE=GCV TEST_NAME=sensitivity_review
 make run_test TEST_SUITE=GCV TEST_NAME=all
 ```

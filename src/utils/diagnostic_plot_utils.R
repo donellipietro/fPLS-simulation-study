@@ -136,7 +136,9 @@ write_family_diagnostics <- function(
 
   rows <- c(
     lapply(names(scalar_diagnostics), function(name) {
-      diagnostic_rows(loaded, family, name, scalar_diagnostics[[name]])
+      diagnostic_rows(
+        loaded, family, name, scalar_diagnostics[[name]], componentwise = FALSE
+      )
     }),
     lapply(names(component_diagnostics), function(name) {
       diagnostic_rows(loaded, family, name, component_diagnostics[[name]])

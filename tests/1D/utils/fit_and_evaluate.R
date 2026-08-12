@@ -25,6 +25,8 @@ native_model_matches_options <- function(model, model_name, test_options) {
   telemetry <- model$results$telemetry
   if (is.null(telemetry)) return(FALSE)
   same <- function(left, right) isTRUE(all.equal(left, right))
+  cfg <- load_config()
+  core_path <- file.path(cfg$PATH_FDAPDE_CPP, "fdaPDE", "core")
   timing_current &&
     same(telemetry$schema_version, 4L) &&
     identical(telemetry$model, model_name) &&
@@ -33,6 +35,19 @@ native_model_matches_options <- function(model, model_name, test_options) {
     same(telemetry$max_iter, test_options$regularization$max_iter) &&
     same(telemetry$tolerance, test_options$regularization$tolerance) &&
     same(as.numeric(telemetry$lambda_grid), test_options$regularization$lambda_grid) &&
+    identical(
+      telemetry$provenance$outer_commit,
+      git_commit(cfg$PATH_FDAPDE_CPP)
+    ) &&
+    identical(telemetry$provenance$core_commit, git_commit(core_path)) &&
+    identical(
+      telemetry$provenance$outer_diff_fingerprint,
+      git_diff_fingerprint(cfg$PATH_FDAPDE_CPP)
+    ) &&
+    identical(
+      telemetry$provenance$core_diff_fingerprint,
+      git_diff_fingerprint(core_path)
+    ) &&
     (telemetry$calibration != "fixed" || if (model_name == "fPCR") {
       same(telemetry$fixed_loading_lambda, test_options$regularization$fixed_loading_lambda)
     } else {

@@ -90,6 +90,13 @@ generate_fpls_data <- function(test_options, data_seed) {
   dimension <- test_options$model$dimension
   n_units <- test_options$dimensions$n_stat_units
   n_comp <- test_options$model$n_comp
+  n_true_comp <- test_options$data$n_true_comp
+  if (is.null(n_true_comp)) n_true_comp <- n_comp
+  n_comp <- as.integer(n_comp)
+  n_true_comp <- as.integer(n_true_comp)
+  if (length(n_true_comp) != 1L || is.na(n_true_comp) || n_true_comp < 1L) {
+    stop("the true DGP rank must be a positive integer")
+  }
   n_locs_requested <- test_options$dimensions$n_locs
   if (dimension != 1L) stop("the 1D suite requires model dimension 1")
 
@@ -103,40 +110,46 @@ generate_fpls_data <- function(test_options, data_seed) {
     test_options$data$location_seed
   )
   loading_generator <- fourier_loading
-  response_loadings <- matrix(rep(1, n_comp), nrow = 1L)
+  response_loadings <- matrix(rep(1, n_true_comp), nrow = 1L)
 
   n_responses <- nrow(response_loadings)
   loadings <- vapply(
-    seq_len(n_comp),
+    seq_len(n_true_comp),
     function(component) loading_generator(reference, component),
     numeric(nrow(reference))
   )
-  score_sd <- exp(seq(0, log(0.25), length.out = n_comp))
+  score_sd <- exp(seq(0, log(0.25), length.out = n_true_comp))
   set.seed(data_seed)
   sampled_scores <- MASS::mvrnorm(
     n_units,
-    mu = rep(0, n_comp),
+    mu = rep(0, n_true_comp),
     Sigma = diag(score_sd^2)
   )
   scores <- scale(sampled_scores, center = TRUE, scale = FALSE)
 
   X_true_reference <- scores %*% t(loadings)
   Y_true <- scores %*% t(response_loadings)
-  truth_pls <- rank_one_pls_truth(Y_true, X_true_reference, n_comp)
-  if (max(abs(Y_true - truth_pls$Y_hat[[n_comp]])) > 1e-8 ||
-      max(abs(X_true_reference - truth_pls$X_hat[[n_comp]])) > 1e-8) {
+  truth_pls <- rank_one_pls_truth(Y_true, X_true_reference, n_true_comp)
+  if (max(abs(Y_true - truth_pls$Y_hat[[n_true_comp]])) > 1e-8 ||
+      max(abs(X_true_reference - truth_pls$X_hat[[n_true_comp]])) > 1e-8) {
     stop("source PLS truth failed its exact reconstruction check")
   }
 
   location_index <- reference_index(reference, locations)
   X_true_locations <- X_true_reference[, location_index, drop = FALSE]
-  Beta_true_reference <- truth_pls$Beta[[n_comp]]
+  X_prefix_locations <- lapply(truth_pls$X_hat, function(value) {
+    value[, location_index, drop = FALSE]
+  })
+  Beta_prefix_locations <- lapply(truth_pls$Beta, function(value) {
+    value[location_index, , drop = FALSE]
+  })
+  Beta_true_reference <- truth_pls$Beta[[n_true_comp]]
   Beta_true_locations <- Beta_true_reference[location_index, , drop = FALSE]
   X_loadings_locations <- truth_pls$X_loadings[location_index, , drop = FALSE]
   X_directions_locations <- truth_pls$X_space_directions[location_index, , drop = FALSE]
 
-  X_last_component <- truth_pls$X_latent_scores[, n_comp, drop = FALSE] %*%
-    t(X_loadings_locations[, n_comp, drop = FALSE])
+  X_last_component <- truth_pls$X_latent_scores[, n_true_comp, drop = FALSE] %*%
+    t(X_loadings_locations[, n_true_comp, drop = FALSE])
   signal_X_power <- mean(X_true_locations^2)
   final_component_power <- mean(X_last_component^2)
   sigma_X <- sqrt(test_options$noise$NSR_X_final_component * final_component_power)
@@ -171,6 +184,7 @@ generate_fpls_data <- function(test_options, data_seed) {
     dimensions = list(
       n_stat_units = n_units,
       n_comp = n_comp,
+      n_true_comp = n_true_comp,
       n_locs_requested = n_locs_requested,
       n_locs = nrow(locations),
       n_responses = n_responses,
@@ -187,7 +201,14 @@ generate_fpls_data <- function(test_options, data_seed) {
       X_latent_scores = truth_pls$X_latent_scores,
       Y_latent_scores = truth_pls$Y_latent_scores,
       X_loadings_locations = X_loadings_locations,
-      Y_loadings = truth_pls$Y_loadings
+      Y_loadings = truth_pls$Y_loadings,
+      prefix = list(
+        Y = truth_pls$Y_hat,
+        X_locations = X_prefix_locations,
+        X_reference = truth_pls$X_hat,
+        Beta_locations = Beta_prefix_locations,
+        Beta_reference = truth_pls$Beta
+      )
     ),
     noise = list(
       sigma_X = sigma_X,

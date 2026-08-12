@@ -15,6 +15,24 @@ git_commit <- function(path) {
   trimws(output[1])
 }
 
+git_diff_fingerprint <- function(path) {
+  output <- system2(
+    "git",
+    c("-C", shQuote(normalizePath(path)), "diff", "--binary", "HEAD", "--"),
+    stdout = TRUE,
+    stderr = TRUE
+  )
+  status <- attr(output, "status")
+  if (!is.null(status) && status != 0L) {
+    stop(glue::glue("cannot fingerprint git worktree at {path}"))
+  }
+  if (!length(output)) return("clean")
+  file <- tempfile("git-diff-")
+  on.exit(unlink(file), add = TRUE)
+  writeLines(output, file, useBytes = TRUE)
+  unname(tools::md5sum(file))
+}
+
 read_cpp_matrix <- function(file) {
   value <- as.matrix(suppressWarnings(read.csv(file, check.names = FALSE)))
   storage.mode(value) <- "double"
@@ -146,7 +164,10 @@ fit_native_model <- function(model_name, data, path_list, test_options) {
   write.csv(data$evaluation, evaluation_file, row.names = FALSE)
 
   outer_commit <- git_commit(cfg$PATH_FDAPDE_CPP)
-  core_commit <- git_commit(file.path(cfg$PATH_FDAPDE_CPP, "fdaPDE", "core"))
+  core_path <- file.path(cfg$PATH_FDAPDE_CPP, "fdaPDE", "core")
+  core_commit <- git_commit(core_path)
+  outer_diff_fingerprint <- git_diff_fingerprint(cfg$PATH_FDAPDE_CPP)
+  core_diff_fingerprint <- git_diff_fingerprint(core_path)
   provenance <- c(
     test_options$provenance,
     list(
@@ -166,7 +187,9 @@ fit_native_model <- function(model_name, data, path_list, test_options) {
       runtime_profile = Sys.getenv("TESTBENCH_PROFILE", unset = "unknown"),
       outer_branch = cfg$FDAPDE_CPP_BRANCH,
       outer_commit = outer_commit,
-      core_commit = core_commit
+      core_commit = core_commit,
+      outer_diff_fingerprint = outer_diff_fingerprint,
+      core_diff_fingerprint = core_diff_fingerprint
     )
   )
   params <- list(
@@ -219,7 +242,13 @@ fit_native_model <- function(model_name, data, path_list, test_options) {
     stop("C++ discretization does not match the requested dimension")
   }
   if (!identical(telemetry$provenance$outer_commit, outer_commit) ||
-      !identical(telemetry$provenance$core_commit, core_commit)) {
+      !identical(telemetry$provenance$core_commit, core_commit) ||
+      !identical(
+        telemetry$provenance$outer_diff_fingerprint, outer_diff_fingerprint
+      ) ||
+      !identical(
+        telemetry$provenance$core_diff_fingerprint, core_diff_fingerprint
+      )) {
     stop("C++ provenance does not match the prepared fdaPDE stack")
   }
 

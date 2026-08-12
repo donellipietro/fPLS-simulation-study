@@ -25,6 +25,30 @@ source_figure_beta_rmse <- function(estimate, truth) {
   source_figure_rmse(align_beta_shape(estimate, truth), normalize_beta_shape(truth))
 }
 
+cosine_similarity <- function(estimate, truth, absolute = FALSE) {
+  estimate <- as.numeric(estimate)
+  truth <- as.numeric(truth)
+  estimate_norm <- sqrt(sum(estimate^2))
+  truth_norm <- sqrt(sum(truth^2))
+  if (length(estimate) != length(truth) ||
+      any(!is.finite(c(estimate, truth))) ||
+      !is.finite(estimate_norm) || !is.finite(truth_norm) ||
+      estimate_norm == 0 || truth_norm == 0) {
+    return(NaN)
+  }
+  value <- sum(estimate * truth) / (estimate_norm * truth_norm)
+  value <- max(-1, min(1, value))
+  if (absolute) abs(value) else value
+}
+
+matrix_component <- function(value, component, n_rows) {
+  if (is.null(value) || length(dim(value)) != 2L ||
+      nrow(value) != n_rows || ncol(value) < component) {
+    return(rep(NaN, n_rows))
+  }
+  value[, component]
+}
+
 component_result <- function(model, name, n_comp) {
   value <- model$results[[name]]
   if (is.null(value)) value <- model$results$telemetry[[name]]
@@ -37,38 +61,96 @@ component_result <- function(model, name, n_comp) {
 
 evaluate_results <- function(model, data, test_options) {
   n_comp <- data$dimensions$n_comp
+  n_true_comp <- data$dimensions$n_true_comp
+  if (is.null(n_true_comp)) n_true_comp <- n_comp
   n_responses <- data$dimensions$n_responses
+  truth_target <- test_options$evaluation$truth_target
+  if (is.null(truth_target)) truth_target <- "final"
+  if (!truth_target %in% c("final", "prefix")) {
+    stop("truth_target must be either 'final' or 'prefix'")
+  }
+  if (identical(truth_target, "prefix") &&
+      (is.null(data$truth$prefix) || n_comp > length(data$truth$prefix$Y))) {
+    stop("prefix truth is unavailable for every fitted component")
+  }
   rmse <- list(
     Y_reconstruction = numeric(n_comp),
-    X_reconstruction_locations = numeric(n_comp),
-    Beta1_locations = numeric(n_comp),
-    Beta2_locations = rep(NaN, n_comp)
+    X_reconstruction_locations = numeric(n_comp)
   )
+  if (identical(truth_target, "prefix")) {
+    cosine <- list(
+      Beta_locations = numeric(n_comp),
+      X_direction_locations = numeric(n_comp),
+      X_loading_locations = numeric(n_comp),
+      X_latent_scores = numeric(n_comp)
+    )
+  } else {
+    rmse$Beta1_locations <- numeric(n_comp)
+    rmse$Beta2_locations <- rep(NaN, n_comp)
+  }
 
   for (h in seq_len(n_comp)) {
+    truth <- if (identical(truth_target, "prefix")) {
+      list(
+        Y = data$truth$prefix$Y[[h]],
+        X_locations = data$truth$prefix$X_locations[[h]],
+        Beta_locations = data$truth$prefix$Beta_locations[[h]]
+      )
+    } else {
+      data$truth
+    }
     rmse$Y_reconstruction[h] <- source_figure_rmse(
-      model$results$Y_hat[[h]], data$truth$Y
+      model$results$Y_hat[[h]], truth$Y
     )
     rmse$X_reconstruction_locations[h] <- source_figure_rmse(
-      model$results$X_hat_locations[[h]], data$truth$X_locations
+      model$results$X_hat_locations[[h]], truth$X_locations
     )
-    rmse$Beta1_locations[h] <- source_figure_beta_rmse(
-      model$results$Beta_locations[[h]][, 1, drop = FALSE],
-      data$truth$Beta_locations[, 1, drop = FALSE]
-    )
-    if (n_responses == 2L) {
-      rmse$Beta2_locations[h] <- source_figure_beta_rmse(
-        model$results$Beta_locations[[h]][, 2, drop = FALSE],
-        data$truth$Beta_locations[, 2, drop = FALSE]
+    if (!identical(truth_target, "prefix")) {
+      rmse$Beta1_locations[h] <- source_figure_beta_rmse(
+        model$results$Beta_locations[[h]][, 1, drop = FALSE],
+        truth$Beta_locations[, 1, drop = FALSE]
+      )
+      if (n_responses == 2L) {
+        rmse$Beta2_locations[h] <- source_figure_beta_rmse(
+          model$results$Beta_locations[[h]][, 2, drop = FALSE],
+          truth$Beta_locations[, 2, drop = FALSE]
+        )
+      }
+    } else {
+      cosine$Beta_locations[h] <- cosine_similarity(
+        model$results$Beta_locations[[h]], truth$Beta_locations
+      )
+      cosine$X_direction_locations[h] <- cosine_similarity(
+        matrix_component(
+          model$results$X_space_directions_locations, h, data$dimensions$n_locs
+        ),
+        data$truth$X_space_directions_locations[, h],
+        absolute = TRUE
+      )
+      cosine$X_loading_locations[h] <- cosine_similarity(
+        matrix_component(
+          model$results$X_loadings_locations, h, data$dimensions$n_locs
+        ),
+        data$truth$X_loadings_locations[, h],
+        absolute = TRUE
+      )
+      cosine$X_latent_scores[h] <- cosine_similarity(
+        matrix_component(
+          model$results$X_latent_scores, h, data$dimensions$n_stat_units
+        ),
+        data$truth$X_latent_scores[, h],
+        absolute = TRUE
       )
     }
   }
 
-  list(
+  evaluation <- list(
     rmse = rmse,
     data_seed = data$data_seed,
     location_seed = data$location_seed,
     dimension = data$dimension,
+    truth_target = truth_target,
+    n_true_components = n_true_comp,
     n_stat_units = data$dimensions$n_stat_units,
     n_locations = data$dimensions$n_locs,
     source_k = data$dimensions$source_k,
@@ -91,4 +173,6 @@ evaluate_results <- function(model, data, test_options) {
     calibration = model$results$calibration,
     provenance = model$results$provenance
   )
+  if (identical(truth_target, "prefix")) evaluation$cosine <- cosine
+  evaluation
 }

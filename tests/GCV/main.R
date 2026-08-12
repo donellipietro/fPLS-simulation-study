@@ -54,14 +54,28 @@ batch_matches_options <- function(file, options, batch_index) {
   if (!file.exists(file)) return(FALSE)
   data <- readRDS(file)
   same <- function(left, right) isTRUE(all.equal(left, right))
+  expected_true_components <- if (is.null(options$data$n_true_comp)) {
+    options$model$n_comp
+  } else {
+    options$data$n_true_comp
+  }
+  cached_true_components <- if (is.null(data$dimensions$n_true_comp)) {
+    data$dimensions$n_comp
+  } else {
+    data$dimensions$n_true_comp
+  }
+  prefix_truth_current <- !identical(options$evaluation$truth_target, "prefix") ||
+    !is.null(data$truth$prefix)
   same(data$data_seed, batch_index) &&
     same(data$dimensions$n_stat_units, options$dimensions$n_stat_units) &&
     same(data$dimensions$n_comp, options$model$n_comp) &&
+    same(cached_true_components, expected_true_components) &&
     same(data$dimensions$n_locs_requested, options$dimensions$n_locs) &&
     same(data$dimensions$source_k, options$dimensions$source_k) &&
     same(nrow(data$evaluation), options$dimensions$n_reference_points) &&
     same(data$noise$requested_NSR_X_final_component, options$noise$NSR_X_final_component) &&
-    same(data$noise$requested_NSR_Y, options$noise$NSR_Y)
+    same(data$noise$requested_NSR_Y, options$noise$NSR_Y) &&
+    prefix_truth_current
 }
 
 models_match_options <- function(files, names, options) {

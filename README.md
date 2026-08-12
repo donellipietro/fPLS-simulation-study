@@ -34,7 +34,8 @@ the standard testbench model object. Competitor code is adapted from the
 corrected submitted implementation at historical design commit `7fb9172`.
 
 All iterative fits use `tol = 1e-8` and `max_iter = 1000`; native GCV uses
-seed `0`. R1-fPLS and PB-fPLS use the shared `10^(-9:2)` grid. B-fPLS with
+seed `0`. The standard R1-fPLS and PB-fPLS tests use the shared `10^(-9:2)`
+grid, while the GCV sensitivity families use `10^(-9:-2)`. B-fPLS with
 smoothing splines retains its original `10^seq(-9, 2, by = 0.1)` grid.
 
 ## Native Dependency
@@ -92,10 +93,12 @@ writing quantitative figures, diagnostic CSV files, qualitative comparisons,
 and a standalone `legend.pdf` for each family.
 
 The primary metrics compare response and predictor reconstructions with their
-noise-free truths. The beta metric is a sign-aligned, Frobenius-normalized
-shape error. The 2D qualitative maps use the ParaView `Cool to Warm (Extended)`
-palette, include the domain boundary, and share the truth range within each
-row.
+noise-free truths. The standard suites retain the sign-aligned,
+Frobenius-normalized beta shape error; the GCV sensitivity families use signed
+Frobenius cosine similarity for beta and absolute cosine similarity for X
+directions, loadings, and scores. The 2D qualitative maps use the ParaView
+`Cool to Warm (Extended)` palette, include the domain boundary, and share the
+truth range within each row.
 
 ## Generated Outputs
 
