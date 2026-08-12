@@ -12,37 +12,144 @@ source("config.R")
 
 cfg <- get_config()
 results_dir <- Sys.getenv("PATH_RESULTS", unset = cfg$PATH_RESULTS)
-gcv_output_dir <- file.path("reports", "gcv_tables")
-review_output_dir <- file.path("reports", "review_tables")
+reports_dir <- Sys.getenv("REVIEW_REPORTS_DIR", unset = "reports")
 sections <- commandArgs(trailingOnly = TRUE)
 available_sections <- c("gcv", "design", "iterations")
 if (!length(sections)) sections <- available_sections
+sections <- unique(sections)
 unknown_sections <- setdiff(sections, available_sections)
 if (length(unknown_sections)) {
   stop("Unknown review-table section: ", paste(unknown_sections, collapse = ", "))
 }
-dir.create(gcv_output_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(review_output_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(reports_dir, recursive = TRUE, showWarnings = FALSE)
+staging_dir <- tempfile(".review_tables_staging_", tmpdir = reports_dir)
+dir.create(staging_dir)
+on.exit(unlink(staging_dir, recursive = TRUE), add = TRUE)
+gcv_output_dir <- file.path(staging_dir, "gcv_tables")
+review_output_dir <- file.path(staging_dir, "review_tables")
+dir.create(gcv_output_dir, recursive = TRUE)
+dir.create(review_output_dir, recursive = TRUE)
 
-latest_existing_file <- function(candidates, description) {
-  existing <- candidates[file.exists(candidates)]
-  if (!length(existing)) {
-    stop(paste(
-      "Missing", description, "from every supported aggregate target:\n ",
-      paste(candidates, collapse = "\n  ")
-    ))
+same_numeric_grid <- function(actual, expected) {
+  actual <- sort(as.numeric(actual))
+  expected <- sort(as.numeric(expected))
+  length(actual) == length(expected) && all(is.finite(actual)) &&
+    isTRUE(all.equal(actual, expected, tolerance = 1e-14, check.attributes = FALSE))
+}
+
+validate_run_status <- function(status, suite, family, target) {
+  expected_schema <- switch(suite, GCV = 6L, `1D` = 7L, `2D` = 7L)
+  if (!is.numeric(status$schema_version) || length(status$schema_version) != 1L ||
+      !is.finite(status$schema_version) || status$schema_version != expected_schema) {
+    stop(sprintf("run_status schema must be exactly %d", expected_schema))
   }
-  selected <- existing[which.max(file.info(existing)$mtime)]
-  message("Using ", selected)
-  selected
+  if (!identical(status$suite, suite) || !identical(status$requested, target) ||
+      !family %in% as.character(status$families)) {
+    stop("run_status suite, requested target, or family does not match")
+  }
+  if (!identical(status$run_complete, TRUE) || !identical(status$smoke_test, FALSE)) {
+    stop("run_status is not a complete production run")
+  }
+  if (identical(suite, "GCV")) {
+    all_gcv_families <- c(
+      "sensitivity", "sensitivity_high_NSRX", "lambda_to_zero",
+      "small_lambda_m_gt_k", "small_lambda_m_lt_k"
+    )
+    expected_families <- switch(
+      target,
+      all = all_gcv_families,
+      sensitivity_review = all_gcv_families[1:2],
+      family
+    )
+    actual_families <- as.character(status$families)
+    if (length(actual_families) != length(expected_families) ||
+        !identical(sort(actual_families), sort(expected_families))) {
+      stop("run_status families do not exactly match the requested GCV target")
+    }
+    if (!same_numeric_grid(status$sensitivity_lambda_grid, c(-1, 0, 10^(-9:-2)))) {
+      stop("run_status does not declare the complete sensitivity lambda grid")
+    }
+    if (!same_numeric_grid(status$sensitivity_NSR_X, c(3, 10))) {
+      stop("run_status does not declare both sensitivity noise regimes")
+    }
+  }
+  invisible(TRUE)
 }
 
 aggregate_file <- function(suite, family, filename, groups = character()) {
   targets <- unique(c("all", groups, family))
-  latest_existing_file(
-    file.path(results_dir, suite, "aggregate", targets, filename),
-    sprintf("%s/%s aggregate %s", suite, family, filename)
-  )
+  candidates <- file.path(results_dir, suite, "aggregate", targets, filename)
+  existing <- which(file.exists(candidates))
+  if (!length(existing)) {
+    stop(paste(
+      "Missing", sprintf("%s/%s aggregate %s", suite, family, filename),
+      "from every supported aggregate target:\n ",
+      paste(candidates, collapse = "\n  ")
+    ))
+  }
+
+  existing_candidates <- candidates[existing]
+  selected_index <- existing[which.max(file.info(existing_candidates)$mtime)]
+  selected <- candidates[selected_index]
+  status_file <- file.path(dirname(selected), "run_status.json")
+  error <- tryCatch({
+    if (!file.exists(status_file)) stop("missing run_status.json")
+    mtimes <- file.info(c(selected, status_file))$mtime
+    if (any(is.na(mtimes)) || mtimes[2] < mtimes[1]) {
+      stop("run_status.json predates the aggregate artifact")
+    }
+    status <- fromJSON(status_file, simplifyVector = TRUE)
+    validate_run_status(status, suite, family, targets[selected_index])
+    NULL
+  }, error = conditionMessage)
+  if (!is.null(error)) {
+    stop(sprintf(
+      "Newest aggregate candidate is not a valid production artifact (%s): %s",
+      selected, error
+    ))
+  }
+  message("Using validated production aggregate ", selected)
+  selected
+}
+
+commit_staged_csvs <- function(relative_files) {
+  backup_dir <- tempfile(".review_tables_backup_", tmpdir = reports_dir)
+  dir.create(backup_dir)
+  installed <- backed_up <- logical(length(relative_files))
+  committed <- FALSE
+  on.exit({
+    if (!committed) {
+      for (i in rev(seq_along(relative_files))) {
+        final <- file.path(reports_dir, relative_files[i])
+        backup <- file.path(backup_dir, relative_files[i])
+        if ((installed[i] || backed_up[i]) && file.exists(final)) unlink(final)
+        if (backed_up[i] && !file.rename(backup, final)) {
+          warning("Failed to restore review-table snapshot: ", final)
+        }
+      }
+    }
+    unlink(backup_dir, recursive = TRUE)
+  }, add = TRUE)
+
+  for (i in seq_along(relative_files)) {
+    staged <- file.path(staging_dir, relative_files[i])
+    final <- file.path(reports_dir, relative_files[i])
+    backup <- file.path(backup_dir, relative_files[i])
+    dir.create(dirname(final), recursive = TRUE, showWarnings = FALSE)
+    if (file.exists(final)) {
+      dir.create(dirname(backup), recursive = TRUE, showWarnings = FALSE)
+      if (!file.rename(final, backup)) {
+        stop("Cannot stage existing review-table snapshot for replacement: ", final)
+      }
+      backed_up[i] <- TRUE
+    }
+    if (!file.rename(staged, final)) {
+      stop("Cannot install staged review-table CSV: ", final)
+    }
+    installed[i] <- TRUE
+  }
+  committed <- TRUE
+  invisible(TRUE)
 }
 
 format_lambda <- function(value) {
@@ -55,10 +162,33 @@ format_lambda <- function(value) {
   format(value, scientific = TRUE, digits = 3, trim = TRUE)
 }
 
-validate_gcv_metric <- function(data, label) {
+gcv_lambda_grid <- c(-1, 0, 10^(-9:-2))
+
+validate_gcv_metric <- function(data, label, lower = -Inf, upper = Inf) {
   required <- c("Group", "lambda", "R1_fPLS")
   if (is.null(data) || any(!required %in% names(data))) {
     stop(sprintf("Missing GCV table input: %s", label))
+  }
+  groups <- sort(unique(as.integer(as.character(data$Group))))
+  lambdas <- sort(unique(as.numeric(data$lambda)))
+  counts <- aggregate(
+    data$R1_fPLS,
+    list(component = data$Group, lambda = data$lambda),
+    length
+  )
+  values <- as.numeric(data$R1_fPLS)
+  if (!identical(groups, 1:4) || !same_numeric_grid(lambdas, gcv_lambda_grid) ||
+      nrow(data) != 4L * length(gcv_lambda_grid) * 30L ||
+      nrow(counts) != 4L * length(gcv_lambda_grid) || any(counts$x != 30L) ||
+      any(!is.finite(values)) || any(values < lower) || any(values > upper)) {
+    stop(sprintf("GCV table input is incomplete or non-production: %s", label))
+  }
+}
+
+validate_gcv_selector <- function(data, label) {
+  required <- c("Group", "lambda", "R1_fPLS")
+  if (is.null(data) || any(!required %in% names(data))) {
+    stop(sprintf("Missing GCV selector input: %s", label))
   }
   groups <- sort(unique(as.integer(as.character(data$Group))))
   counts <- aggregate(
@@ -66,10 +196,66 @@ validate_gcv_metric <- function(data, label) {
     list(component = data$Group, lambda = data$lambda),
     length
   )
-  if (!identical(groups, 1:4) || any(!is.finite(data$R1_fPLS)) ||
-      any(counts$x != 30L)) {
-    stop(sprintf("GCV table input is incomplete or non-production: %s", label))
+  if (!identical(groups, 1:4) ||
+      !same_numeric_grid(unique(data$lambda), gcv_lambda_grid) ||
+      nrow(data) != 4L * length(gcv_lambda_grid) * 30L ||
+      nrow(counts) != 4L * length(gcv_lambda_grid) || any(counts$x != 30L)) {
+    stop(sprintf("GCV selector input is incomplete or non-production: %s", label))
   }
+  fixed <- data$lambda > 0
+  if (any(!is.finite(data$R1_fPLS[fixed])) || !isTRUE(all.equal(
+    as.numeric(data$R1_fPLS[fixed]), as.numeric(data$lambda[fixed]),
+    check.attributes = FALSE
+  ))) {
+    stop(sprintf("Fixed-lambda selector diagnostics are invalid: %s", label))
+  }
+  selected <- data$R1_fPLS[data$lambda == -1]
+  if (any(!is.finite(selected)) ||
+      any(!selected %in% gcv_lambda_grid[gcv_lambda_grid > 0])) {
+    stop(sprintf("GCV selector chose a lambda outside the production grid: %s", label))
+  }
+  invisible(TRUE)
+}
+
+validate_gcv_aggregate <- function(loaded, family) {
+  aggregate_families <- loaded$provenance$family$R1_fPLS
+  expected_rows <- length(gcv_lambda_grid) * 30L
+  expected_nsrx <- if (identical(family, "sensitivity_high_NSRX")) 10 else 3
+  aggregate_nsrx <- loaded$provenance$NSR_X_final_component$R1_fPLS
+  if (!identical(as.character(loaded$model_names), "R1_fPLS") ||
+      !identical(as.character(loaded$varying_options), "lambda") ||
+      is.null(aggregate_families) ||
+      length(aggregate_families) != expected_rows ||
+      any(is.na(aggregate_families) | aggregate_families != family) ||
+      is.null(aggregate_nsrx) || length(aggregate_nsrx) != expected_rows ||
+      any(!is.finite(aggregate_nsrx) | aggregate_nsrx != expected_nsrx)) {
+    stop(sprintf("GCV aggregate family metadata does not match: %s", family))
+  }
+  metrics <- list(
+    Y_reconstruction = list(loaded$rmse$Y_reconstruction, 0, Inf),
+    X_reconstruction = list(loaded$rmse$X_reconstruction_locations, 0, Inf),
+    Beta_RMSE = list(loaded$rmse$Beta1_locations, 0, Inf),
+    Beta = list(loaded$cosine$Beta_locations, -1, 1),
+    X_direction = list(loaded$cosine$X_direction_locations, 0, 1),
+    X_loading = list(loaded$cosine$X_loading_locations, 0, 1),
+    X_scores = list(loaded$cosine$X_latent_scores, 0, 1)
+  )
+  for (name in names(metrics)) {
+    validate_gcv_metric(
+      metrics[[name]][[1]], paste(family, name),
+      metrics[[name]][[2]], metrics[[name]][[3]]
+    )
+  }
+  validate_gcv_selector(loaded$direction_lambda, paste(family, "direction lambda"))
+  validate_gcv_selector(loaded$loading_lambda, paste(family, "loading lambda"))
+  selection_distribution(loaded$direction_lambda, paste(family, "direction lambda"))
+  selection_distribution(loaded$loading_lambda, paste(family, "loading lambda"))
+  if (is.null(loaded$truth_target$R1_fPLS) ||
+      length(loaded$truth_target$R1_fPLS) != expected_rows ||
+      any(loaded$truth_target$R1_fPLS != "prefix")) {
+    stop(sprintf("GCV aggregate does not use prefix truth: %s", family))
+  }
+  invisible(TRUE)
 }
 
 median_by_component <- function(data, lambda_value) {
@@ -167,6 +353,7 @@ if ("gcv" %in% sections) {
       "GCV", family, sprintf("loaded_%s.rds", family),
       groups = "sensitivity_review"
     ))
+    validate_gcv_aggregate(loaded, family)
     metrics <- list(
       Y_reconstruction = list(data = loaded$rmse$Y_reconstruction, higher = FALSE),
       X_reconstruction = list(data = loaded$rmse$X_reconstruction_locations, higher = FALSE),
@@ -297,49 +484,75 @@ write_iteration_table <- function(suite, family) {
     ),
     stringsAsFactors = FALSE
   )
-  required <- c("diagnostic", "component", "model", "value")
+  required <- c(
+    "family", "diagnostic", "component", "level", "repetition", "model", "value"
+  )
   if (any(!required %in% names(diagnostics))) {
     stop(sprintf("Invalid diagnostics schema for %s/%s", suite, family))
+  }
+  if (any(diagnostics$family != family)) {
+    stop(sprintf("Diagnostics family mismatch for %s/%s", suite, family))
   }
 
   options <- load_family_options(suite, family)
   first <- options[[1]]
   n_comp <- first$model$n_comp
   n_reps <- first$test_options$n_reps
-  expected_per_component <- length(options) * n_reps
   if (n_comp != 4L) stop("The review iteration table expects four components")
+  varying <- first$test_options$varying_options
+  expected_levels <- option_values(options, function(option) {
+    path <- find_name_path(option, varying)
+    if (!isTRUE(path$found)) stop(sprintf("Missing varying option: %s", varying))
+    get_by_path(option, path$path)
+  })
+  expected_cells <- expand.grid(
+    component = seq_len(n_comp),
+    level = expected_levels,
+    repetition = seq_len(n_reps),
+    KEEP.OUT.ATTRS = FALSE,
+    stringsAsFactors = FALSE
+  )
+  cell_key <- function(rows) paste(
+    rows$component,
+    format(rows$level, scientific = TRUE, digits = 17, trim = TRUE),
+    rows$repetition,
+    sep = "|"
+  )
+  expected_keys <- sort(cell_key(expected_cells))
+  required_diagnostic <- function(model_name, diagnostic_name) {
+    rows <- diagnostics[
+      diagnostics$diagnostic == diagnostic_name & diagnostics$model == model_name,
+      , drop = FALSE
+    ]
+    keys <- cell_key(rows)
+    if (nrow(rows) != nrow(expected_cells) || anyDuplicated(keys) ||
+        !identical(sort(keys), expected_keys) || any(!is.finite(rows$value))) {
+      stop(sprintf(
+        "Incomplete %s diagnostics for %s/%s/%s",
+        tolower(diagnostic_name), suite, family, model_name
+      ))
+    }
+    rows
+  }
+  non_iterative_models <- c("MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS")
 
   rows <- lapply(seq_along(first$model_names), function(index) {
     model_name <- first$model_names[index]
-    iterations <- diagnostics[
-      diagnostics$diagnostic == "Iteration count" & diagnostics$model == model_name,
-      , drop = FALSE
-    ]
-    finite_iterations <- iterations[is.finite(iterations$value), , drop = FALSE]
-    has_iterations <- nrow(finite_iterations) && any(finite_iterations$value > 0)
-
     component_values <- rep("--", n_comp)
     monotone_value <- "--"
-    if (has_iterations) {
+    if (!model_name %in% non_iterative_models) {
+      iterations <- required_diagnostic(model_name, "Iteration count")
+      if (any(iterations$value <= 0)) {
+        stop(sprintf("Invalid iteration counts for %s/%s/%s", suite, family, model_name))
+      }
       for (component in seq_len(n_comp)) {
-        values <- finite_iterations$value[finite_iterations$component == component]
-        if (length(values) != expected_per_component || any(values <= 0)) {
-          stop(sprintf(
-            "Incomplete iteration diagnostics for %s/%s/%s component %d",
-            suite, family, model_name, component
-          ))
-        }
+        values <- iterations$value[iterations$component == component]
         component_values[component] <- format_number(median(values))
       }
 
-      monotone <- diagnostics[
-        diagnostics$diagnostic == "Monotonic fit" & diagnostics$model == model_name,
-        "value"
-      ]
-      monotone <- monotone[is.finite(monotone)]
-      if (length(monotone) != expected_per_component * n_comp ||
-          any(!monotone %in% c(0, 1))) {
-        stop(sprintf("Incomplete monotonicity diagnostics for %s/%s/%s", suite, family, model_name))
+      monotone <- required_diagnostic(model_name, "Monotonic fit")$value
+      if (any(!monotone %in% c(0, 1))) {
+        stop(sprintf("Invalid monotonicity diagnostics for %s/%s/%s", suite, family, model_name))
       }
       monotone_value <- format_percent(100 * mean(monotone))
     }
@@ -372,4 +585,36 @@ if ("iterations" %in% sections) {
   for (spec in iteration_tables) write_iteration_table(spec[1], spec[2])
 }
 
+expected_csvs <- character()
+if ("gcv" %in% sections) {
+  expected_csvs <- c(expected_csvs, file.path(
+    "gcv_tables",
+    paste0(
+      rep(c("sensitivity", "sensitivity_high_NSRX"), each = 6L), "_",
+      rep(c(
+        "Y_reconstruction", "X_reconstruction", "Beta",
+        "X_direction", "X_loading", "X_scores"
+      ), 2L),
+      ".csv"
+    )
+  ))
+}
+if ("design" %in% sections) {
+  expected_csvs <- c(expected_csvs, file.path("review_tables", "submitted_design.csv"))
+}
+if ("iterations" %in% sections) {
+  expected_csvs <- c(expected_csvs, file.path(
+    "review_tables",
+    vapply(iteration_tables, function(spec) {
+      sprintf("%s_%s_iterations.csv", spec[1], spec[2])
+    }, character(1))
+  ))
+}
+staged_csvs <- list.files(
+  staging_dir, pattern = "[.]csv$", recursive = TRUE, full.names = FALSE
+)
+if (!identical(sort(staged_csvs), sort(expected_csvs))) {
+  stop("Staged review-table CSV set is incomplete or unexpected")
+}
+commit_staged_csvs(expected_csvs)
 message("Regenerated review-table sections: ", paste(sections, collapse = ", "), ".")
