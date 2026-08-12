@@ -43,6 +43,7 @@ PBS_MULTI_TIME ?=
 PBS_MAX_JOBS ?=
 PBS_QUEUE ?=
 PBS_ACCOUNT ?=
+PBS_EXCLUSIVE_RESOURCE ?=
 PBS_AGGREGATE ?= 1
 PBS_COMPILE_CPUS ?=
 PBS_COMPILE_MEM ?=
@@ -85,7 +86,7 @@ COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
         ensure_env \
         compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
-        run_test inspect_results review_tables review_report
+        run_test inspect_results review_tables review_report kami_review_submit
 
 
 all: build
@@ -370,6 +371,17 @@ review_tables: ensure_env
 review_report: review_tables
 	@cd reports && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error \
 		review_simulation_results.tex
+
+## Submit the complete reviewer campaign as one serial full-node Torque/PBS job
+kami_review_submit:
+	@PBS_DRY_RUN="$(PBS_DRY_RUN)" \
+	PBS_MULTI_CPUS="$(PBS_MULTI_CPUS)" \
+	PBS_MULTI_MEM="$(PBS_MULTI_MEM)" \
+	PBS_MULTI_TIME="$(PBS_MULTI_TIME)" \
+	PBS_QUEUE="$(PBS_QUEUE)" \
+	PBS_ACCOUNT="$(PBS_ACCOUNT)" \
+	PBS_EXCLUSIVE_RESOURCE="$(PBS_EXCLUSIVE_RESOURCE)" \
+		bash scripts/submit_kami_review.sh
 
 ## Inspect results of a specific test interactively
 # Usage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>
