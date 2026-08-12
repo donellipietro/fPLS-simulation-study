@@ -37,6 +37,55 @@ dir.create(aggregate_dir, recursive = TRUE, showWarnings = FALSE)
 all_diagnostics <- list()
 diagnostic_outputs <- list()
 
+validate_sensitivity_metric <- function(
+    data, family_options, metric, lower = -Inf, upper = Inf) {
+  if (is.null(data)) stop(glue::glue("missing sensitivity metric: {metric}"))
+
+  n_comp <- family_options[[1]]$model$n_comp
+  n_reps <- family_options[[1]]$test_options$n_reps
+  expected_rows <- length(family_options) * n_comp * n_reps
+  if (nrow(data) != expected_rows ||
+      !identical(sort(unique(as.integer(data$Group))), seq_len(n_comp))) {
+    stop(glue::glue("incomplete sensitivity metric: {metric}"))
+  }
+
+  counts <- aggregate(
+    data$R1_fPLS,
+    list(component = data$Group, lambda = data$lambda),
+    length
+  )
+  values <- data$R1_fPLS
+  if (nrow(counts) != length(family_options) * n_comp ||
+      any(counts$x != n_reps) || any(!is.finite(values)) ||
+      any(values < lower) || any(values > upper)) {
+    stop(glue::glue("invalid sensitivity metric: {metric}"))
+  }
+}
+
+validate_sensitivity_metrics <- function(loaded, family_options) {
+  validate_sensitivity_metric(
+    loaded$rmse$Y_reconstruction, family_options, "Y reconstruction RMSE", 0
+  )
+  validate_sensitivity_metric(
+    loaded$rmse$X_reconstruction_locations,
+    family_options, "X reconstruction RMSE", 0
+  )
+  validate_sensitivity_metric(
+    loaded$rmse$Beta1_locations, family_options, "beta shape RMSE", 0
+  )
+  validate_sensitivity_metric(
+    loaded$cosine$Beta_locations,
+    family_options, "signed beta cosine", -1, 1
+  )
+  for (metric in c(
+    "X_direction_locations", "X_loading_locations", "X_latent_scores"
+  )) {
+    validate_sensitivity_metric(
+      loaded$cosine[[metric]], family_options, metric, 0, 1
+    )
+  }
+}
+
 ## Load, validate, and plot every family ----
 for (family in families) {
   path_list <- create_paths(test_suite)
@@ -133,9 +182,7 @@ for (family in families) {
   saveRDS(loaded, file.path(aggregate_dir, glue::glue("loaded_{family}.rds")))
   image_dir <- file.path(cfg$PATH_IMAGES, test_suite, family)
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
-  prefix_sensitivity <- family %in% c(
-    "sensitivity", "sensitivity_high_NSRX"
-  )
+  prefix_sensitivity <- family %in% sensitivity_families
 
   near_zero_family <- startsWith(family, "small_lambda")
   near_zero_breaks <- if (identical(family, "small_lambda_m_lt_k")) {
@@ -151,16 +198,17 @@ for (family in families) {
   all_diagnostics[[family]] <- diagnostics$rows
   diagnostic_outputs[[family]] <- diagnostics$plots
 
-
   plot_specs <- if (prefix_sensitivity) {
+    validate_sensitivity_metrics(loaded, family_options)
     data.frame(
       metric = c(
-        "Y_reconstruction", "X_reconstruction_locations", "Beta_locations",
-        "X_direction_locations", "X_loading_locations", "X_latent_scores"
+        "Y_reconstruction", "X_reconstruction_locations", "Beta1_locations",
+        "Beta_locations", "X_direction_locations", "X_loading_locations",
+        "X_latent_scores"
       ),
-      source = c("rmse", "rmse", rep("cosine", 4L)),
+      source = c(rep("rmse", 3L), rep("cosine", 4L)),
       value_label = c(
-        rep("RMSE", 2L), "Signed cosine similarity",
+        rep("RMSE", 3L), "Signed cosine similarity",
         rep("Absolute cosine similarity", 3L)
       ),
       stringsAsFactors = FALSE
@@ -198,10 +246,6 @@ for (family in families) {
     )
     dev.off()
   }
-  if (prefix_sensitivity) {
-    unlink(file.path(image_dir, "Beta1_locations.pdf"))
-  }
-
   pdf(
     file.path(image_dir, "legend.pdf"),
     width = max(4, 2.8 * length(loaded$model_labels)), height = 1.5, bg = "white"
@@ -220,7 +264,7 @@ diagnostics <- dplyr::bind_rows(all_diagnostics)
 write.csv(diagnostics, file.path(aggregate_dir, "all_diagnostics.csv"), row.names = FALSE)
 write_json(
   list(
-    schema_version = 5L,
+    schema_version = 6L,
     suite = test_suite,
     requested = requested,
     families = families,

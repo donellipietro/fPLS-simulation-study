@@ -18,10 +18,11 @@ functional predictor is more contaminated.
 
 Both one-lambda sensitivity families evaluate each fitted prefix `h` against
 its matching noise-free `X_h`, `Y_h`, and cumulative `beta_h`. They report RMSE
-for predictor and response reconstruction, signed Frobenius cosine similarity
-for beta, and component-wise absolute cosine similarity for X directions,
-X loadings, and X scores. Components retain their sequential order without
-permutation matching.
+for predictor and response reconstruction and the same sign-aligned,
+Frobenius-normalized beta shape RMSE used by the paper suites. They additionally
+report signed Frobenius cosine similarity for beta and component-wise absolute
+cosine similarity for X directions, X loadings, and X scores. Components retain
+their sequential order without permutation matching.
 
 ## Asymptotic And Numerical Experiments
 

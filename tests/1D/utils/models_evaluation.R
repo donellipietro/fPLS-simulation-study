@@ -75,7 +75,9 @@ evaluate_results <- function(model, data, test_options) {
   }
   rmse <- list(
     Y_reconstruction = numeric(n_comp),
-    X_reconstruction_locations = numeric(n_comp)
+    X_reconstruction_locations = numeric(n_comp),
+    Beta1_locations = numeric(n_comp),
+    Beta2_locations = rep(NaN, n_comp)
   )
   if (identical(truth_target, "prefix")) {
     cosine <- list(
@@ -84,9 +86,6 @@ evaluate_results <- function(model, data, test_options) {
       X_loading_locations = numeric(n_comp),
       X_latent_scores = numeric(n_comp)
     )
-  } else {
-    rmse$Beta1_locations <- numeric(n_comp)
-    rmse$Beta2_locations <- rep(NaN, n_comp)
   }
 
   for (h in seq_len(n_comp)) {
@@ -105,18 +104,17 @@ evaluate_results <- function(model, data, test_options) {
     rmse$X_reconstruction_locations[h] <- source_figure_rmse(
       model$results$X_hat_locations[[h]], truth$X_locations
     )
-    if (!identical(truth_target, "prefix")) {
-      rmse$Beta1_locations[h] <- source_figure_beta_rmse(
-        model$results$Beta_locations[[h]][, 1, drop = FALSE],
-        truth$Beta_locations[, 1, drop = FALSE]
+    rmse$Beta1_locations[h] <- source_figure_beta_rmse(
+      model$results$Beta_locations[[h]][, 1, drop = FALSE],
+      truth$Beta_locations[, 1, drop = FALSE]
+    )
+    if (n_responses == 2L) {
+      rmse$Beta2_locations[h] <- source_figure_beta_rmse(
+        model$results$Beta_locations[[h]][, 2, drop = FALSE],
+        truth$Beta_locations[, 2, drop = FALSE]
       )
-      if (n_responses == 2L) {
-        rmse$Beta2_locations[h] <- source_figure_beta_rmse(
-          model$results$Beta_locations[[h]][, 2, drop = FALSE],
-          truth$Beta_locations[, 2, drop = FALSE]
-        )
-      }
-    } else {
+    }
+    if (identical(truth_target, "prefix")) {
       cosine$Beta_locations[h] <- cosine_similarity(
         model$results$Beta_locations[[h]], truth$Beta_locations
       )

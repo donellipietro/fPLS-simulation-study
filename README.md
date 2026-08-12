@@ -93,10 +93,10 @@ writing quantitative figures, diagnostic CSV files, qualitative comparisons,
 and a standalone `legend.pdf` for each family.
 
 The primary metrics compare response and predictor reconstructions with their
-noise-free truths. The standard suites retain the sign-aligned,
-Frobenius-normalized beta shape error; the GCV sensitivity families use signed
-Frobenius cosine similarity for beta and absolute cosine similarity for X
-directions, loadings, and scores. The 2D qualitative maps use the ParaView
+noise-free truths. All suites retain the sign-aligned, Frobenius-normalized beta
+shape error. The GCV sensitivity families additionally use signed Frobenius
+cosine similarity for beta and absolute cosine similarity for X directions,
+loadings, and scores. The 2D qualitative maps use the ParaView
 `Cool to Warm (Extended)` palette, include the domain boundary, and share the
 truth range within each row.
 

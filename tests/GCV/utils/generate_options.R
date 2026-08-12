@@ -34,9 +34,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   }
 
   high_NSRX <- grepl("high_NSRX", name_main_test, fixed = TRUE)
-  prefix_sensitivity <- name_main_test %in% c(
-    "sensitivity", "sensitivity_high_NSRX"
-  )
+  prefix_sensitivity <- name_main_test %in% sensitivity_families
   models <- gcv_model_catalog()
   near_zero_grid <- 10^c(-300, -200, -100, -50, -30, -20:-9)
   refined_m_lt_k_grid <- 10^c(-300, -200, -100, seq(-50, -30, by = 2), -20:-9)

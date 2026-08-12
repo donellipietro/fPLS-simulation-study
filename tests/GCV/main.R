@@ -87,6 +87,37 @@ models_match_options <- function(files, names, options) {
   }, files, names))
 }
 
+evaluation_matches_options <- function(file, options) {
+  if (!file.exists(file)) return(FALSE)
+  if (!identical(options$evaluation$truth_target, "prefix")) return(TRUE)
+
+  contents <- new.env(parent = emptyenv())
+  loaded <- tryCatch({
+    load(file, envir = contents)
+    TRUE
+  }, error = function(error) FALSE)
+  if (!loaded || !exists("results_evaluation", envir = contents, inherits = FALSE)) {
+    return(FALSE)
+  }
+
+  expected_rmse <- c(
+    "Y_reconstruction", "X_reconstruction_locations", "Beta1_locations"
+  )
+  expected_cosine <- c(
+    "Beta_locations", "X_direction_locations",
+    "X_loading_locations", "X_latent_scores"
+  )
+  all(vapply(options$model_names, function(model_name) {
+    evaluation <- contents$results_evaluation[[model_name]]
+    if (is.null(evaluation) || !identical(evaluation$truth_target, "prefix")) {
+      return(FALSE)
+    }
+    metrics <- c(evaluation$rmse[expected_rmse], evaluation$cosine[expected_cosine])
+    length(metrics) == length(c(expected_rmse, expected_cosine)) &&
+      all(vapply(metrics, length, integer(1)) == options$model$n_comp)
+  }, logical(1)))
+}
+
 ## Run every repetition ----
 for (batch_index in seq_len(test_options$test_options$n_reps)) {
   cat(glue::glue("\nBatch {batch_index}:\n", .trim = FALSE))
@@ -103,7 +134,7 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
   )
   data_current <- batch_matches_options(data_file, test_options, batch_index)
   if (!FORCE_FIT && !FORCE_EVALUATE &&
-      data_current && file.exists(evaluation_file) &&
+      data_current && evaluation_matches_options(evaluation_file, test_options) &&
       models_match_options(model_files, test_options$model_names, test_options)) {
     cat("- Existing complete batch; skipped\n")
     next
