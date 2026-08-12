@@ -1,22 +1,38 @@
 # 2D Simulation Study
 
-This suite studies multivariate functional PLS on the unit square. Predictors
-are generated from four smooth spatial loading functions and paired with two
-responses. The final latent predictor component receives the severe-noise
-condition used in the submitted study.
+This suite uses a functional predictor on the unit square and two scalar responses. The data
+contain four smooth spatial signal components. Production runs use 30 replications, baseline
+noise ratios `NSR_X = 3` for the final predictor component and `NSR_Y = 0.1`, and
+`tol = 1e-8`, `max_iter = 1000` for iterative fits.
 
-The suite compares multivariate PLS, fPCR, and R1-fPLS while varying the spatial
-mesh resolution (`vary_k`) or number of statistical units (`vary_n`). The
-`vary_NSRX` and `vary_NSRY`
-families vary one noise level while fixing `n = 100`, `m = 1600`, and
-`k = 900`. The `vary_H` family fits five components once and reports the
-reconstruction trajectory from one through five retained components, together
-with the observed variance reconstructed in `X` and `Y` and the reconstructed
-`X`--`Y` cross-covariance structure. The
-fixed-component families report predictor reconstruction and response-specific
-regression-coefficient shape error after four retained components.
+The compared methods are MV-PLS, fPCR, and R1-fPLS.
 
-Production families use 30 replications. Reports include wall-clock time,
-peak memory, selected regularisation parameters, and a representative beta-map
-comparison for the central `vary_n` scenario. Within each beta-map row, the
-truth fixes the shared colour scale so the fitted maps can be compared directly.
+## Families
+
+| Family | Levels | Fixed production setting |
+|---|---|---|
+| `vary_k` | `k = 25, 100, 400, 900, 1600, 2500` | `n = 100`, `m = 1600`, four fitted components |
+| `vary_n` | `n = 50, 100, 200` | `m = 1600`, `k = 900`, four fitted components |
+| `vary_NSRX` | `NSR_X = 1, 3, 5, 10` | `n = 100`, `m = 1600`, `k = 900`, `NSR_Y = 0.1` |
+| `vary_NSRY` | `NSR_Y = 0.01, 0.1, 0.5, 1` | `n = 100`, `m = 1600`, `k = 900`, `NSR_X = 3` |
+| `vary_H` | prefixes `H = 1, ..., 5` | one five-component fit at `n = 100`, `m = 1600`, `k = 900` |
+
+Here `n` is the sample size, `m` the number of observed locations, and `k` the number of mesh
+nodes used by the source discretization.
+
+## Metrics and outputs
+
+The suite records RMSE for noise-free Y and X reconstructions and separate paper-compatible,
+sign-aligned unit-norm beta shape RMSEs for the two responses. `vary_H` additionally records
+the reconstructed variance of X and Y and reconstructed X--Y cross-covariance for each prefix.
+Aggregates retain compute-only `fit_seconds`, peak RAM, selected penalties, iteration counts,
+and monotonicity when available. The central `vary_n` setting also produces a representative
+beta-map panel with one truth-fixed colour range per response.
+
+## Commands
+
+```sh
+make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
+make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=vary_n
+make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=vary_H
+```

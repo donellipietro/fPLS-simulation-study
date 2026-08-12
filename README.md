@@ -1,110 +1,56 @@
 # fPLS Simulation Study
 
-This repository contains the submitted fPLS simulation design and additional
-diagnostic experiments. It follows the
-`fdaPDE-test-bench` architecture through canonical `stable` commit `89ba803`
-and uses the native `fdaPDE-cpp` implementation directly. The obsolete
-fPLS-R fitting bridge is not used.
+This repository contains the simulation experiments used for the fPLS paper and its reviewer
+diagnostics. Production runs use 30 replications per option cell and single-threaded fits.
 
-Generated dependencies, builds, data, queues, logs, results, figures, and
-local reports remain repository-local and ignored.
+## Experiment catalog
 
-## Test Suites
+| Suite | Families in `all` | Comparison |
+|---|---|---|
+| `1D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY` | MV-PLS, two B-fPLS variants, PB-fPLS, fPCR, and R1-fPLS on a curve with a scalar response |
+| `2D` | `vary_k`, `vary_n`, `vary_NSRX`, `vary_NSRY`, `vary_H` | MV-PLS, fPCR, and R1-fPLS on the unit square with two responses |
+| `GCV` | `sensitivity`, `sensitivity_high_NSRX`, `lambda_to_zero`, `small_lambda_m_gt_k`, `small_lambda_m_lt_k` | R1-fPLS tuning and numerical diagnostics in 1D |
+| `2D-predictive-order` | `vary_H` | MV-PLS, fPCR, and R1-fPLS when response-relevant components have low predictor variance |
 
-| Suite | Families | Purpose |
-| --- | --- | --- |
-| `1D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY` | Submitted curve simulations plus noise-sensitivity and fPCR comparisons |
-| `2D` | `vary_k`, `vary_n`, `vary_NSRX`, `vary_NSRY`, `vary_H` | Submitted spatial simulations plus noise and component-prefix comparisons |
-| `GCV` | sensitivity, large-sample, and near-zero-lambda families | Tuning behavior, cost, and numerical-stability diagnostics |
-| `2D-predictive-order` | `all` | Experimental comparison of variance-ordered fPCR and response-relevant fPLS components |
+The exact levels and fixed settings are documented in each suite README under `tests/`.
 
-Each suite has a scientific README under `tests/<suite>/README.md`. The
-standard 1D and 2D families use 30 replications in production. The GCV and
-predictive-order suites are separate diagnostic experiments.
+## Metrics
 
-## Methods
+The paper-facing 1D and 2D suites report RMSE against the noise-free response and predictor
+reconstructions. Regression-coefficient error is the RMSE between unit-Frobenius-norm beta
+shapes after choosing the sign that minimizes the error; the 2D suite reports this separately
+for both responses.
 
-The one-dimensional comparisons include MV-PLS, fPCR, B-fPLS with regression
-splines, B-fPLS with smoothing splines, PB-fPLS, and R1-fPLS. The spatial and
-predictive-order comparisons use MV-PLS, fPCR, and R1-fPLS.
+The two GCV sensitivity families additionally retain signed Frobenius cosine similarity for
+the cumulative beta estimate and absolute cosine similarity for each X direction, loading, and
+score. Components remain in extraction order. The predictive-order suite also reports the
+reconstructed variance of X and Y and reconstructed X--Y cross-covariance.
 
-R1-fPLS and fPCR call `<fdaPDE/models.h>` through direct C++ drivers. Thin R
-wrappers serialize inputs, invoke `cpp/run.sh`, validate outputs, and return
-the standard testbench model object. Competitor code is adapted from the
-corrected submitted implementation at historical design commit `7fb9172`.
+`fit_seconds` is compute-only: it covers method-specific preprocessing/tuning, fitting, and
+in-memory post-processing. It excludes data generation, result I/O, and accuracy evaluation.
+Peak RAM, selected penalties, iteration counts, and monotonicity diagnostics are retained when
+the fitted method supplies them.
 
-All iterative fits use `tol = 1e-8` and `max_iter = 1000`; native GCV uses
-seed `0`. The standard R1-fPLS and PB-fPLS tests use the shared `10^(-9:2)`
-grid, while the GCV sensitivity families use `10^(-9:-2)`. B-fPLS with
-smoothing splines retains its original `10^seq(-9, 2, by = 0.1)` grid.
+## Run commands
 
-## Native Dependency
+Prepare one runtime profile, then run a suite or an individual family:
 
-Runtime profiles select the repository-local fdaPDE clone on branch
-`develop_fPLS`. The native implementation is available at:
-
-- outer fdaPDE-cpp: `ecbf23ef37571174c438ab68c3d21d7ecd5cf18f`
-- fdaPDE/core gitlink: `1b75249a7b49ccee72cb94207a9dc5daaa21848c`
-
-Native telemetry records both commits for every fit. R competitors record the
-versions of the scientific packages used by their implementation.
-
-## Workflow
-
-Prepare the selected runtime profile:
-
-```bash
+```sh
 make build PROFILE=macbook
+make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
+make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
+make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=all
+make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
+
+# Example: one family only
+make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity
 ```
 
-Run reduced plumbing checks:
+Available profiles are `macbook`, `windows`, `hpc-slurm`, and `hpc-torque`. After all required
+production aggregations are present, regenerate every report CSV and compile the reviewer report:
 
-```bash
-SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
-SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
-SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=all
-SMOKE_TEST=1 make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
+```sh
+make review_report
 ```
 
-Omit `SMOKE_TEST=1` for the complete configured experiment. Individual
-families can replace `all`. Matching complete batches are skipped, and
-matching generated data are reused when a fit or evaluation must be refreshed.
-
-The available profiles are `macbook`, `windows`, `hpc-slurm`, and
-`hpc-torque`. The active profile owns compilers, dependency locations,
-execution strategy, threading, and scheduler resources; suite configuration
-owns the scientific design.
-
-The `hpc-torque` profile submits compilation and test jobs through Torque/PBS.
-Its resource requests can be overridden with the `PBS_*` and
-`PBS_COMPILE_*` variables; set `PBS_DRY_RUN=1` or `PBS_COMPILE_DRY_RUN=1` to
-preview submissions without scheduling jobs.
-
-## Outputs
-
-Batch results retain component-wise reconstructions, regression-coefficient
-estimates, selected penalties, objective histories, iteration counts,
-monotonicity flags, execution time, peak RAM, and implementation provenance.
-`fit_seconds` measures method-specific preprocessing and tuning, fitting, and
-in-memory post-processing. It excludes data generation, result serialization
-and loading, and accuracy evaluation.
-Aggregation validates the expected option cells and replications before
-writing quantitative figures, diagnostic CSV files, qualitative comparisons,
-and a standalone `legend.pdf` for each family.
-
-The primary metrics compare response and predictor reconstructions with their
-noise-free truths. All suites retain the sign-aligned, Frobenius-normalized beta
-shape error. The GCV sensitivity families additionally use signed Frobenius
-cosine similarity for beta and absolute cosine similarity for X directions,
-loadings, and scores. The 2D qualitative maps use the ParaView
-`Cool to Warm (Extended)` palette, include the domain boundary, and share the
-truth range within each row.
-
-## Generated Outputs
-
-The near-zero-lambda family is a numerical diagnostic: non-finite fits are
-recorded as failed observations rather than treated as successful estimates.
-Generated production outputs are intentionally not versioned. Aggregate
-`run_status.json` files retain operational completion, smoke-mode, output, and
-configuration metadata; paper-facing claims and acceptance decisions belong to
-the project integration record rather than these run artifacts.
+See [`reports/README.md`](reports/README.md) for the table-to-aggregate provenance matrix.
