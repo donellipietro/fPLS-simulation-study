@@ -1,5 +1,5 @@
 # = ========================================================================== =
-# - Script: native_wrapper.R
+# - Script: wrappers.R
 # - Desc: Thin file/process adapter around the native fdaPDE-cpp driver.
 # = ========================================================================== =
 

@@ -1,6 +1,6 @@
 # = ========================================================================== =
 # - Test: fPLS paper simulation on a 2D support
-# - Desc: Runs one option through MV-PLS and native R1-fPLS for all batches.
+# - Desc: Runs one option through MV-PLS, fPCR, and native R1-fPLS for all batches.
 # - Args:
 #   [1] name_main_test: one configured 2D family or group
 #   [2] file_options: one generated JSON option file

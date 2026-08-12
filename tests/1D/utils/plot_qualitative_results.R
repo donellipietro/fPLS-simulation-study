@@ -4,6 +4,11 @@
 # = ========================================================================== =
 
 qualitative_source_k_1d <- c(11L, 101L)
+# Preserve the model subset of the submitted qualitative panel. The axis range
+# still uses the full current catalog so regenerating the figure keeps its layout.
+qualitative_model_names_1d <- c(
+  "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS"
+)
 
 load_fitted_model <- function(file, model_name) {
   env <- new.env(parent = emptyenv())
@@ -67,9 +72,7 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
     points(data$locations[, 1], mv, col = "grey70", pch = 16, cex = 0.55)
 
     colors <- setNames(options$model_colors, options$model_names)
-    for (model_name in c(
-      "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS"
-    )) {
+    for (model_name in qualitative_model_names_1d[-1]) {
       lines(
         data$evaluation[observed_support, 1],
         estimates[[model_name]]$evaluation[observed_support],
