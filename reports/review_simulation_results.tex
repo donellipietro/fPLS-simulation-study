@@ -85,6 +85,17 @@
   \caption{#2}
   \end{figure}
 }
+\newcommand{\submittedpaperfigure}[2][]{%
+  \IfFileExists{#2}{%
+    \includegraphics[#1]{#2}%
+  }{%
+    \fbox{\parbox[c][3.4cm][c]{0.82\linewidth}{\centering
+      \textbf{\textcolor{red!70!black}{Asset esterno mancante}}\\[0.4em]
+      La figura estratta dal manoscritto non è inclusa nel repository.\\
+      Nessun risultato sostitutivo è mostrato.\\[0.35em]
+      \texttt{\detokenize{#2}}}}%
+  }%
+}
 \newcommand{\gcvtable}[3]{%
   \begin{table}[H]
   \centering
@@ -186,7 +197,7 @@ Le quattro simulazioni già nel paper mantengono lo stesso setting. Le modifiche
 \begin{figure}[H]
 \centering
 {\small\textbf{Versione sottomessa (Fig.~3).}\par}
-\includegraphics[width=0.78\linewidth]{paper_figure_crops/1d_vary_k.png}\par
+\submittedpaperfigure[width=0.78\linewidth]{paper_figure_crops/1d_vary_k.png}\par
 \vspace{0.35em}
 {\small\textbf{Output aggiornato.}\par}
 \begin{subfigure}[t]{0.32\linewidth}
@@ -215,7 +226,7 @@ differenza tra componenti ordinate per varianza e componenti predittive.}
 \begin{figure}[H]
 \centering
 {\small\textbf{Versione sottomessa (Fig.~4).}\par}
-\includegraphics[width=0.88\linewidth]{paper_figure_crops/1d_qualitative.png}\par
+\submittedpaperfigure[width=0.88\linewidth]{paper_figure_crops/1d_qualitative.png}\par
 \vspace{0.45em}
 {\small\textbf{Output aggiornato.}\par}
 \includegraphics[width=0.88\linewidth]{../images/1D/vary_k/qualitative_beta.pdf}
@@ -230,7 +241,7 @@ serve rigenerare l'immagine.}
 \begin{figure}[H]
 \centering
 {\small\textbf{Versione sottomessa (Fig.~5).}\par}
-\includegraphics[width=0.78\linewidth]{paper_figure_crops/1d_vary_n.png}\par
+\submittedpaperfigure[width=0.78\linewidth]{paper_figure_crops/1d_vary_n.png}\par
 \vspace{0.35em}
 {\small\textbf{Output aggiornato.}\par}
 \begin{subfigure}[t]{0.32\linewidth}
@@ -255,7 +266,7 @@ serve rigenerare l'immagine.}
 \begin{figure}[H]
 \centering
 {\small\textbf{Versione sottomessa (Fig.~S2).}\par}
-\includegraphics[width=0.78\linewidth]{paper_figure_crops/1d_vary_m.png}\par
+\submittedpaperfigure[width=0.78\linewidth]{paper_figure_crops/1d_vary_m.png}\par
 \vspace{0.35em}
 {\small\textbf{Output aggiornato.}\par}
 \begin{subfigure}[t]{0.32\linewidth}
@@ -280,7 +291,7 @@ serve rigenerare l'immagine.}
 \begin{figure}[H]
 \centering
 {\small\textbf{Versione sottomessa (Fig.~6).}\par}
-\includegraphics[width=0.82\linewidth]{paper_figure_crops/2d_qualitative.png}\par
+\submittedpaperfigure[width=0.82\linewidth]{paper_figure_crops/2d_qualitative.png}\par
 \vspace{0.45em}
 {\small\textbf{Output aggiornato.}\par}
 \includegraphics[width=0.82\linewidth]{../images/2D/vary_n/beta_representative.pdf}
@@ -292,7 +303,7 @@ serve rigenerare l'immagine.}
 \begin{figure}[H]
 \centering
 {\small\textbf{Versione sottomessa (Fig.~7).}\par}
-\includegraphics[width=0.82\linewidth]{paper_figure_crops/2d_vary_n.png}\par
+\submittedpaperfigure[width=0.82\linewidth]{paper_figure_crops/2d_vary_n.png}\par
 \vspace{0.35em}
 {\small\textbf{Output aggiornato.}\par}
 \begin{subfigure}[t]{0.32\linewidth}
