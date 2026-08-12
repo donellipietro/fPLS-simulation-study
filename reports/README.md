@@ -11,7 +11,12 @@ make review_report
 To refresh only the CSV snapshots, use `make review_tables`. For a focused plumbing check,
 `Rscript reports/generate_review_tables.R gcv design` accepts any combination of `gcv`,
 `design`, and `iterations`; the no-argument command used by Make requires all production
-inputs. Interpretive comments remain hand-written in the TeX and are never generated.
+inputs. Run `Rscript tests/smoke_generate_review_tables.R` for the temporary-fixture validation
+and atomicity smoke check.
+
+The tables and the metrics they display are generated and validated automatically. Numeric
+values embedded in prose and all interpretive comments remain hand-written in the TeX; this
+pipeline does not update or validate those narrative claims.
 
 ## Table provenance
 
@@ -27,10 +32,18 @@ inputs. Interpretive comments remain hand-written in the TeX and are never gener
 | GCV high-NSRX: the same six metrics | `tests/GCV/aggregate_results.R` → `loaded_sensitivity_high_NSRX.rds` | `gcv_tables/sensitivity_high_NSRX_{Y_reconstruction,X_reconstruction,Beta,X_direction,X_loading,X_scores}.csv` |
 
 `reports/generate_review_tables.R` is the only CSV writer in this chain. It selects the newest
-compatible aggregate under `aggregate/all`, the relevant grouped target, or the individual
-family; validates production completeness; and overwrites the committed CSV snapshots. The
-iteration tables report medians across every level and repetition in a family. A dash denotes a
-non-iterative method or unavailable iterative diagnostics.
+candidate under `aggregate/all`, the relevant grouped target, or the individual family and then
+fails closed unless its paired `run_status.json` is current, complete, non-smoke, schema-compatible,
+and coherent with the suite, target, and family. For GCV, schema 6, all 30 repetitions, beta RMSE,
+prefix truth, and the exact `-1, 0, 10^-9, ..., 10^-2` sensitivity grid are mandatory for both
+families. An invalid newest candidate is an error; it is never treated as schema 6 or silently
+replaced by an older candidate.
+
+Every requested CSV is generated below one staging directory. Existing snapshots are replaced
+only after every requested section has succeeded, with rollback on an installation error. The
+iteration tables report medians across every level and repetition in a family. A dash denotes an
+explicitly non-iterative method; missing fPCR or R1-fPLS iteration/monotonicity diagnostics are an
+error.
 
 ## GCV outputs used by the report
 
@@ -46,4 +59,6 @@ plots all of the following:
 The six paper figure crops under `reports/paper_figure_crops/` are external submitted-manuscript
 assets, not simulation outputs. Their original extraction script and source-PDF version are not
 stored in this repository, so exact regeneration of those six comparison images remains an
-evidence gap.
+evidence gap. When a crop is absent, the TeX compiles with a red `Asset esterno mancante`
+placeholder that states that no substitute result is being shown; when the crop is supplied at
+the expected path, the report uses it automatically. The PNG files remain untracked.

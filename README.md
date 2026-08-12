@@ -53,4 +53,10 @@ production aggregations are present, regenerate every report CSV and compile the
 make review_report
 ```
 
-See [`reports/README.md`](reports/README.md) for the table-to-aggregate provenance matrix.
+The CSV-backed tables and metrics are regenerated automatically; prose-level numeric claims and
+interpretive comments in the TeX remain manual. See [`reports/README.md`](reports/README.md) for
+the table-to-aggregate provenance and validation contract.
+
+For the complete Kami campaign, use the dedicated single-job Torque/PBS workflow documented in
+[`KAMI_TORQUE_RUNBOOK.md`](KAMI_TORQUE_RUNBOOK.md). It builds once and runs `1D/all`, `2D/all`,
+`GCV/all`, and `2D-predictive-order/all` serially; it does not use the generic PBS array runner.
