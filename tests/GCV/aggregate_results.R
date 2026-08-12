@@ -34,6 +34,13 @@ if (any(!families %in% test_groups$all)) stop("unknown GCV diagnostic family")
 cfg <- load_config()
 aggregate_dir <- file.path(cfg$PATH_RESULTS, test_suite, "aggregate", requested)
 dir.create(aggregate_dir, recursive = TRUE, showWarnings = FALSE)
+status_file <- file.path(aggregate_dir, "run_status.json")
+if (file.exists(status_file) && unlink(status_file) != 0L) {
+  stop("cannot invalidate the previous GCV run status")
+}
+staging_dir <- tempfile(".aggregate_staging_", tmpdir = aggregate_dir)
+dir.create(staging_dir)
+on.exit(unlink(staging_dir, recursive = TRUE), add = TRUE)
 all_diagnostics <- list()
 diagnostic_outputs <- list()
 
@@ -179,7 +186,6 @@ for (family in families) {
   }
 
   loaded <- load_all_quantitiative_results(path_list, family)
-  saveRDS(loaded, file.path(aggregate_dir, glue::glue("loaded_{family}.rds")))
   image_dir <- file.path(cfg$PATH_IMAGES, test_suite, family)
   dir.create(image_dir, recursive = TRUE, showWarnings = FALSE)
   prefix_sensitivity <- family %in% sensitivity_families
@@ -258,10 +264,14 @@ for (family in families) {
     horiz = TRUE, bty = "n"
   )
   dev.off()
+
+  # Stage only after every metric and plot for this family has validated.
+  saveRDS(loaded, file.path(staging_dir, glue::glue("loaded_{family}.rds")))
 }
 
 diagnostics <- dplyr::bind_rows(all_diagnostics)
 write.csv(diagnostics, file.path(aggregate_dir, "all_diagnostics.csv"), row.names = FALSE)
+staged_status <- file.path(staging_dir, "run_status.json")
 write_json(
   list(
     schema_version = 6L,
@@ -281,8 +291,21 @@ write_json(
       -300, -200, -100, seq(-50, -30, by = 2), -20:-9
     )
   ),
-  file.path(aggregate_dir, "run_status.json"),
+  staged_status,
   auto_unbox = TRUE,
   pretty = TRUE
 )
+for (family in families) {
+  destination <- file.path(aggregate_dir, glue::glue("loaded_{family}.rds"))
+  staged <- file.path(staging_dir, glue::glue("loaded_{family}.rds"))
+  if (file.exists(destination) && unlink(destination) != 0L) {
+    stop(glue::glue("cannot replace the previous GCV aggregate: {destination}"))
+  }
+  if (!file.rename(staged, destination)) {
+    stop(glue::glue("cannot publish validated GCV aggregate: {destination}"))
+  }
+}
+if (!file.rename(staged_status, status_file)) {
+  stop("cannot publish the validated GCV run status")
+}
 cat(glue::glue("Aggregated {length(families)} complete GCV diagnostic families.\n"))
