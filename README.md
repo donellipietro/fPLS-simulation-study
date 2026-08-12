@@ -14,8 +14,8 @@ local reports remain repository-local and ignored.
 | Suite | Families | Purpose |
 | --- | --- | --- |
 | `1D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY` | Submitted curve simulations plus noise-sensitivity and fPCR comparisons |
-| `2D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY`, `vary_H` | Submitted spatial simulations plus noise and component-prefix comparisons |
-| `GCV` | sensitivity, competitor, large-sample, and near-zero-lambda families | Tuning behavior, cost, and numerical-stability diagnostics |
+| `2D` | `vary_k`, `vary_n`, `vary_NSRX`, `vary_NSRY`, `vary_H` | Submitted spatial simulations plus noise and component-prefix comparisons |
+| `GCV` | sensitivity, large-sample, and near-zero-lambda families | Tuning behavior, cost, and numerical-stability diagnostics |
 | `2D-predictive-order` | `all` | Experimental comparison of variance-ordered fPCR and response-relevant fPLS components |
 
 Each suite has a scientific README under `tests/<suite>/README.md`. The

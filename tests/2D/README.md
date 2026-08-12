@@ -6,8 +6,8 @@ responses. The final latent predictor component receives the severe-noise
 condition used in the submitted study.
 
 The suite compares multivariate PLS, fPCR, and R1-fPLS while varying the spatial
-mesh resolution (`vary_k`), number of statistical units (`vary_n`), or number
-of observed spatial locations (`vary_m`). The `vary_NSRX` and `vary_NSRY`
+mesh resolution (`vary_k`) or number of statistical units (`vary_n`). The
+`vary_NSRX` and `vary_NSRY`
 families vary one noise level while fixing `n = 100`, `m = 1600`, and
 `k = 900`. The `vary_H` family fits five components once and reports the
 reconstruction trajectory from one through five retained components, together

@@ -3,8 +3,6 @@
 # - Desc: Generates the one-dimensional GCV diagnostic experiment families.
 # = ========================================================================== =
 
-source("tests/1D/utils/generate_options.R")
-
 gcv_model_catalog <- function() {
   list(
     names = "R1_fPLS",
@@ -21,7 +19,6 @@ lambda_level_name <- function(lambda) {
 
 standard_lambda_grid <- 10^(-9:2)
 sensitivity_lambda_grid <- 10^(-9:-2)
-component_lambda_grid <- if (SMOKE_TEST) c(1e-6, 1) else standard_lambda_grid
 
 ## Function: generate_options ----
 # - Args:
@@ -36,13 +33,11 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
     stop(glue::glue("The test {name_main_test} does not exist"))
   }
 
-  competitor_reference <- endsWith(name_main_test, "_competitors")
   high_NSRX <- grepl("high_NSRX", name_main_test, fixed = TRUE)
-  componentwise_sensitivity <- identical(name_main_test, "sensitivity_componentwise")
   prefix_sensitivity <- name_main_test %in% c(
     "sensitivity", "sensitivity_high_NSRX"
   )
-  models <- if (competitor_reference) paper_model_catalog() else gcv_model_catalog()
+  models <- gcv_model_catalog()
   near_zero_grid <- 10^c(-300, -200, -100, -50, -30, -20:-9)
   refined_m_lt_k_grid <- 10^c(-300, -200, -100, seq(-50, -30, by = 2), -20:-9)
   n_reps <- if (SMOKE_TEST) 1L else 30L
@@ -50,27 +45,10 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
 
   ## Family-specific dimensions and varying levels ----
   switch(name_main_test,
-    sensitivity_componentwise = {
-      varying <- c("lambda_1", "lambda_2")
-      lambda <- -1
-      lambda_1 <- c(-1, 0, component_lambda_grid)
-      lambda_2 <- c(-1, 0, component_lambda_grid)
-      n_stat_units <- 100L
-      n_locs <- 200L
-      source_k <- 51L
-    },
     sensitivity =,
     sensitivity_high_NSRX = {
       varying <- "lambda"
       lambda <- if (SMOKE_TEST) c(-1, 0, 1e-6) else c(-1, 0, sensitivity_lambda_grid)
-      n_stat_units <- 100L
-      n_locs <- 200L
-      source_k <- 51L
-    },
-    sensitivity_competitors =,
-    sensitivity_high_NSRX_competitors = {
-      varying <- "benchmark"
-      lambda <- -1
       n_stat_units <- 100L
       n_locs <- 200L
       source_k <- 51L
@@ -104,7 +82,6 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
     model_labels = models$labels,
     model_colors = models$colors,
     cpp_script = test_suite,
-    benchmark = 1L,
     test_options = list(
       n_reps = n_reps,
       varying_options = varying,
@@ -113,7 +90,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
     ),
     model = list(
       dimension = 1L,
-      n_comp = if (componentwise_sensitivity) 2L else 4L,
+      n_comp = 4L,
       center = FALSE,
       discretization = "spline"
     ),
@@ -143,48 +120,21 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       max_iter = 1000L,
       tolerance = 1e-8
     ),
-    competitors = list(
-      basis_k = 11L,
-      smoothing_lambda_grid = if (SMOKE_TEST) c(1e-4, 1e-2) else 10^seq(-9, 2, by = 0.1),
-      pb_lambda_grid = standard_lambda_grid,
-      pb_cv_folds = 5L
-    ),
     provenance = list(
       models_in_run = models$names,
-      comparator_scope = if (componentwise_sensitivity) {
-        "R1_fPLS_componentwise_equal_direction_loading_schedule"
-      } else if (competitor_reference) {
-        "own_calibration_reference_at_fixed_DGP"
-      } else {
-        "R1_fPLS_common_lambda_sweep"
-      },
+      comparator_scope = "R1_fPLS_common_lambda_sweep",
       smoke_test = SMOKE_TEST
     )
   )
 
-  if (componentwise_sensitivity) {
-    options$data$n_true_comp <- 4L
-  }
-  if (componentwise_sensitivity || prefix_sensitivity) {
+  if (prefix_sensitivity) {
     options$evaluation <- list(truth_target = "prefix")
-  }
-  if (componentwise_sensitivity) {
-    options$regularization$lambda_1 <- lambda_1
-    options$regularization$lambda_2 <- lambda_2
   }
 
   name_fun <- function(opts_i, comb_row) {
-    if (componentwise_sensitivity) {
-      return(glue::glue(
-        "{name_main_test}_lambda_1_{lambda_level_name(comb_row$lambda_1)}_",
-        "lambda_2_{lambda_level_name(comb_row$lambda_2)}"
-      ))
-    }
     value <- comb_row[[varying]]
     level <- if (varying == "lambda") {
       lambda_level_name(value)
-    } else if (varying == "benchmark") {
-      "own_calibration"
     } else {
       sprintf("%05d", as.integer(value))
     }
@@ -192,41 +142,16 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
   }
   options_list <- explode_options(options, by = varying, name_fun = name_fun)
 
-  if (componentwise_sensitivity) {
-    options_list <- Filter(function(opts_i) {
-      lambda_1_i <- opts_i$regularization$lambda_1
-      lambda_2_i <- opts_i$regularization$lambda_2
-      (lambda_1_i > 0 && lambda_2_i > 0) ||
-        (lambda_1_i == lambda_2_i && lambda_1_i %in% c(-1, 0))
-    }, options_list)
-  }
-
   for (i in seq_along(options_list)) {
-    if (componentwise_sensitivity) {
-      lambda_1_i <- options_list[[i]]$regularization$lambda_1
-      lambda_2_i <- options_list[[i]]$regularization$lambda_2
-      value <- lambda_1_i
-      if (value > 0) {
-        schedule <- c(lambda_1_i, lambda_2_i)
-        options_list[[i]]$regularization$lambda <- schedule
-        options_list[[i]]$regularization$fixed_direction_lambda <- schedule
-        options_list[[i]]$regularization$fixed_loading_lambda <- schedule
-      } else {
-        options_list[[i]]$regularization$lambda <- value
-      }
-    } else {
-      value <- options_list[[i]]$regularization$lambda
-    }
+    value <- options_list[[i]]$regularization$lambda
     if (value == -1) {
       options_list[[i]]$regularization$calibration <- "gcv"
     } else if (value == 0) {
       options_list[[i]]$regularization$calibration <- "multivariate"
     } else {
       options_list[[i]]$regularization$calibration <- "fixed"
-      if (!componentwise_sensitivity) {
-        options_list[[i]]$regularization$fixed_direction_lambda <- value
-        options_list[[i]]$regularization$fixed_loading_lambda <- value
-      }
+      options_list[[i]]$regularization$fixed_direction_lambda <- value
+      options_list[[i]]$regularization$fixed_loading_lambda <- value
     }
   }
   write_options_json(options_list, dir = path_queue, name_field = "name_test")

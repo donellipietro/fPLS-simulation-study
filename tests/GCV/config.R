@@ -9,8 +9,7 @@ test_suite <- "GCV"
 
 ## Tests included in the grouped all target ----
 sensitivity_families <- c(
-  "sensitivity", "sensitivity_componentwise", "sensitivity_competitors",
-  "sensitivity_high_NSRX", "sensitivity_high_NSRX_competitors"
+  "sensitivity", "sensitivity_high_NSRX"
 )
 test_groups <- list(
   sensitivity_review = sensitivity_families,
