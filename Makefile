@@ -2,6 +2,7 @@
 # Define commands ----
 SHELL := /bin/bash
 RSCRIPT ?= Rscript
+LATEXMK ?= latexmk
 
 ACTIVE_ENV_PROFILE := $(strip $(shell if [ -f .env ]; then set -a; . ./.env >/dev/null 2>&1; printf '%s' "$$TESTBENCH_PROFILE"; fi))
 REQUESTED_PROFILE := $(strip $(PROFILE))
@@ -84,7 +85,7 @@ COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
         ensure_env \
         compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
-        run_test inspect_results
+        run_test inspect_results review_tables review_report
 
 
 all: build
@@ -359,6 +360,16 @@ run_test: ensure_env
 		SMOKE_TEST="$(SMOKE_TEST)" \
 		"$$runner" "$(TEST_SUITE)" "$(TEST_NAME)"; \
 	fi
+
+## Regenerate every CSV table consumed by the reviewer report
+review_tables: ensure_env
+	@set -a; source .env; set +a; \
+	SMOKE_TEST=0 $(RSCRIPT) reports/generate_review_tables.R
+
+## Regenerate reviewer tables and compile the reviewer report
+review_report: review_tables
+	@cd reports && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error \
+		review_simulation_results.tex
 
 ## Inspect results of a specific test interactively
 # Usage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>

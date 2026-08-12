@@ -3,6 +3,8 @@
 # - Desc: Produces the submitted k=11/k=101 beta comparison when available.
 # = ========================================================================== =
 
+qualitative_source_k_1d <- c(11L, 101L)
+
 load_fitted_model <- function(file, model_name) {
   env <- new.env(parent = emptyenv())
   load(file, envir = env)
@@ -12,7 +14,7 @@ load_fitted_model <- function(file, model_name) {
 plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
   selected <- family_options[vapply(family_options, function(options) {
     !isTRUE(options$test_options$smoke_test) &&
-      options$dimensions$source_k %in% c(11L, 101L)
+      options$dimensions$source_k %in% qualitative_source_k_1d
   }, logical(1))]
   if (length(selected) != 2L) return(FALSE)
   selected <- selected[order(vapply(selected, function(x) x$dimensions$source_k, integer(1)))]

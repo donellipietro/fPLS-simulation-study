@@ -48,22 +48,7 @@ valutazione.}
 \caption{Proposta per la Fig.~3: legend sotto i pannelli, fit time in basso a destra.}
 \end{figure}
 
-{\footnotesize
-\begin{center}
-\begin{tabular}{lccccc}
-\toprule
-Metodo & $h=1$ & $h=2$ & $h=3$ & $h=4$ & Fit monotono \\
-\midrule
-MV-PLS & -- & -- & -- & -- & -- \\
-B-fPLS (Regression Splines) & -- & -- & -- & -- & -- \\
-B-fPLS (Smoothing Splines) & -- & -- & -- & -- & -- \\
-PB-fPLS & -- & -- & -- & -- & -- \\
-fPCR & 3 & 5 & 4.5 & 3 & 100\% \\
-R1-fPLS & 2 & 2 & 2 & 2 & 100\% \\
-\bottomrule
-\end{tabular}
-\end{center}
-\par}
+\reviewiterationtable{review_tables/1D_vary_k_iterations.csv}
 
 \notebox{La figura riporta il fit time al variare di $k$. B-fPLS con smoothing splines è il
 metodo più costoso: effettua il pre-smoothing separatamente per ciascuna osservazione e usa una
@@ -96,22 +81,7 @@ splines e MV-PLS restano più leggeri in una parte dell'intervallo.}
 \caption{Proposta per la Fig.~5: legend sotto i pannelli, fit time in basso a destra.}
 \end{figure}
 
-{\footnotesize
-\begin{center}
-\begin{tabular}{lccccc}
-\toprule
-Metodo & $h=1$ & $h=2$ & $h=3$ & $h=4$ & Fit monotono \\
-\midrule
-MV-PLS & -- & -- & -- & -- & -- \\
-B-fPLS (Regression Splines) & -- & -- & -- & -- & -- \\
-B-fPLS (Smoothing Splines) & -- & -- & -- & -- & -- \\
-PB-fPLS & -- & -- & -- & -- & -- \\
-fPCR & 3 & 5 & 4 & 3 & 100\% \\
-R1-fPLS & 2 & 2 & 2 & 2 & 100\% \\
-\bottomrule
-\end{tabular}
-\end{center}
-\par}
+\reviewiterationtable{review_tables/1D_vary_n_iterations.csv}
 
 \notebox{Qui R1-fPLS e fPCR usano la discretizzazione con 51 nodi, mentre B-fPLS e
 PB-fPLS usano 11 nodi. R1-fPLS rimane comunque più veloce di PB-fPLS e di B-fPLS con
@@ -143,22 +113,7 @@ questo setting.}
 \caption{Proposta per la Fig.~S2: legend sotto i pannelli, fit time in basso a destra.}
 \end{figure}
 
-{\footnotesize
-\begin{center}
-\begin{tabular}{lccccc}
-\toprule
-Metodo & $h=1$ & $h=2$ & $h=3$ & $h=4$ & Fit monotono \\
-\midrule
-MV-PLS & -- & -- & -- & -- & -- \\
-B-fPLS (Regression Splines) & -- & -- & -- & -- & -- \\
-B-fPLS (Smoothing Splines) & -- & -- & -- & -- & -- \\
-PB-fPLS & -- & -- & -- & -- & -- \\
-fPCR & 3.5 & 5 & 4 & 4 & 100\% \\
-R1-fPLS & 2 & 2 & 2 & 2 & 100\% \\
-\bottomrule
-\end{tabular}
-\end{center}
-\par}
+\reviewiterationtable{review_tables/1D_vary_m_iterations.csv}
 
 \notebox{Anche in questo setting R1-fPLS e fPCR usano la discretizzazione con 51 nodi,
 mentre B-fPLS e PB-fPLS usano 11 nodi. R1-fPLS è più veloce di PB-fPLS e di B-fPLS con
@@ -189,19 +144,7 @@ smoothing splines, mentre B-fPLS con regression splines e MV-PLS restano più le
 \caption{Proposta per la Fig.~7: legend sotto i pannelli, fit time in basso a destra.}
 \end{figure}
 
-{\footnotesize
-\begin{center}
-\begin{tabular}{lccccc}
-\toprule
-Metodo & $h=1$ & $h=2$ & $h=3$ & $h=4$ & Fit monotono \\
-\midrule
-MV-PLS & -- & -- & -- & -- & -- \\
-fPCR & 4 & 3 & 4 & 3 & 100\% \\
-R1-fPLS & 3 & 6 & 3 & 3 & 100\% \\
-\bottomrule
-\end{tabular}
-\end{center}
-\par}
+\reviewiterationtable{review_tables/2D_vary_n_iterations.csv}
 
 \notebox{Nel confronto 2D il fit time di fPCR è inferiore a quello di R1-fPLS nel perimetro
 misurato. fPCR stima i loading, mentre R1-fPLS stima anche le direzioni e seleziona via GCV un

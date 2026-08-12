@@ -105,6 +105,37 @@
   \caption{#3}
   \end{table}
 }
+\newcommand{\reviewdesigntable}[1]{%
+  \begin{table}[H]
+  \centering
+  \small
+  \begin{tabular}{p{0.18\linewidth}p{0.72\linewidth}}
+  \toprule
+  \textbf{test suite / test} & \textbf{Setting nel paper} \\
+  \midrule
+  \csvreader[separator=pipe,head to column names,late after line=\\]{#1}{}{%
+    \texttt{\csvcoli} & \csvcolii
+  }
+  \bottomrule
+  \end{tabular}
+  \caption{Test della simulazione sottomessa e configurazioni attuali.}
+  \end{table}
+}
+\newcommand{\reviewiterationtable}[1]{%
+  {\footnotesize
+  \begin{center}
+  \begin{tabular}{lccccc}
+  \toprule
+  Metodo & $h=1$ & $h=2$ & $h=3$ & $h=4$ & Fit monotono \\
+  \midrule
+  \csvreader[head to column names,late after line=\\]{#1}{}{%
+    \csvcoli & \csvcolii & \csvcoliii & \csvcoliv & \csvcolv & \csvcolvi
+  }
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  \par}
+}
 \newcommand{\statusbox}[3]{%
   \vspace{0.35em}
   \noindent\fcolorbox{#1}{#2}{\parbox{0.94\linewidth}{#3}}%
@@ -146,25 +177,7 @@ Le quattro simulazioni già nel paper mantengono lo stesso setting. Le modifiche
   risultati sono compatibili, non identici punto per punto.
 \end{itemize}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{p{0.18\linewidth}p{0.72\linewidth}}
-\toprule
-\textbf{test suite / test} & \textbf{Setting nel paper} \\
-\midrule
-\texttt{1D/vary\_k} &
-$n=100$, $m=200$, $k=5,11,21,51,101$; qualitativo per $k=11,101$ \\
-\texttt{1D/vary\_n} &
-$n=50,100,200$, $m=200$; $k=51$ per R1-fPLS e $k=11$ per i competitor \\
-\texttt{1D/vary\_m} &
-$n=100$, $m=50,100,200$; $k=51$ per R1-fPLS e $k=11$ per i competitor \\
-\texttt{2D/vary\_n} &
-$n=50,100,200$, $m=1600$, $k=900$; qualitativo a $n=100$ \\
-\bottomrule
-\end{tabular}
-\caption{Test della simulazione sottomessa e configurazioni attuali.}
-\end{table}
+\reviewdesigntable{review_tables/submitted_design.csv}
 
 \subsection{\texttt{1D/vary\_k}: numero di nodi}
 
@@ -352,19 +365,7 @@ punti osservati.
 \caption{\texttt{2D/vary\_k}: accuratezza e costo al variare dei nodi della mesh.}
 \end{figure}
 
-{\footnotesize
-\begin{center}
-\begin{tabular}{lccccc}
-\toprule
-Metodo & $h=1$ & $h=2$ & $h=3$ & $h=4$ & Fit monotono \\
-\midrule
-MV-PLS & -- & -- & -- & -- & -- \\
-fPCR & 4 & 3 & 4 & 3 & 100\% \\
-R1-fPLS & 3 & 7 & 3 & 4 & 100\% \\
-\bottomrule
-\end{tabular}
-\end{center}
-\par}
+\reviewiterationtable{review_tables/2D_vary_k_iterations.csv}
 
 \goodbox{Come atteso, le ricostruzioni non sono influenzate dalla risoluzione della mesh una
 volta raggiunto un numero sufficiente di nodi per rappresentare i campi stimati. L'unico
@@ -561,7 +562,9 @@ Qui $|A|$ indica il numero di elementi di $A$.
 
 Si usa la RMSE per $(\widehat X_h,X_h^\star)$ e $(\widehat Y_h,Y_h^\star)$, il coseno di
 Frobenius con segno per $(\widehat\beta_h,\beta_h^\star)$ e il coseno in valore assoluto
-per le direzioni, i loading e gli score di $X$ del componente $h$.
+per le direzioni, i loading e gli score di $X$ del componente $h$. L'output aggregato conserva
+anche la shape-RMSE di $\beta_h$, allineata nel segno e normalizzata come nei test del paper;
+nelle tabelle di sensibilità qui sotto si riporta il coseno con segno.
 
 Nelle tabelle seguenti, per ogni componente il lambda fisso riportato è quello che produce la
 mediana minima per le RMSE e la mediana massima per le cosine similarity. Le colonne dei lambda
@@ -787,152 +790,6 @@ failure è gestita per valori più piccoli, quando il problema diventa numericam
 \decisionbox{Aggiungere nei supplementary: il solo test di stabilità a lambda piccoli,
 includendo la failure gestita per valori non finiti.}
 
-% moved to review_execution_time.tex at the start of Test aggiuntivi
-\iffalse
-\subsection{Fit time nelle figure del paper}
-
-\reviewcomment{Reviewer 3, comment 3}{
-Because this is a submission to Statistics and Computing, I think the computational side should
-be developed more explicitly. The paper explains the algorithmic structure and mentions
-implementation in an open-source C++ library, which is a real strength. However, the manuscript
-currently provides very little quantitative information on computational cost, scalability, or
-numerical behavior. This is especially important in the neuroimaging application, where the
-predictors live on a mesh with more than 36,000 nodes. At a minimum, I would like to see
-\reviewhighlight{additional reporting on runtime and, if possible, memory usage for the main
-experiments; number of iterations required for convergence; practical computational cost of
-GCV-based tuning; sensitivity of computation to the basis dimension or mesh resolution; and
-discussion of numerical stability when extracting several components.} Even a modest runtime
-or scaling study would substantially improve the paper for this journal.}
-
-\notebox{Come deciso, nelle figure quantitative già presenti nel paper la legend viene
-spostata sotto i pannelli e lo spazio liberato in basso a destra viene usato per
-l'fit time. La composizione mostrata qui è ancora provvisoria: sistemo le figure
-definitive una volta concordati i risultati da inserire.}
-
-\subsubsection{Fig.~3: \texttt{1D/vary\_k}}
-\begin{figure}[H]
-\centering
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_k/Y_reconstruction.pdf}
-\caption{RMSE $Y$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_k/X_reconstruction_locations.pdf}
-\caption{RMSE $X$.}
-\end{subfigure}
-\par\vspace{0.35em}
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_k/Beta1_locations.pdf}
-\caption{RMSE $\beta_1$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_k/fit_seconds.pdf}
-\caption{Fit time.}
-\end{subfigure}
-\par\vspace{0.15em}
-\modellegend
-\caption{Proposta per la Fig.~3: legend sotto i pannelli, fit time in basso a destra.}
-\end{figure}
-
-\notebox{La figura riporta il fit time al variare di $k$. B-fPLS con smoothing splines è il
-metodo più costoso: effettua il pre-smoothing separatamente per ciascuna osservazione e usa una
-griglia di $\lambda$ più ampia. Le implementazioni native R1-fPLS e fPCR sono più veloci di
-PB-fPLS e di B-fPLS con smoothing splines, con un vantaggio che cresce all'aumentare di $k$.
-B-fPLS con regression splines e MV-PLS restano più leggeri in una parte dell'intervallo.}
-
-\subsubsection{Fig.~5: \texttt{1D/vary\_n}}
-\begin{figure}[H]
-\centering
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_n/Y_reconstruction.pdf}
-\caption{RMSE $Y$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_n/X_reconstruction_locations.pdf}
-\caption{RMSE $X$.}
-\end{subfigure}
-\par\vspace{0.35em}
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_n/Beta1_locations.pdf}
-\caption{RMSE $\beta_1$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_n/fit_seconds.pdf}
-\caption{Fit time.}
-\end{subfigure}
-\par\vspace{0.15em}
-\modellegend
-\caption{Proposta per la Fig.~5: legend sotto i pannelli, fit time in basso a destra.}
-\end{figure}
-
-\notebox{Anche qui R1-fPLS e fPCR usano la discretizzazione con 51 basi, mentre B-fPLS e
-PB-fPLS usano 11 funzioni di base B-spline. Nonostante la rappresentazione più fine,
-R1-fPLS è più veloce di PB-fPLS e di B-fPLS con smoothing splines; B-fPLS con regression
-splines e MV-PLS restano più leggeri in questo setting.}
-
-\subsubsection{Fig.~S2: \texttt{1D/vary\_m}}
-\begin{figure}[H]
-\centering
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_m/Y_reconstruction.pdf}
-\caption{RMSE $Y$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_m/X_reconstruction_locations.pdf}
-\caption{RMSE $X$.}
-\end{subfigure}
-\par\vspace{0.35em}
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_m/Beta1_locations.pdf}
-\caption{RMSE $\beta_1$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/1D/vary_m/fit_seconds.pdf}
-\caption{Fit time.}
-\end{subfigure}
-\par\vspace{0.15em}
-\modellegend
-\caption{Proposta per la Fig.~S2: legend sotto i pannelli, fit time in basso a destra.}
-\end{figure}
-
-\notebox{Anche in questo setting R1-fPLS e fPCR usano la discretizzazione con 51 basi,
-mentre B-fPLS e PB-fPLS usano 11 funzioni di base B-spline. R1-fPLS rimane più veloce di
-PB-fPLS e di B-fPLS con smoothing splines; B-fPLS con regression splines e MV-PLS restano
-più leggeri.}
-
-\subsubsection{Fig.~7: \texttt{2D/vary\_n}}
-\begin{figure}[H]
-\centering
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/2D/vary_n/X_reconstruction_locations.pdf}
-\caption{RMSE $X$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/2D/vary_n/Beta1_locations.pdf}
-\caption{RMSE $\beta_1$.}
-\end{subfigure}
-\par\vspace{0.35em}
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/2D/vary_n/Beta2_locations.pdf}
-\caption{RMSE $\beta_2$.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/2D/vary_n/fit_seconds.pdf}
-\caption{Fit time.}
-\end{subfigure}
-\par\vspace{0.15em}
-\modellegendtwod
-\caption{Proposta per la Fig.~7: legend sotto i pannelli, fit time in basso a destra.}
-\end{figure}
-
-\notebox{Nel confronto 2D fPCR è il metodo funzionale più veloce perché stima solo i
-loading. R1-fPLS stima invece direzioni e loading e seleziona via GCV un $\lambda$ per entrambe
-le quantità a ogni componente; questo costo è visibile nel fit time.}
-
-\decisionbox{Aggiungere fit time nelle Fig.~3, Fig.~5, Fig.~S2 e Fig.~7, con la legend
-sotto i pannelli.}
-
-\fi
 \subsection{\texttt{2D/vary\_H}: numero di componenti estratte}
 
 \reviewcomment{Reviewer 2, comment 7}{

@@ -3,6 +3,12 @@
 # - Desc: Produces the submitted representative 2D beta maps when available.
 # = ========================================================================== =
 
+representative_beta_setting_2d <- list(
+  n_stat_units = 100L,
+  source_k = 900L,
+  n_locs = 1600L
+)
+
 load_fitted_model <- function(file, model_name) {
   env <- new.env(parent = emptyenv())
   load(file, envir = env)
@@ -12,9 +18,9 @@ load_fitted_model <- function(file, model_name) {
 plot_representative_beta_2d <- function(path_list, family_options, image_dir) {
   selected <- family_options[vapply(family_options, function(options) {
     !isTRUE(options$test_options$smoke_test) &&
-      options$dimensions$n_stat_units == 100L &&
-      options$dimensions$source_k == 900L &&
-      options$dimensions$n_locs == 1600L
+      options$dimensions$n_stat_units == representative_beta_setting_2d$n_stat_units &&
+      options$dimensions$source_k == representative_beta_setting_2d$source_k &&
+      options$dimensions$n_locs == representative_beta_setting_2d$n_locs
   }, logical(1))]
   if (length(selected) != 1L) return(FALSE)
   options <- selected[[1]]
