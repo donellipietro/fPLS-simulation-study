@@ -218,12 +218,12 @@ validate_gcv_selector <- function(data, label) {
 }
 
 validate_gcv_aggregate <- function(loaded, family) {
-  aggregate_families <- loaded$provenance$family$R1_fPLS
+  aggregate_families <- unname(as.character(loaded$provenance$family$R1_fPLS))
   expected_rows <- length(gcv_lambda_grid) * 30L
   expected_nsrx <- if (identical(family, "sensitivity_high_NSRX")) 10 else 3
-  aggregate_nsrx <- loaded$provenance$NSR_X_final_component$R1_fPLS
-  if (!identical(as.character(loaded$model_names), "R1_fPLS") ||
-      !identical(as.character(loaded$varying_options), "lambda") ||
+  aggregate_nsrx <- as.numeric(loaded$provenance$NSR_X_final_component$R1_fPLS)
+  if (!identical(unname(as.character(loaded$model_names)), "R1_fPLS") ||
+      !identical(unname(as.character(loaded$varying_options)), "lambda") ||
       is.null(aggregate_families) ||
       length(aggregate_families) != expected_rows ||
       any(is.na(aggregate_families) | aggregate_families != family) ||
