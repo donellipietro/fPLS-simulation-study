@@ -70,6 +70,13 @@ gcv_scalar <- function(value) {
 }
 
 gcv_loaded <- function(missing_beta_rmse = FALSE, incomplete_grid = FALSE) {
+  gcv_scalar_nsrx <- function(value) {
+    rows <- expand.grid(
+      lambda = gcv_grid[gcv_grid != 0], repetition = 1:30,
+      KEEP.OUT.ATTRS = FALSE
+    )
+    data.frame(Group = 1L, lambda = rows$lambda, R1_fPLS = value)
+  }
   loaded <- list(
     rmse = list(
       Y_reconstruction = gcv_metric(0.2),
@@ -87,7 +94,7 @@ gcv_loaded <- function(missing_beta_rmse = FALSE, incomplete_grid = FALSE) {
     truth_target = list(R1_fPLS = rep("prefix", length(gcv_grid) * 30L)),
     provenance = list(
       family = gcv_scalar("fixture"),
-      NSR_X_final_component = gcv_scalar(3)
+      NSR_X_final_component = gcv_scalar_nsrx(3)
     ),
     model_names = "R1_fPLS",
     varying_options = "lambda"

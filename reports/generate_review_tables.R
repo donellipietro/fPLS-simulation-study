@@ -221,14 +221,30 @@ validate_gcv_aggregate <- function(loaded, family) {
   aggregate_families <- unname(as.character(loaded$provenance$family$R1_fPLS))
   expected_rows <- length(gcv_lambda_grid) * 30L
   expected_nsrx <- if (identical(family, "sensitivity_high_NSRX")) 10 else 3
-  aggregate_nsrx <- as.numeric(loaded$provenance$NSR_X_final_component$R1_fPLS)
+  aggregate_nsrx <- loaded$provenance$NSR_X_final_component
+  expected_nsrx_lambdas <- gcv_lambda_grid[gcv_lambda_grid != 0]
+  nsrx_counts <- if (!is.null(aggregate_nsrx) &&
+                     all(c("lambda", "R1_fPLS") %in% names(aggregate_nsrx))) {
+    aggregate(
+      aggregate_nsrx$R1_fPLS,
+      list(lambda = aggregate_nsrx$lambda),
+      length
+    )
+  } else {
+    data.frame(lambda = numeric(), x = integer())
+  }
   if (!identical(unname(as.character(loaded$model_names)), "R1_fPLS") ||
       !identical(unname(as.character(loaded$varying_options)), "lambda") ||
       is.null(aggregate_families) ||
       length(aggregate_families) != expected_rows ||
       any(is.na(aggregate_families) | aggregate_families != family) ||
-      is.null(aggregate_nsrx) || length(aggregate_nsrx) != expected_rows ||
-      any(!is.finite(aggregate_nsrx) | aggregate_nsrx != expected_nsrx)) {
+      is.null(aggregate_nsrx) ||
+      !same_numeric_grid(unique(aggregate_nsrx$lambda), expected_nsrx_lambdas) ||
+      nrow(aggregate_nsrx) != length(expected_nsrx_lambdas) * 30L ||
+      nrow(nsrx_counts) != length(expected_nsrx_lambdas) ||
+      any(nsrx_counts$x != 30L) ||
+      any(!is.finite(aggregate_nsrx$R1_fPLS) |
+          aggregate_nsrx$R1_fPLS != expected_nsrx)) {
     stop(sprintf("GCV aggregate family metadata does not match: %s", family))
   }
   metrics <- list(
