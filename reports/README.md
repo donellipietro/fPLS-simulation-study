@@ -58,9 +58,9 @@ plots all of the following:
 - absolute cosines for directions, loadings, and scores;
 - compute telemetry (`fit_seconds.pdf` and `peak_ram_mib.pdf`).
 
-The six paper figure crops under `reports/paper_figure_crops/` are external submitted-manuscript
-assets, not simulation outputs. Their original extraction script and source-PDF version are not
-stored in this repository, so exact regeneration of those six comparison images remains an
-evidence gap. When a crop is absent, the TeX compiles with a red `Asset esterno mancante`
-placeholder that states that no substitute result is being shown; when the crop is supplied at
-the expected path, the report uses it automatically. The PNG files remain untracked.
+The six original submitted-paper figures are expected under the ignored `reports/paper_figures/` directory.
+The expected files are `1d_test3.pdf`, `qualitative_1D.pdf`, `1d_test1.pdf`, `1d_test2.pdf`,
+`2d_beta.pdf`, and `2d_test1.pdf`. They are copied from the paper checkout for local report
+compilation, but are not simulation outputs and are not tracked here. If an original is absent,
+the TeX compiles with a red `Asset esterno mancante` placeholder that states that no substitute
+result is being shown.
