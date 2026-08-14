@@ -179,8 +179,10 @@ unlink(file.path(gcv_results, "GCV", "aggregate", "all"), recursive = TRUE)
 stale <- write_gcv_family(gcv_results, "sensitivity")
 Sys.setFileTime(stale$status, Sys.time())
 Sys.setFileTime(stale$aggregate, Sys.time() + 1)
-expect_failure(run_generator(gcv_results, gcv_reports, "gcv"), "predates the aggregate")
-assert_snapshots_unchanged(gcv_reports, gcv_relative, gcv_hashes)
+archive_order <- run_generator(gcv_results, gcv_reports, "gcv")
+assert(archive_order$status == 0L,
+       paste("Valid archived GCV fixtures failed:\n", archive_order$output))
+gcv_hashes <- seed_snapshots(gcv_reports, gcv_relative)
 
 write_gcv_family(gcv_results, "sensitivity", smoke_test = TRUE)
 expect_failure(run_generator(gcv_results, gcv_reports, "gcv"), "complete production run")

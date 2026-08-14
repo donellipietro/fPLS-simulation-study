@@ -33,11 +33,13 @@ pipeline does not update or validate those narrative claims.
 
 `reports/generate_review_tables.R` is the only CSV writer in this chain. It selects the newest
 candidate under `aggregate/all`, the relevant grouped target, or the individual family and then
-fails closed unless its paired `run_status.json` is current, complete, non-smoke, schema-compatible,
-and coherent with the suite, target, and family. For GCV, schema 6, all 30 repetitions, beta RMSE,
-prefix truth, and the exact `-1, 0, 10^-9, ..., 10^-2` sensitivity grid are mandatory for both
-families. An invalid newest candidate is an error; it is never treated as schema 6 or silently
-replaced by an older candidate.
+fails closed unless its paired `run_status.json` is present, complete, non-smoke, schema-compatible,
+and coherent with the suite, target, and family. File modification times are not used to pair the
+status with the aggregate: archive tools and cloud synchronization can rewrite those times without
+changing the validated contents. For GCV, schema 6, all 30 repetitions, beta RMSE, prefix truth,
+and the exact `-1, 0, 10^-9, ..., 10^-2` sensitivity grid are mandatory for both families. An
+invalid newest candidate is an error; it is never treated as schema 6 or silently replaced by an
+older candidate.
 
 Every requested CSV is generated below one staging directory. Existing snapshots are replaced
 only after every requested section has succeeded, with rollback on an installation error. The

@@ -94,10 +94,6 @@ aggregate_file <- function(suite, family, filename, groups = character()) {
   status_file <- file.path(dirname(selected), "run_status.json")
   error <- tryCatch({
     if (!file.exists(status_file)) stop("missing run_status.json")
-    mtimes <- file.info(c(selected, status_file))$mtime
-    if (any(is.na(mtimes)) || mtimes[2] < mtimes[1]) {
-      stop("run_status.json predates the aggregate artifact")
-    }
     status <- fromJSON(status_file, simplifyVector = TRUE)
     validate_run_status(status, suite, family, targets[selected_index])
     NULL
