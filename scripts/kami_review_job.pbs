@@ -47,7 +47,7 @@ printf 'Reviewer campaign job: %s\nHost: %s\nStarted: %s\n' \
   "${PBS_JOBID}" "$(hostname)" "${STARTED_AT}"
 
 CURRENT_STAGE="build"
-make --no-print-directory build PROFILE=hpc-torque
+FDAPDE_CPP_MANAGED=true make --no-print-directory build PROFILE=hpc-torque
 
 CURRENT_STAGE="compile_all"
 make --no-print-directory compile_all PROFILE=hpc-torque \
