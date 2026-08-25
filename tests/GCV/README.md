@@ -18,6 +18,12 @@ For the sensitivity families, GCV chooses direction and loading penalties separa
 component from `1e-9, ..., 1e-2`. `sensitivity_review` is a group containing the two sensitivity
 families; `all` contains all five families.
 
+For GCV-calibrated cells, each raw R1-fPLS output also saves one curve per component and update:
+`direction_gcv_h*.csv` and `loading_gcv_h*.csv`, both with `lambda,gcv` columns. Other test
+suites do not write these files. Aggregation also writes `*_direction_gcv_curves.pdf` and
+`*_loading_gcv_curves.pdf` in the corresponding `images/GCV/<family>/` directory. Each PDF has
+one panel per component and shows the median curve with its interquartile band across replications.
+
 ## Metrics and outputs
 
 The sensitivity families evaluate every fitted prefix against its matching noise-free prefix.

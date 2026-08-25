@@ -200,6 +200,8 @@ fit_native_model <- function(model_name, data, path_list, test_options) {
     fixed_direction_lambda = test_options$regularization$fixed_direction_lambda,
     fixed_loading_lambda = test_options$regularization$fixed_loading_lambda,
     lambda_grid = test_options$regularization$lambda_grid,
+    save_gcv_curves = identical(test_suite, "GCV") &&
+      identical(test_options$regularization$calibration, "gcv"),
     gcv_seed = test_options$regularization$gcv_seed,
     gcv_probes = test_options$regularization$gcv_probes,
     max_iter = test_options$regularization$max_iter,

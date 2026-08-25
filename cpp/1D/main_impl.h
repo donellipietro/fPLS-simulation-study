@@ -44,6 +44,19 @@ std::vector<double> lambda_schedule(const json& value, int n_comp, const char* n
     return schedule;
 }
 
+matrix_t gcv_curve_matrix(
+  const std::vector<double>& lambda_grid, const std::vector<double>& values) {
+    if (lambda_grid.size() != values.size()) {
+        throw std::runtime_error("GCV curve and lambda grid sizes do not agree");
+    }
+    matrix_t curve(lambda_grid.size(), 2);
+    for (std::size_t i = 0; i < lambda_grid.size(); ++i) {
+        curve(i, 0) = lambda_grid[i];
+        curve(i, 1) = values[i];
+    }
+    return curve;
+}
+
 #include "../include/fpcr_driver.h"
 
 template <typename Domain, typename Space, typename DirectionPenalty, typename LoadingPenalty>
@@ -59,6 +72,7 @@ int run_fpls(
     const int gcv_seed = params.at("gcv_seed").get<int>();
     const std::string calibration = params.at("calibration").get<std::string>();
     const std::vector<double> lambda_grid = params.at("lambda_grid").get<std::vector<double>>();
+    const bool save_gcv_curves = params.value("save_gcv_curves", false);
     const std::filesystem::path output_dir(params.at("output_dir").get<std::string>());
 
     if (params.at("center").get<bool>()) {
@@ -66,6 +80,9 @@ int run_fpls(
     }
     if (n_comp < 1 || max_iter < 1 || tolerance <= 0 || gcv_probes < 1) {
         throw std::runtime_error("invalid fPLS configuration");
+    }
+    if (save_gcv_curves && calibration != "gcv") {
+        throw std::runtime_error("GCV curves can only be saved for GCV calibration");
     }
     const std::vector<double> fixed_direction_lambdas = lambda_schedule(
       params.at("fixed_direction_lambda"), n_comp, "fixed_direction_lambda");
@@ -168,6 +185,30 @@ int run_fpls(
     write_csv(output_file(output_dir, "x_mean_locations.csv"), matrix_t::Zero(1, X.cols()));
     write_csv(output_file(output_dir, "y_mean.csv"), matrix_t::Zero(1, Y.cols()));
 
+    json gcv_curve_files = json::array();
+    if (save_gcv_curves) {
+        const auto& direction_gcv_values = model.direction_gcv_values();
+        const auto& loading_gcv_values = model.loading_gcv_values();
+        for (int h = 0; h < n_comp; ++h) {
+            const int component = h + 1;
+            const std::string direction_file = "direction_gcv_h" + std::to_string(component) + ".csv";
+            const std::string loading_file = "loading_gcv_h" + std::to_string(component) + ".csv";
+            write_csv(
+              output_file(output_dir, direction_file),
+              gcv_curve_matrix(lambda_grid, direction_gcv_values[h]),
+              std::vector<std::string>{"lambda", "gcv"});
+            write_csv(
+              output_file(output_dir, loading_file),
+              gcv_curve_matrix(lambda_grid, loading_gcv_values[h]),
+              std::vector<std::string>{"lambda", "gcv"});
+            gcv_curve_files.push_back(json{
+              {"component", component},
+              {"direction", direction_file},
+              {"loading", loading_file}
+            });
+        }
+    }
+
     for (int h = 0; h < n_comp; ++h) {
         write_csv(
           output_file(output_dir, "objective_history_h" + std::to_string(h + 1) + ".csv"),
@@ -197,7 +238,7 @@ int run_fpls(
     const double wall_seconds = std::chrono::duration<double>(serialization_end - wall_start).count();
     std::ofstream telemetry(output_file(output_dir, "telemetry.json"));
     telemetry << json {
-      {"schema_version", 4},
+      {"schema_version", save_gcv_curves ? 5 : 4},
       {"model", "R1_fPLS"},
       {"mode", "native_fdaPDE_cpp"},
       {"discretization", discretization},
@@ -215,6 +256,8 @@ int run_fpls(
       {"gcv_probes", gcv_probes},
       {"gcv_seed", gcv_seed},
       {"lambda_grid", lambda_grid},
+      {"save_gcv_curves", save_gcv_curves},
+      {"gcv_curve_files", gcv_curve_files},
       {"fixed_direction_lambda", params.at("fixed_direction_lambda")},
       {"fixed_loading_lambda", params.at("fixed_loading_lambda")},
       {"setup_seconds", setup_seconds},

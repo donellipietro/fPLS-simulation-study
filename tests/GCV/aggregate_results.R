@@ -93,6 +93,95 @@ validate_sensitivity_metrics <- function(loaded, family_options) {
   }
 }
 
+validate_gcv_curves <- function(raw_dir, options) {
+  expected_lambda <- as.numeric(options$regularization$lambda_grid)
+  for (prefix in c("direction", "loading")) {
+    for (component in seq_len(options$model$n_comp)) {
+      curve <- suppressWarnings(read.csv(
+        file.path(raw_dir, glue::glue("{prefix}_gcv_h{component}.csv")),
+        check.names = FALSE
+      ))
+      if (!identical(names(curve), c("lambda", "gcv")) ||
+          nrow(curve) != length(expected_lambda) ||
+          !isTRUE(all.equal(curve$lambda, expected_lambda)) ||
+          any(!is.finite(curve$gcv))) {
+        stop(glue::glue("invalid {prefix} GCV curve for component {component}"))
+      }
+    }
+  }
+}
+
+load_gcv_curves <- function(path_list, family, options) {
+  if (!identical(options$regularization$calibration, "gcv")) {
+    return(data.frame())
+  }
+
+  curves <- list()
+  index <- 1L
+  for (batch_index in seq_len(options$test_options$n_reps)) {
+    raw_dir <- file.path(
+      path_list$results, family, options$name_test,
+      glue::glue("batch_{batch_index}"), "raw", "R1_fPLS"
+    )
+    for (update in c("direction", "loading")) {
+      for (component in seq_len(options$model$n_comp)) {
+        curve <- read.csv(
+          file.path(raw_dir, glue::glue("{update}_gcv_h{component}.csv")),
+          check.names = FALSE
+        )
+        curves[[index]] <- transform(
+          curve,
+          batch = batch_index,
+          update = update,
+          component = factor(component, levels = seq_len(options$model$n_comp))
+        )
+        index <- index + 1L
+      }
+    }
+  }
+  dplyr::bind_rows(curves)
+}
+
+write_gcv_curve_plots <- function(curves, image_dir, name_test) {
+  if (!nrow(curves)) return(character())
+
+  summary <- curves |>
+    dplyr::group_by(update, component, lambda) |>
+    dplyr::summarise(
+      median_gcv = median(gcv),
+      lower_gcv = quantile(gcv, 0.25),
+      upper_gcv = quantile(gcv, 0.75),
+      .groups = "drop"
+    )
+
+  output_files <- character()
+  for (update in c("direction", "loading")) {
+    plot_data <- dplyr::filter(summary, .data$update == update)
+    output_file <- file.path(
+      image_dir, glue::glue("{name_test}_{update}_gcv_curves.pdf")
+    )
+    plot <- ggplot(plot_data, aes(x = lambda, y = median_gcv)) +
+      geom_ribbon(
+        aes(ymin = lower_gcv, ymax = upper_gcv),
+        fill = "#377EB8", alpha = 0.22
+      ) +
+      geom_line(colour = "#377EB8", linewidth = 0.6) +
+      geom_point(colour = "#377EB8", size = 1.5) +
+      scale_x_log10() +
+      facet_wrap(~ component, scales = "free_y", nrow = 1L) +
+      labs(
+        x = expression(lambda),
+        y = "GCV criterion",
+        title = paste("GCV curves for", update, "updates")
+      ) +
+      theme_bw(base_size = 10) +
+      theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+    ggsave(output_file, plot, width = 9, height = 3, units = "in")
+    output_files <- c(output_files, output_file)
+  }
+  output_files
+}
+
 ## Load, validate, and plot every family ----
 for (family in families) {
   path_list <- create_paths(test_suite)
@@ -133,14 +222,26 @@ for (family in families) {
           "direction_lambdas.csv", "loading_lambdas.csv",
           paste0("objective_history_h", seq_len(options$model$n_comp), ".csv")
         )
+        if (identical(options$regularization$calibration, "gcv")) {
+          raw_required <- c(
+            raw_required,
+            paste0("direction_gcv_h", seq_len(options$model$n_comp), ".csv"),
+            paste0("loading_gcv_h", seq_len(options$model$n_comp), ".csv")
+          )
+        }
         if (any(!file.exists(file.path(raw_dir, raw_required)))) {
           stop(glue::glue("incomplete native diagnostics for {options$name_test}/batch_{batch_index}"))
         }
+        if (identical(options$regularization$calibration, "gcv")) {
+          validate_gcv_curves(raw_dir, options)
+        }
         telemetry <- fromJSON(file.path(raw_dir, "telemetry.json"))
-        if (!identical(telemetry$schema_version, 4L) ||
+        expected_schema <- if (identical(options$regularization$calibration, "gcv")) 5L else 4L
+        if (!identical(telemetry$schema_version, expected_schema) ||
             !identical(telemetry$model, "R1_fPLS") ||
             !identical(telemetry$mode, "native_fdaPDE_cpp") ||
             !identical(telemetry$calibration, options$regularization$calibration) ||
+            !identical(telemetry$save_gcv_curves, identical(options$regularization$calibration, "gcv")) ||
             telemetry$max_iter != 1000L || telemetry$tolerance != 1e-8) {
           stop("native diagnostic settings do not match the GCV suite")
         }
@@ -203,6 +304,16 @@ for (family in families) {
   )
   all_diagnostics[[family]] <- diagnostics$rows
   diagnostic_outputs[[family]] <- diagnostics$plots
+
+  gcv_curve_outputs <- unlist(lapply(
+    family_options,
+    function(options) {
+      write_gcv_curve_plots(
+        load_gcv_curves(path_list, family, options), image_dir, options$name_test
+      )
+    }
+  ), use.names = FALSE)
+  diagnostic_outputs[[family]]$gcv_curves <- gcv_curve_outputs
 
   plot_specs <- if (prefix_sensitivity) {
     validate_sensitivity_metrics(loaded, family_options)
