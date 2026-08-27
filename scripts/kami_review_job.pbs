@@ -30,15 +30,6 @@ finish() {
 }
 trap finish EXIT
 
-if [[ -n "${PBS_NODEFILE:-}" && -r "${PBS_NODEFILE}" ]]; then
-  ALLOCATED_SLOTS="$(wc -l < "${PBS_NODEFILE}" | tr -d '[:space:]')"
-  if [[ "${ALLOCATED_SLOTS}" =~ ^[0-9]+$ ]] &&
-      (( ALLOCATED_SLOTS < PBS_MULTI_CPUS )); then
-    echo "Error: PBS allocated ${ALLOCATED_SLOTS} slots, fewer than requested ${PBS_MULTI_CPUS}." >&2
-    exit 1
-  fi
-fi
-
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
