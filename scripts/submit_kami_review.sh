@@ -16,7 +16,7 @@ for name in PBS_MULTI_CPUS PBS_MULTI_MEM PBS_MULTI_TIME; do
   fi
 done
 if [[ ! "${PBS_MULTI_CPUS}" =~ ^[1-9][0-9]*$ ]]; then
-  echo "Error: PBS_MULTI_CPUS must be the positive number of cores on one complete node." >&2
+  echo "Error: PBS_MULTI_CPUS must be a positive core count." >&2
   exit 1
 fi
 if ! is_truthy "${PBS_DRY_RUN:-0}" && ! command -v qsub >/dev/null 2>&1; then
@@ -28,8 +28,12 @@ RUN_TAG="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 RUN_DIR="${PROJECT_DIR}/logs/kami/${RUN_TAG}"
 export KAMI_RUN_DIR="${RUN_DIR}"
 
-QSUB_ARGS=(-V -N fpls_review -o "${RUN_DIR}/job.out" -e "${RUN_DIR}/job.err")
-QSUB_ARGS+=(-l "nodes=1:ppn=${PBS_MULTI_CPUS}" -l "mem=${PBS_MULTI_MEM}")
+QSUB_ARGS=(-V -N fpls_simulations -o "${RUN_DIR}/job.out" -e "${RUN_DIR}/job.err")
+if [[ "${PBS_EXCLUSIVE_RESOURCE:-}" == place=* ]]; then
+  QSUB_ARGS+=(-l "select=1:ncpus=${PBS_MULTI_CPUS}:mem=${PBS_MULTI_MEM}")
+else
+  QSUB_ARGS+=(-l "nodes=1:ppn=${PBS_MULTI_CPUS}" -l "mem=${PBS_MULTI_MEM}")
+fi
 QSUB_ARGS+=(-l "walltime=${PBS_MULTI_TIME}")
 [[ -n "${PBS_QUEUE:-}" ]] && QSUB_ARGS+=(-q "${PBS_QUEUE}")
 [[ -n "${PBS_ACCOUNT:-}" ]] && QSUB_ARGS+=(-A "${PBS_ACCOUNT}")
