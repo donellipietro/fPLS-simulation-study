@@ -81,11 +81,13 @@ positive_log10_table <- function(table, model_names) {
 #   * file: target PDF path
 #   * title: plot title prefix
 #   * values_name: y-axis label
+#   * median_lines: overlay median trend lines on the boxplots
 # - Desc:
 #   Writes a standard aggregate plot when finite values are available.
 write_diagnostic_plot <- function(loaded, data, file, title, values_name,
                                   limits = NULL, horizontal_lines = NULL,
-                                  y_breaks = NULL) {
+                                  y_breaks = NULL, median_lines = FALSE,
+                                  group_labels = NULL) {
   if (!finite_model_values(data, loaded$model_names)) return(FALSE)
 
   pdf(file, width = 8, height = 5)
@@ -98,7 +100,9 @@ write_diagnostic_plot <- function(loaded, data, file, title, values_name,
       loglog = FALSE, normalized = FALSE
     ),
     horizontal_lines = horizontal_lines,
-    y_breaks = y_breaks
+    y_breaks = y_breaks,
+    group_labels = group_labels,
+    median_lines = median_lines
   )
   TRUE
 }
@@ -114,7 +118,8 @@ write_diagnostic_plot <- function(loaded, data, file, title, values_name,
 #   Writes telemetry/lambda CSV rows and family diagnostic plots.
 write_family_diagnostics <- function(
     loaded, family, aggregate_dir, image_dir,
-    lambda_limits = lambda_log10_limits, lambda_breaks = lambda_log10_grid) {
+    lambda_limits = lambda_log10_limits, lambda_breaks = lambda_log10_grid,
+    fit_time_median_lines = TRUE) {
   scalar_diagnostics <- c(
     fit_seconds = "Fit time (s)",
     peak_ram_mib = "Peak RAM (MiB)"
@@ -156,10 +161,26 @@ write_family_diagnostics <- function(
 
   plot_status <- list()
   for (name in names(scalar_diagnostics)) {
+    plot_data <- loaded[[name]]
+    values_name <- scalar_diagnostics[[name]]
+    group_labels <- NULL
+    if (identical(name, "fit_seconds") && !is.null(plot_data)) {
+      plot_data <- positive_log10_table(plot_data, loaded$model_names)
+      values_name <- "log10(Fit time (s))"
+      if (identical(loaded$varying_options[1], "lambda")) {
+        lambda <- sort(unique(plot_data$lambda))
+        group_labels <- ifelse(
+          lambda == -1, "GCV",
+          ifelse(lambda == 0, "MV-PLS", formatC(lambda, format = "e", digits = 0))
+        )
+      }
+    }
     plot_status[[name]] <- write_diagnostic_plot(
-      loaded, loaded[[name]],
+      loaded, plot_data,
       file.path(image_dir, glue::glue("{name}.pdf")),
-      scalar_diagnostics[[name]], scalar_diagnostics[[name]]
+      scalar_diagnostics[[name]], values_name,
+      median_lines = identical(name, "fit_seconds") && fit_time_median_lines,
+      group_labels = group_labels
     )
   }
   plot_status$iteration_count <- write_diagnostic_plot(

@@ -116,20 +116,20 @@
   \caption{#3}
   \end{table}
 }
-\newcommand{\reviewdesigntable}[1]{%
+\newcommand{\reviewdesigntable}[2][Test della simulazione sottomessa e configurazioni attuali.]{%
   \begin{table}[H]
   \centering
-  \small
-  \begin{tabular}{p{0.18\linewidth}p{0.72\linewidth}}
+  \footnotesize
+  \begin{tabular}{>{\raggedright\arraybackslash\ttfamily\scriptsize}p{0.29\linewidth}>{\raggedright\arraybackslash}p{0.61\linewidth}}
   \toprule
-  \textbf{test suite / test} & \textbf{Setting nel paper} \\
+  \textbf{\rmfamily test suite / test} & \textbf{\rmfamily Configurazione del test} \\
   \midrule
-  \csvreader[separator=pipe,head to column names,late after line=\\]{#1}{}{%
-    \texttt{\csvcoli} & \csvcolii
+  \csvreader[separator=pipe,head to column names,late after line=\\]{#2}{}{%
+    \csvcoli & \csvcolii
   }
   \bottomrule
   \end{tabular}
-  \caption{Test della simulazione sottomessa e configurazioni attuali.}
+  \caption{#1}
   \end{table}
 }
 \newcommand{\reviewiterationtable}[1]{%
@@ -215,7 +215,7 @@ Le quattro simulazioni già nel paper mantengono lo stesso setting. Le modifiche
 \caption{Confronto completo sul test che varia il numero di nodi.}
 \end{figure}
 
-\goodbox{I risultati quantitativi sono equivalenti a quelli sottomessi.}
+\goodbox{I risultati quantitativi sono coerenti, nelle principali tendenze, con quelli sottomessi.}
 
 \notebox{fPCR (verde) è molto competitivo in questo setting. La
 Sezione~\ref{sec:predictive-order} mostra uno scenario costruito per evidenziare la
@@ -259,7 +259,7 @@ serve rigenerare l'immagine.}
 \caption{Confronto completo sul test che varia $n$.}
 \end{figure}
 
-\goodbox{I risultati quantitativi sono equivalenti a quelli della versione sottomessa.}
+\goodbox{I risultati quantitativi sono coerenti, nelle principali tendenze, con quelli della versione sottomessa.}
 
 \subsection{\texttt{1D/vary\_m}: numero di location osservate}
 
@@ -284,7 +284,7 @@ serve rigenerare l'immagine.}
 \caption{Confronto completo sul test che varia $m$.}
 \end{figure}
 
-\goodbox{I risultati quantitativi sono equivalenti a quelli dei supplementary.}
+\goodbox{I risultati quantitativi sono coerenti, nelle principali tendenze, con quelli dei supplementary.}
 
 \subsection{\texttt{2D/vary\_n}: numero di soggetti}
 
@@ -321,9 +321,11 @@ serve rigenerare l'immagine.}
 \caption{Confronto quantitativo completo in 2D.}
 \end{figure}
 
-\goodbox{I risultati quantitativi sono equivalenti a quelli della versione sottomessa.}
+\goodbox{I risultati quantitativi sono coerenti, nelle principali tendenze, con quelli della versione sottomessa.}
 
 \section{Test aggiuntivi}
+
+\reviewdesigntable[Test aggiuntivi e relative configurazioni.]{review_tables/additional_design.csv}
 
 \input{review_execution_time.tex}
 
@@ -381,8 +383,6 @@ punti osservati.
 \goodbox{Come atteso, le ricostruzioni non sono influenzate dalla risoluzione della mesh una
 volta raggiunto un numero sufficiente di nodi per rappresentare i campi stimati. L'unico
 andamento sistematico è quello dei fit time.}
-
-\decisionbox{Quali risultati di questo test vogliamo riportare nel paper o nei supplementary?}
 
 \subsection{\texttt{1D/vary\_NSRX} e \texttt{1D/vary\_NSRY}: robustezza al rumore}
 
@@ -442,8 +442,6 @@ L'aumento di RMSE $X$ con $\mathrm{NSR}_X$ è atteso. Il fatto che $\beta_1$ dei
 regolarizzati resti stabile non impedisce a RMSE $Y$ di crescere: la predizione di $Y$ usa una
 $X$ più rumorosa e quindi ne è influenzata. Il comportamento al variare di
 $\mathrm{NSR}_Y$ è quello atteso.
-
-\decisionbox{Quali risultati vogliamo aggiungere al paper o ai supplementaries?}
 
 \subsection{\texttt{2D/vary\_NSRX} e \texttt{2D/vary\_NSRY}: robustezza al rumore}
 
@@ -513,8 +511,6 @@ effetto della sola simulazione 1D.
 stima regolarizzata al crescere del rumore in $X$, crescita degli errori di ricostruzione e
 risposta attesa al crescere del rumore in $Y$.}
 
-\decisionbox{Quali risultati vogliamo aggiungere al paper o ai supplementaries?}
-
 \subsection{\texttt{GCV/sensitivity} e \texttt{GCV/sensitivity\_high\_NSRX}}
 
 \reviewcomment{Reviewer 2, comment 6}{
@@ -543,18 +539,25 @@ journal, requests for additional simulation settings seem entirely reasonable.}
 penalizzazioni fissate e uguali per direzioni e loading. Il confronto è ripetuto nello scenario
 standard ($\mathrm{NSR}_X=3$) e con rumore alto in $X$ ($\mathrm{NSR}_X=10$), mantenendo
 $\mathrm{NSR}_Y=0.1$, $n=100$, $m=200$, $k=51$ e quattro componenti. La griglia è
-$10^{-9},\ldots,10^{-2}$. GCV seleziona invece una penalizzazione distinta per direzioni e
-loading a ogni componente, con seed 0 e 100 probe.
+$10^{-9},\ldots,10^{-2}$ e la selezione avviene mediante una ricerca discreta sui valori
+considerati. Dopo ogni deflazione la ricerca GCV viene ripetuta sulla cross-covarianza corrente,
+selezionando separatamente la penalizzazione per direzioni e loading, con seed 0 e 100 probe.
 
-Ciascun pannello, indicizzato da $h$, confronta il modello troncato ai primi $h$ componenti con
-la corrispondente verità simulata. In particolare, le ricostruzioni stimate
-$\widehat X_h$ e $\widehat Y_h$ sono confrontate con le ricostruzioni noise-free di verità
+Nelle implementazioni usate nei test, l'inizializzazione è la prima direzione singolare destra
+della cross-covarianza corrente. L'algoritmo si arresta quando due valori consecutivi
+dell'obiettivo soddisfano la tolleranza assoluta o relativa $10^{-8}$, oppure al raggiungimento
+di 1000 iterazioni. La sensibilità a inizializzazioni alternative e l'interazione tra tuning e
+deflazione sequenziale non sono valutate da questi esperimenti e restano questioni aperte.
+
+Ciascun pannello, indicizzato da $h$, confronta il modello troncato alle prime $h$ componenti con
+la corrispondente ground truth. In particolare, le ricostruzioni stimate
+$\widehat X_h$ e $\widehat Y_h$ sono confrontate con le ricostruzioni noise-free
 $X_h^\star$ e $Y_h^\star$; la stima cumulativa $\widehat\beta_h$ è confrontata con
-$\beta_h^\star$; infine, la direzione, il loading e lo score stimati del componente $h$ sono
-confrontati con le rispettive quantità di verità. L'ordine sequenziale dei componenti è
+$\beta_h^\star$; infine, la direzione, il loading e lo score stimati della componente $h$ sono
+confrontati con le rispettive ground truth. L'ordine sequenziale delle componenti è
 mantenuto senza permutation matching.
 
-Le metriche sono definite come segue. Per una matrice $A$ e la corrispondente verità $A^\star$,
+Le metriche sono definite come segue. Per una matrice $A$ e la corrispondente ground truth $A^\star$,
 
 \[
   \mathrm{RMSE}(A,A^\star) =
@@ -680,17 +683,6 @@ miglior valore fissato della griglia in tutti i prefissi. Il vantaggio rispetto 
 nei componenti successivi ed è particolarmente evidente per $X$, $\beta$, direzioni, loading e
 score quando il rumore in $X$ è alto.}
 
-\notebox{Sul MacBook usato per questi risultati, la mediana del fit time è circa
-$0.0163$ s per GCV, $0.0110$ s per MV-PLS e $0.0034$ s per un singolo fit nativo a
-$\lambda$ fissato, in entrambi gli scenari. GCV valuta 64 criteri (otto valori, due
-penalizzazioni e quattro componenti), inclusi i 100 probe. Il confronto GCV--fixed è diretto
-perché usa lo stesso driver e lo stesso perimetro temporale; il confronto assoluto con MV-PLS
-va interpretato come tempo dell'implementazione sulla macchina usata, perché MV-PLS è eseguito
-in R su dati già in memoria.}
-
-\decisionbox{Riportare i risultati di \texttt{sensitivity} e
-\texttt{sensitivity\_high\_NSRX}.}
-
 \subsection{\texttt{GCV/lambda\_to\_zero} e test a $\lambda$ molto piccolo}
 
 \reviewcomment{Reviewer 2, comment 6}{
@@ -748,7 +740,7 @@ numerica quando $\lambda$ diventa estremamente piccolo, nei casi $m>k$ e $m<k$.
 \end{figure}
 
 \warningbox{Il test non mostra una convergenza semplice e generale di GCV a zero nel range
-osservato. Non supporta una claim sulla convergenza di GCV a zero.}
+osservato. Non supporta il nostro claim sulla convergenza di $\lambda$ a zero.}
 
 \begin{figure}[H]
 \centering
@@ -798,9 +790,6 @@ Test a $\lambda$ molto piccolo quando $m<k$.}
 finiti fino a $10^{-300}$. Per $m<k$ il test è interamente finito da $10^{-42}$ in poi e la
 failure è gestita per valori più piccoli, quando il problema diventa numericamente non finito.}
 
-\decisionbox{Aggiungere nei supplementary: il solo test di stabilità a lambda piccoli,
-includendo la failure gestita per valori non finiti.}
-
 \subsection{\texttt{2D/vary\_H}: numero di componenti estratte}
 
 \reviewcomment{Reviewer 2, comment 7}{
@@ -813,6 +802,22 @@ criterion. In the real-data application, the authors retain $H=3$, but the selec
 is again not fully specified. I suggest adding a brief discussion of possible criteria for
 choosing $H$, such as cross-validation or explained covariance, and reporting how $H$ was
 chosen in the simulations and application.}
+
+\reviewcomment{Reviewer 3, comment 2}{
+The proposed methodology is coherent and well motivated, and I find the regularized rank-one
+construction appealing. However, the theoretical support for the actual penalized functional
+estimator remains limited relative to the breadth of the claims. The supplement provides derivations
+for the multivariate PLS characterization and for the operator representation, but I did not find
+formal statistical guarantees for the proposed R1-fPLS estimator itself, such as consistency, error
+bounds, or a clearer discussion of how discretization and regularization affect estimation accuracy.
+I am not necessarily asking for a full asymptotic theory if that is beyond the intended scope of the
+paper, but the authors should either provide stronger theoretical support or moderate the claims
+accordingly.
+In addition, several practical methodological choices need clearer discussion:
+\reviewhighlight{how the number of extracted components is selected}, how sensitive the method
+is to initialization, what stopping criterion is used in practice, and how the tuning of the
+smoothing parameters interacts with the sequential extraction of components. These details are
+important both statistically and computationally.}
 
 \reviewcomment{Reviewer 3, comment 4}{
 The simulation studies are generally well designed and do a good job showing that the proposed
@@ -829,8 +834,9 @@ behavior, for example varying mesh resolution, increasing missingness or noise, 
 number of extracted components, or examining sensitivity to the tuning strategy.} For this
 journal, requests for additional simulation settings seem entirely reasonable.}
 
-\textbf{Test added.} Un unico fit fino a $H=5$, valutato progressivamente per separare il
-comportamento empirico dalla scelta di $H$ nel data analysis.
+\textbf{Test added.} Un unico fit fino a $H=5$, valutato progressivamente sui suoi prefissi.
+Nei test principali $H=4$ è fissato a priori e coincide con il numero di componenti di segnale
+usate nella generazione; non è selezionato mediante un criterio data-driven.
 
 \begin{figure}[H]
 \centering
@@ -876,23 +882,30 @@ R_X^2(h) = 1 - \frac{\|X - \widehat X_h\|_F^2}{\|X - \bar X\|_F^2},
 \qquad
 R_Y^2(h) = 1 - \frac{\|Y - \widehat Y_h\|_F^2}{\|Y - \bar Y\|_F^2},
 \]
-dove $\bar X$ e $\bar Y$ sono le medie colonnari dei dati osservati. Per la
-cross-covarianza riportiamo invece
+dove $\bar X$ e $\bar Y$ sono le medie colonnari dei dati osservati. Indicando con $X_c$ e
+$Y_c$ le corrispondenti matrici centrate, e con $\widehat X_{h,c}$ e $\widehat Y_{h,c}$ le
+ricostruzioni centrate, definiamo le cross-covarianze empiriche
+\[
+C_{XY}=\frac{X_c^\top Y_c}{n-1},
+\qquad
+\widehat C_{XY,h}=\frac{\widehat X_{h,c}^\top\widehat Y_{h,c}}{n-1}.
+\]
+Per la cross-covarianza riportiamo quindi l'indice relativo di ricostruzione
 \[
 R_{XY}^2(h) = 1 -
 \frac{\|C_{XY} - \widehat C_{XY,h}\|_F^2}{\|C_{XY}\|_F^2}.
 \]
-Potremmo proporre queste metriche per la selezione di $H$.
+La notazione $R_{XY}^2(h)$ è usata per compattezza, ma non indica un $R^2$ standard.
 
 \begin{figure}[H]
 \centering
 \begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/2D/vary_H/X_variance_explained.pdf}
-\caption{Varianza osservata di $X$ ricostruita.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
 \centering\includegraphics[width=\linewidth]{../images/2D/vary_H/Y_variance_explained.pdf}
 \caption{Varianza osservata di $Y$ ricostruita.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.48\linewidth}
+\centering\includegraphics[width=\linewidth]{../images/2D/vary_H/X_variance_explained.pdf}
+\caption{Varianza osservata di $X$ ricostruita.}
 \end{subfigure}
 \par\vspace{0.35em}
 \begin{subfigure}[t]{0.72\linewidth}
@@ -905,15 +918,30 @@ Potremmo proporre queste metriche per la selezione di $H$.
 
 \notebox{fPCR ricostruisce una quota maggiore della varianza di $X$ con due e tre componenti,
 mentre R1-fPLS e MV-PLS ricostruiscono una quota maggiore di $Y$. La cross-covarianza è già
-in larga parte ricostruita con una componente e cresce verso il $100\%$ con le successive; è
-informativa come controllo. MV-PLS tende invece a overfittare: alla quinta componente aumenta
-la varianza osservata di $Y$ ricostruita, mentre i due metodi regolarizzati rimangono
-sostanzialmente stabili.}
+in larga parte ricostruita con una componente e cresce verso il $100\%$ con le successive.
+Alla quinta componente aumenta la varianza osservata di $Y$ ricostruita da MV-PLS, mentre i due
+metodi regolarizzati rimangono sostanzialmente stabili. Questo andamento suggerisce un possibile
+overfitting di MV-PLS, ma non consente di trarre una conclusione definitiva perché la diagnostica
+è calcolata in-sample.}
 
-\decisionbox{Quali risultati di questo test vogliamo riportare nel paper o nei supplementary?}
+\notebox{Le curve di varianza ricostruita di $X$ e $Y$ e l'indice relativo di ricostruzione
+della cross-covarianza forniscono diagnostiche osservabili che possono supportare la scelta di
+$H$. Non definiamo né validiamo però una soglia o una regola automatica: una procedura
+data-driven per la selezione di $H$ resta aperta.}
 
 \subsection{\texttt{2D-predictive-order/vary\_H}: componente predittiva a bassa varianza}
 \label{sec:predictive-order}
+
+\reviewcomment{Reviewer 2, comment 7}{
+\reviewhighlight{After Algorithm 1, the authors may clarify how the number of latent
+components $H$ is selected.} Similar to the choice of the number of principal components in
+PCA, $H$ is an important tuning parameter in PLS-type methods and may affect both prediction
+and interpretation. In the simulation studies, it is not clear whether $H$ is fixed to the
+true number of latent components used in data generation, or selected by a data-driven
+criterion. In the real-data application, the authors retain $H=3$, but the selection criterion
+is again not fully specified. I suggest adding a brief discussion of possible criteria for
+choosing $H$, such as cross-validation or explained covariance, and reporting how $H$ was
+chosen in the simulations and application.}
 
 \reviewcomment{Reviewer 2, comment 8}{
 Since the introduction discusses the distinction between PLS and principal component regression,
@@ -923,11 +951,28 @@ method as an additional benchmark in the simulation study, at least for one sett
 in simulation.} This comparison would help readers better assess the practical advantage of
 R1-fPLS over another widely used functional dimension-reduction approach.}
 
+\reviewcomment{Reviewer 3, comment 2}{
+The proposed methodology is coherent and well motivated, and I find the regularized rank-one
+construction appealing. However, the theoretical support for the actual penalized functional
+estimator remains limited relative to the breadth of the claims. The supplement provides derivations
+for the multivariate PLS characterization and for the operator representation, but I did not find
+formal statistical guarantees for the proposed R1-fPLS estimator itself, such as consistency, error
+bounds, or a clearer discussion of how discretization and regularization affect estimation accuracy.
+I am not necessarily asking for a full asymptotic theory if that is beyond the intended scope of the
+paper, but the authors should either provide stronger theoretical support or moderate the claims
+accordingly.
+In addition, several practical methodological choices need clearer discussion:
+\reviewhighlight{how the number of extracted components is selected}, how sensitive the method
+is to initialization, what stopping criterion is used in practice, and how the tuning of the
+smoothing parameters interacts with the sequential extraction of components. These details are
+important both statistically and computationally.}
+
 \bluebox{fPCR è molto competitivo e nei test 1D non stiamo ancora giustificando in modo
 esplicito il vantaggio di fPLS. Il test seguente è stato aggiunto per verificare se un setting
 con componenti predittive a bassa varianza rendesse questa differenza visibile.}
 
-\textbf{Test added.} A differenza di \texttt{2D/vary\_H}, che mantiene il setting sottomesso
+\textbf{Test added.} Un unico fit fino a $H=10$, valutato progressivamente sui suoi prefissi.
+A differenza di \texttt{2D/vary\_H}, che mantiene il setting sottomesso
 con quattro componenti spaziali e la matrice dei loading di risposta $C$ riportata sopra, questo
 è un setting sperimentale costruito per separare varianza di $X$ e rilevanza predittiva. Riutilizziamo
 esattamente la data generation del test 2D sottomesso, estendendo da quattro a dieci le componenti
@@ -975,12 +1020,12 @@ $R_{XY}^2(H)$ riportate nel test \texttt{2D/vary\_H}.
 \begin{figure}[H]
 \centering
 \begin{subfigure}[t]{0.48\linewidth}
-\centering\includegraphics[width=\linewidth]{../images/2D-predictive-order/vary_H/X_variance_explained.pdf}
-\caption{Varianza osservata di $X$ ricostruita.}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
 \centering\includegraphics[width=\linewidth]{../images/2D-predictive-order/vary_H/Y_variance_explained.pdf}
 \caption{Varianza osservata di $Y$ ricostruita.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.48\linewidth}
+\centering\includegraphics[width=\linewidth]{../images/2D-predictive-order/vary_H/X_variance_explained.pdf}
+\caption{Varianza osservata di $X$ ricostruita.}
 \end{subfigure}
 \par\vspace{0.35em}
 \begin{subfigure}[t]{0.72\linewidth}
@@ -1003,12 +1048,10 @@ osservata di $Y$, e con sei componenti sono vicini al $90\%$; fPCR resta invece 
 basse perché privilegia le componenti più variabili di $X$. fPCR recupera la prima direzione
 predittiva alla componente 9 e la seconda alla 10.}
 
-\decisionbox{Decidere se riportare questo test come evidenza qualitativa che PLS recupera il
-segnale predittivo prima di fPCR. Se vogliamo sostenere la claim più forte ``due componenti contro
-dieci'', il setting va ridisegnato imponendo una decomposizione PLS noiseless esatta a $H=2$.}
-
-\notebox{In tutte le 30 ripetizioni del test, R1-fPLS e fPCR producono soluzioni finite e
-traiettorie monotone; nessun fit raggiunge il limite di iterazioni.}
+\notebox{Anche in questo setting le diagnostiche osservabili descrivono come la struttura
+ricostruita evolve lungo i prefissi del fit, ma non definiscono una regola automatica per
+selezionare $H$. Il valore massimo $H=10$ appartiene al disegno sperimentale e non è scelto dai
+dati.}
 
 \section{Richieste dei reviewer ancora aperte}
 
@@ -1016,31 +1059,34 @@ Questa sezione riporta le richieste che restano aperte nel perimetro delle simul
 in rosso non sono soddisfatte dai test eseguiti; le richieste sull'applicazione non sono riportate
 qui.
 
-\reviewcomment{Reviewer 2, comment 7}{
-After Algorithm 1, the authors may clarify how the number of latent components $H$ is selected.
-Similar to the choice of the number of principal components in PCA, $H$ is an important tuning
-parameter in PLS-type methods and may affect both prediction and interpretation. In the simulation
-studies, it is not clear whether $H$ is fixed to the true number of latent components used in data
-generation, \unmetreviewhighlight{or selected by a data-driven criterion}. In the real-data
-application, the authors retain $H=3$, but the selection criterion is again not fully specified. I
-suggest adding a brief discussion of possible criteria for choosing $H$, such as
-\unmetreviewhighlight{cross-validation or explained covariance, and reporting how $H$ was chosen
-in the simulations} and application.}
-
 \reviewcomment{Reviewer 3, comment 2}{
-The proposed methodology is coherent and well motivated, and I find the regularized rank-one
-construction appealing. However, the theoretical support for the actual penalized functional
-estimator remains limited relative to the breadth of the claims. The supplement provides derivations
-for the multivariate PLS characterization and for the operator representation, but I did not find
-formal statistical guarantees for the proposed R1-fPLS estimator itself, such as consistency, error
-bounds, or a clearer discussion of how discretization and regularization affect estimation accuracy.
-I am not necessarily asking for a full asymptotic theory if that is beyond the intended scope of the
-paper, but the authors should either provide stronger theoretical support or moderate the claims
-accordingly.
-In addition, several practical methodological choices need clearer discussion:
-\unmetreviewhighlight{how the number of extracted components is selected, how sensitive the method
-is to initialization}, what stopping criterion is used in practice, and
+Several practical methodological choices need clearer discussion:
+how the number of extracted components is selected,
+\unmetreviewhighlight{how sensitive the method is to initialization}, what stopping criterion is used in practice, and
 \unmetreviewhighlight{how the tuning of the smoothing parameters interacts with the sequential
 extraction of components}. These details are important both statistically and computationally.}
+
+\notebox{Il report specifica come $H$ è fissato nei test, mostra diagnostiche osservabili lungo
+i prefissi e documenta il criterio di arresto. Restano da studiare la sensibilità a
+inizializzazioni alternative e l'interazione tra tuning dei parametri di smoothing e deflazione
+sequenziale.}
+
+\reviewcomment{Reviewer 3, comment 3}{
+Because this is a submission to Statistics and Computing, I think the computational side should
+be developed more explicitly. The paper explains the algorithmic structure and mentions
+implementation in an open-source C++ library, which is a real strength. However, the manuscript
+currently provides very little quantitative information on computational cost, scalability, or
+numerical behavior. This is especially important in the neuroimaging application, where the
+predictors live on a mesh with more than 36,000 nodes. At a minimum, I would like to see
+additional reporting on runtime and, \unmetreviewhighlight{if possible, memory usage for the main
+experiments}; number of iterations required for convergence; practical computational cost of
+GCV-based tuning; sensitivity of computation to the basis dimension or mesh resolution; and
+\unmetreviewhighlight{discussion of numerical stability when extracting several components.}
+Even a modest runtime or scaling study would substantially improve the paper for this journal.}
+
+\notebox{Fit time, iterazioni, costo del GCV, risoluzione della mesh e stabilità a penalità molto
+piccole sono già riportati. Restano aperti la campagna uniforme su Kami con hardware, numero di
+thread e modalità di esecuzione documentati, la memoria nei test principali e una verifica
+esplicita della stabilità numerica lungo estrazioni con molti componenti.}
 
 \end{document}

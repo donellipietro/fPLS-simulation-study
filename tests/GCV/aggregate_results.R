@@ -216,7 +216,7 @@ for (family in families) {
       if (identical(options$regularization$calibration, "multivariate")) {
         if (!identical(model$MODE, "MV_PLS")) stop("lambda = 0 must use MV-PLS")
       } else {
-        raw_dir <- model$results$raw_output_dir
+        raw_dir <- file.path(batch_dir, "raw", "R1_fPLS")
         raw_required <- c(
           "params.json", "telemetry.json", "component_diagnostics.csv",
           "direction_lambdas.csv", "loading_lambdas.csv",
@@ -300,7 +300,8 @@ for (family in families) {
   diagnostics <- write_family_diagnostics(
     loaded, family, aggregate_dir, image_dir,
     lambda_limits = if (near_zero_family) c(-300, -9) else lambda_log10_limits,
-    lambda_breaks = if (near_zero_family) near_zero_breaks else lambda_log10_grid
+    lambda_breaks = if (near_zero_family) near_zero_breaks else lambda_log10_grid,
+    fit_time_median_lines = !prefix_sensitivity
   )
   all_diagnostics[[family]] <- diagnostics$rows
   diagnostic_outputs[[family]] <- diagnostics$plots

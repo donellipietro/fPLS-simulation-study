@@ -574,6 +574,7 @@ plot.field_tile <- function(nodes, f, boundary = NULL,
 #   * limits: optional y-axis range
 #   * DIVIDERS: logical, whether to draw vertical separators between groups
 #   * LEGEND: logical, whether to display the legend
+#   * MEDIAN_LINES: logical, overlay model-wise median trends on the boxplots
 # - Desc:
 #   Creates grouped boxplots comparing models (columns) within multiple groups.
 plot.grouped_boxplots <- function(data,
@@ -581,7 +582,7 @@ plot.grouped_boxplots <- function(data,
                                   subgroup_name = "Models", subgroup_labels = NULL, subgroup_colors = NULL,
                                   values_name = "Score", limits = NULL,
                                   DIVIDERS = TRUE, LEGEND = TRUE, EXPAND_Y = TRUE,
-                                  Y_BREAKS = NULL) {
+                                  Y_BREAKS = NULL, Y_LABELS = NULL, MEDIAN_LINES = FALSE) {
 
   ## Data integrity check
   if (!("Group" %in% names(data))) stop("The dataframe must contain a column named 'Group'")
@@ -592,6 +593,7 @@ plot.grouped_boxplots <- function(data,
 
   ## Extract labels
   groups_levels <- unique(data$Group)
+  if (is.numeric(groups_levels)) groups_levels <- sort(groups_levels)
   subgroup_levels <- unique(data$SubGroup)
   if (is.null(group_labels)) {
     group_labels <- if (is.numeric(groups_levels)) {
@@ -612,36 +614,55 @@ plot.grouped_boxplots <- function(data,
     mutate(SubGroup = factor(SubGroup, levels = subgroup_levels, labels = subgroup_labels))
 
   ## Build plot
+  dodge <- position_dodge(width = 0.75)
+  boxplots <- if (MEDIAN_LINES) {
+    geom_boxplot(na.rm = TRUE, position = dodge, width = 0.7)
+  } else {
+    geom_boxplot(na.rm = TRUE)
+  }
   plot <- ggplot(data, aes(x = Group, y = Score, fill = SubGroup)) +
-    geom_boxplot(na.rm = TRUE) +
     labs(x = group_name, y = values_name) +
     scale_fill_manual(name = subgroup_name, values = subgroup_colors)
+
+  ## Draw group dividers behind the data layers, not over the boxplots.
+  if (DIVIDERS && length(group_labels) > 1) {
+    plot <- plot +
+      geom_vline(xintercept = seq(1.5, length(unique(group_labels)) - 0.5, 1),
+                 lwd = 0.2, colour = "grey")
+  }
+  if (MEDIAN_LINES) {
+    if (length(groups_levels) > 1L) {
+      plot <- plot + stat_summary(
+        aes(color = SubGroup, group = SubGroup), fun = median,
+        geom = "line", position = dodge, linewidth = 1.15
+      )
+    }
+    plot <- plot + scale_color_manual(name = subgroup_name, values = subgroup_colors)
+  }
+  plot <- plot + boxplots
 
   ## Add limits
   if (!is.null(limits)) {
     if (is.null(Y_BREAKS)) {
       plot <- plot + scale_y_continuous(
         limits = limits,
+        labels = if (is.null(Y_LABELS)) waiver() else Y_LABELS,
         expand = if (EXPAND_Y) waiver() else expansion(mult = 0)
       )
     } else {
       plot <- plot + scale_y_continuous(
         limits = limits, breaks = Y_BREAKS, minor_breaks = NULL,
+        labels = if (is.null(Y_LABELS)) waiver() else Y_LABELS,
         expand = if (EXPAND_Y) waiver() else expansion(mult = 0)
       )
     }
-  }
-
-  ## Add dividers
-  if (DIVIDERS && length(group_labels) > 1) {
-    plot <- plot +
-      geom_vline(xintercept = seq(1.5, length(unique(group_labels)) - 0.5, 1),
-                 lwd = 0.2, colour = "grey")
+  } else if (!is.null(Y_LABELS)) {
+    plot <- plot + scale_y_continuous(labels = Y_LABELS)
   }
 
   ## Add or remove legend
   if (!LEGEND) {
-    plot <- plot + guides(fill = "none")
+    plot <- plot + guides(fill = "none", color = "none")
   }
 
   return(plot)
@@ -912,7 +933,7 @@ plot.grouped_violins <- function(data,
 #   Builds per-group panels of aggregated results over the first varying option,
 #   conditioning on all remaining varying options. For each combination, it can
 #   render boxplots and/or line plots (linear, log-x, log-log, normalized).
-plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, values_names, order = NULL, limits = NULL, plots_catalog = NULL, horizontal_lines = NULL, y_breaks = NULL) {
+plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, values_names, order = NULL, limits = NULL, plots_catalog = NULL, horizontal_lines = NULL, y_breaks = NULL, group_labels = NULL, median_lines = FALSE) {
 
   ## Get model-related properties
   model_names  <- loaded_results$model_names
@@ -1035,13 +1056,15 @@ plot.aggregated_data <- function(loaded_results, data_plot_orig, title_prefix, v
           data_plot_trimmed[, c("Group", valid_models)],
           values_name = values_names,
           group_name = group_name,
+          group_labels = group_labels,
           subgroup_name = "Approaches",
           subgroup_labels = model_labels[match(valid_models, model_names)],
           subgroup_colors = model_colors[match(valid_models, model_names)],
           limits = limits,
           LEGEND = FALSE,
           EXPAND_Y = is.null(horizontal_lines),
-          Y_BREAKS = y_breaks
+          Y_BREAKS = y_breaks,
+          MEDIAN_LINES = median_lines
         ) + std_plot_settings()
         if (!is.null(horizontal_lines)) {
           boxplot_list[[j]] <- boxplot_list[[j]] +

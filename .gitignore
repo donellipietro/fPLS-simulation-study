@@ -12,6 +12,11 @@
 # generated outputs and root links
 /results
 /images
+/paper-figures/panels
+/paper-figures/exports
+/paper-figures/layouts/*
+!/paper-figures/layouts/*.af
+/paper-tables/csv
 /reports
 /logs
 /queue

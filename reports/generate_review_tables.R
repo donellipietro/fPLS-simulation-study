@@ -470,6 +470,38 @@ if ("design" %in% sections) {
     quote = FALSE,
     sep = "|"
   )
+
+  additional_design <- data.frame(
+    suite_test = c(
+      "2D/vary\\_k", "1D/vary\\_NSRX", "1D/vary\\_NSRY",
+      "2D/vary\\_NSRX", "2D/vary\\_NSRY", "GCV/sensitivity",
+      "GCV/sensitivity\\_high\\_NSRX", "GCV/lambda\\_to\\_zero",
+      "GCV/small\\_lambda\\_m\\_gt\\_k", "GCV/small\\_lambda\\_m\\_lt\\_k",
+      "2D/vary\\_H", "2D-predictive-order/vary\\_H"
+    ),
+    setting = c(
+      "$k=\\{25,100,400,900,1600,2500\\}$; $n=100$, $m=1600$",
+      "$\\mathrm{NSR}_X=\\{1,3,5,10\\}$; $n=100$, $m=200$, $k=51$, $\\mathrm{NSR}_Y=0.1$",
+      "$\\mathrm{NSR}_Y=\\{0.01,0.1,0.5,1\\}$; $n=100$, $m=200$, $k=51$, $\\mathrm{NSR}_X=3$",
+      "$\\mathrm{NSR}_X=\\{1,3,5,10\\}$; $n=100$, $m=1600$, $k=900$, $\\mathrm{NSR}_Y=0.1$",
+      "$\\mathrm{NSR}_Y=\\{0.01,0.1,0.5,1\\}$; $n=100$, $m=1600$, $k=900$, $\\mathrm{NSR}_X=3$",
+      "$n=100$, $m=200$, $k=51$; GCV, limite MV-PLS e penalità fisse $10^{-9},\\ldots,10^{-2}$",
+      "$n=100$, $m=200$, $k=51$, $\\mathrm{NSR}_X=10$; stessa griglia GCV",
+      "$n=50,100,200,500,1000,2000,5000$; $m=100$, $k=51$; GCV",
+      "$n=100$, $m=100$, $k=51$; griglia sparsa: esponenti $-300,-200,-100,-50,-30,-20,\\ldots,-9$",
+      "$n=100$, $m=25$, $k=51$; griglia sparsa e raffinata tra gli esponenti $-50$ e $-30$",
+      "un unico fit valutato per prefissi; $H=1,\\ldots,5$; $n=100$, $m=1600$, $k=900$",
+      "un unico fit valutato per prefissi; $H=1,\\ldots,10$; $n=100$, $m=1600$, $k=900$; componenti generative rilevanti per $Y$: 9 e 10"
+    ),
+    stringsAsFactors = FALSE
+  )
+  write.table(
+    additional_design,
+    file.path(review_output_dir, "additional_design.csv"),
+    row.names = FALSE,
+    quote = FALSE,
+    sep = "|"
+  )
 }
 
 format_number <- function(value) {
@@ -612,7 +644,10 @@ if ("gcv" %in% sections) {
   ))
 }
 if ("design" %in% sections) {
-  expected_csvs <- c(expected_csvs, file.path("review_tables", "submitted_design.csv"))
+  expected_csvs <- c(
+    expected_csvs,
+    file.path("review_tables", c("submitted_design.csv", "additional_design.csv"))
+  )
 }
 if ("iterations" %in% sections) {
   expected_csvs <- c(expected_csvs, file.path(

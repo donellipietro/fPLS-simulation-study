@@ -86,10 +86,35 @@ COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
         ensure_env \
         compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
-        run_test inspect_results review_tables review_report kami_review_submit
+        run_test inspect_results review_tables review_report kami_review_submit \
+        simulation_figure_panels simulation_paper_tables
 
 
 all: build
+
+
+# Manuscript figure panels ----
+## Regenerate every simulation-study panel PDF for the Affinity layouts.
+simulation_figure_panels:
+	@$(RSCRIPT) paper-figures/scripts/1D_data.R
+	@$(RSCRIPT) paper-figures/scripts/1D_vary_k.R
+	@$(RSCRIPT) paper-figures/scripts/1D_qualitative.R
+	@$(RSCRIPT) paper-figures/scripts/1D_vary_n.R
+	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_nsrx.R
+	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_nsry.R
+	@$(RSCRIPT) paper-figures/scripts/2D_qualitative.R
+	@$(RSCRIPT) paper-figures/scripts/2D_vary_n.R
+	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_nsrx.R
+	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_nsry.R
+	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_m.R
+	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_k.R
+	@FPLS_GCV_HORIZONTAL_FINAL=true $(RSCRIPT) paper-figures/scripts/S_1D_gcv_sensitivity.R
+	@$(RSCRIPT) paper-figures/scripts/2D_vary_H.R
+	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_H_extended.R
+
+## Regenerate every CSV table used by the simulation-study manuscript.
+simulation_paper_tables:
+	@$(RSCRIPT) paper-tables/scripts/generate_iteration_tables.R
 
 
 # Config targets ----

@@ -76,7 +76,7 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
           stop(glue::glue("invalid component-wise result shape for {model_name}"))
         }
         if (model_name %in% c("R1_fPLS", "fPCR")) {
-          raw_dir <- model$results$raw_output_dir
+          raw_dir <- file.path(batch_dir, "raw", model_name)
           model_required_raw <- c(
             required_raw,
             if (model_name == "fPCR") "fpca_lambdas.csv" else character()
