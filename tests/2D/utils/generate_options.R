@@ -47,6 +47,12 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       n_locs <- if (SMOKE_TEST) 36L else 1600L
       source_k <- if (SMOKE_TEST) 25L else 900L
     },
+    vary_m = {
+      varying <- "n_locs"
+      n_stat_units <- if (SMOKE_TEST) 12L else 100L
+      n_locs <- if (SMOKE_TEST) 36L else c(900L, 1600L, 2400L)
+      source_k <- if (SMOKE_TEST) 25L else 900L
+    },
     vary_NSRX = {
       varying <- "NSR_X_final_component"
       n_stat_units <- if (SMOKE_TEST) 12L else 100L

@@ -8,7 +8,7 @@ diagnostics. Production runs use 30 replications per option cell and single-thre
 | Suite | Families in `all` | Comparison |
 |---|---|---|
 | `1D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY` | MV-PLS, two B-fPLS variants, PB-fPLS, fPCR, and R1-fPLS on a curve with a scalar response |
-| `2D` | `vary_k`, `vary_n`, `vary_NSRX`, `vary_NSRY`, `vary_H` | MV-PLS, fPCR, and R1-fPLS on the unit square with two responses |
+| `2D` | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY`, `vary_H` | MV-PLS, fPCR, and R1-fPLS on the unit square with two responses |
 | `GCV` | `sensitivity`, `sensitivity_high_NSRX`, `lambda_to_zero`, `small_lambda_m_gt_k`, `small_lambda_m_lt_k` | R1-fPLS tuning and numerical diagnostics in 1D |
 | `2D-predictive-order` | `vary_H` | MV-PLS, fPCR, and R1-fPLS when response-relevant components have low predictor variance |
 
@@ -56,7 +56,3 @@ make review_report
 The CSV-backed tables and metrics are regenerated automatically; prose-level numeric claims and
 interpretive comments in the TeX remain manual. See [`reports/README.md`](reports/README.md) for
 the table-to-aggregate provenance and validation contract.
-
-For the complete Kami campaign, use the dedicated single-job Torque/PBS workflow documented in
-[`KAMI_TORQUE_RUNBOOK.md`](KAMI_TORQUE_RUNBOOK.md). It builds once and runs `1D/all`, `2D/all`,
-`GCV/all`, and `2D-predictive-order/all` serially; it does not use the generic PBS array runner.
