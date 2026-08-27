@@ -1,7 +1,0 @@
-method,h1,h2,h3,h4,monotone
-MV-PLS,--,--,--,--,--
-B-fPLS (Regression Splines),--,--,--,--,--
-B-fPLS (Smoothing Splines),--,--,--,--,--
-PB-fPLS,--,--,--,--,--
-fPCR,4,5,4,4,100\%
-R1-fPLS,2,2,2,2,100\%

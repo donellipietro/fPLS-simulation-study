@@ -1,5 +1,0 @@
-suite_test|setting
-1D/vary\_k|$n=100$, $m=200$, $k=\{5,11,21,51,101\}$; qualitativo per $k=\{11,101\}$
-1D/vary\_n|$n=\{50,100,200\}$, $m=200$; $k=51$, base dei competitor $k=11$
-1D/vary\_m|$n=100$, $m=\{50,100,200\}$; $k=51$, base dei competitor $k=11$
-2D/vary\_n|$n=\{50,100,200\}$, $m=1600$, $k=900$; qualitativo a $n=100$

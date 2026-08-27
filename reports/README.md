@@ -14,9 +14,10 @@ To refresh only the CSV snapshots, use `make review_tables`. For a focused plumb
 inputs. Run `Rscript tests/smoke_generate_review_tables.R` for the temporary-fixture validation
 and atomicity smoke check.
 
-The tables and the metrics they display are generated and validated automatically. Numeric
-values embedded in prose and all interpretive comments remain hand-written in the TeX; this
-pipeline does not update or validate those narrative claims.
+The tables and the metrics they display are generated and validated automatically; the CSV
+snapshots are ignored rather than versioned. Numeric values embedded in prose and all
+interpretive comments remain hand-written in the TeX; this pipeline does not update or validate
+those narrative claims.
 
 ## Table provenance
 
