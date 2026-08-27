@@ -11,7 +11,7 @@ is_truthy() {
 
 for name in PBS_MULTI_CPUS PBS_MULTI_MEM PBS_MULTI_TIME; do
   if [[ -z "${!name:-}" ]]; then
-    echo "Error: ${name} is required; see KAMI_TORQUE_RUNBOOK.md." >&2
+    echo "Error: ${name} is required for the complete-node Kami submission." >&2
     exit 1
   fi
 done

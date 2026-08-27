@@ -43,7 +43,7 @@ export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
-printf 'Reviewer campaign job: %s\nHost: %s\nStarted: %s\n' \
+printf 'Simulation campaign job: %s\nHost: %s\nStarted: %s\n' \
   "${PBS_JOBID}" "$(hostname)" "${STARTED_AT}"
 
 CURRENT_STAGE="build"
@@ -59,8 +59,5 @@ for suite in 1D 2D GCV 2D-predictive-order; do
   ./tests/run_tests.sh "${suite}" all
 done
 
-CURRENT_STAGE="review_tables"
-make --no-print-directory review_tables
-
 CURRENT_STAGE="complete"
-printf '\nReviewer campaign completed successfully.\n'
+printf '\nSimulation campaign completed successfully.\n'

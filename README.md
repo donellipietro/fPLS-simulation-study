@@ -49,13 +49,4 @@ make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
 make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity
 ```
 
-Available profiles are `macbook`, `windows`, `hpc-slurm`, and `hpc-torque`. After all required
-production aggregations are present, regenerate every report CSV and compile the reviewer report:
-
-```sh
-make review_report
-```
-
-The CSV-backed tables and metrics are regenerated automatically; prose-level numeric claims and
-interpretive comments in the TeX remain manual. See [`reports/README.md`](reports/README.md) for
-the table-to-aggregate provenance and validation contract.
+Available profiles are `macbook`, `windows`, `hpc-slurm`, and `hpc-torque`.

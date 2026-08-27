@@ -86,7 +86,7 @@ COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
         ensure_env \
         compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
-        run_test inspect_results review_tables review_report kami_review_submit \
+        run_test inspect_results kami_review_submit \
         simulation_figure_panels simulation_paper_tables
 
 
@@ -386,16 +386,6 @@ run_test: ensure_env
 		SMOKE_TEST="$(SMOKE_TEST)" \
 		"$$runner" "$(TEST_SUITE)" "$(TEST_NAME)"; \
 	fi
-
-## Regenerate every CSV table consumed by the reviewer report
-review_tables: ensure_env
-	@set -a; source .env; set +a; \
-	SMOKE_TEST=0 $(RSCRIPT) reports/generate_review_tables.R
-
-## Regenerate reviewer tables and compile the reviewer report
-review_report: review_tables
-	@cd reports && $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error \
-		review_simulation_results.tex
 
 ## Submit the complete reviewer campaign as one serial full-node Torque/PBS job
 kami_review_submit:
