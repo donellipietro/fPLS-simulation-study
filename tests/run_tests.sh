@@ -31,6 +31,7 @@ cd "${PATH_REPO}"
 TEST_SUITE="$1"
 REQUESTED_TEST_NAME="$2"
 
+Rscript src/write_runtime_metadata.R "${TEST_SUITE}" "${REQUESTED_TEST_NAME}"
 Rscript src/init.R "${TEST_SUITE}" "${REQUESTED_TEST_NAME}"
 
 TEST_NAMES=()

@@ -31,6 +31,9 @@ in-memory post-processing. It excludes data generation, result I/O, and accuracy
 Peak RAM, selected penalties, iteration counts, and monotonicity diagnostics are retained when
 the fitted method supplies them.
 
+Each serial suite run also writes `results/<suite>/runtime_metadata.json`, recording the host,
+CPU and RAM, scheduler allocation, pinned thread settings, timestamp, and Git commit.
+
 ## Run commands
 
 Prepare one runtime profile, then run a suite or an individual family:
