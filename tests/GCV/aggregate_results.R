@@ -236,12 +236,18 @@ for (family in families) {
           validate_gcv_curves(raw_dir, options)
         }
         telemetry <- fromJSON(file.path(raw_dir, "telemetry.json"))
-        expected_schema <- if (identical(options$regularization$calibration, "gcv")) 5L else 4L
+        saves_gcv_curves <- identical(options$regularization$calibration, "gcv")
+        expected_schema <- if (saves_gcv_curves) 5L else 4L
+        gcv_curve_setting_current <- if (saves_gcv_curves) {
+          identical(telemetry$save_gcv_curves, TRUE)
+        } else {
+          is.null(telemetry$save_gcv_curves) || identical(telemetry$save_gcv_curves, FALSE)
+        }
         if (!identical(telemetry$schema_version, expected_schema) ||
             !identical(telemetry$model, "R1_fPLS") ||
             !identical(telemetry$mode, "native_fdaPDE_cpp") ||
             !identical(telemetry$calibration, options$regularization$calibration) ||
-            !identical(telemetry$save_gcv_curves, identical(options$regularization$calibration, "gcv")) ||
+            !gcv_curve_setting_current ||
             telemetry$max_iter != 1000L || telemetry$tolerance != 1e-8) {
           stop("native diagnostic settings do not match the GCV suite")
         }

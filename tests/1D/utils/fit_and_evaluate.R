@@ -27,13 +27,18 @@ native_model_matches_options <- function(model, model_name, test_options) {
   same <- function(left, right) isTRUE(all.equal(left, right))
   saves_gcv_curves <- identical(test_suite, "GCV") &&
     identical(test_options$regularization$calibration, "gcv")
+  gcv_curve_setting_current <- if (saves_gcv_curves) {
+    identical(telemetry$save_gcv_curves, TRUE)
+  } else {
+    is.null(telemetry$save_gcv_curves) || identical(telemetry$save_gcv_curves, FALSE)
+  }
   cfg <- load_config()
   core_path <- file.path(cfg$PATH_FDAPDE_CPP, "fdaPDE", "core")
   timing_current &&
     same(telemetry$schema_version, if (saves_gcv_curves) 5L else 4L) &&
     identical(telemetry$model, model_name) &&
     identical(telemetry$calibration, test_options$regularization$calibration) &&
-    identical(telemetry$save_gcv_curves, saves_gcv_curves) &&
+    gcv_curve_setting_current &&
     same(telemetry$n_components, test_options$model$n_comp) &&
     same(telemetry$max_iter, test_options$regularization$max_iter) &&
     same(telemetry$tolerance, test_options$regularization$tolerance) &&
