@@ -1,24 +1,27 @@
-# Simulation-study paper tables
+# Manuscript table sources
 
-`scripts/` contains the generators for CSV tables used in the manuscript, and
-`csv/` contains their reproducible outputs.
+`scripts/generate_iteration_tables.R` validates production diagnostics and writes the CSV
+summaries supporting the Supplementary Material's R1-fPLS convergence table and the article's
+global convergence statements.
 
-Run from the repository root:
+From the repository root:
 
 ```sh
-make simulation_paper_tables
+FPLS_RESULTS=/absolute/path/to/results make simulation_paper_tables
 ```
 
-The generator reads the validated production aggregates under `results/` and
-fails if a required experiment, diagnostic, repetition, or finite solution is
-missing. Set `FPLS_RESULTS` only when the aggregate results live elsewhere.
-In the GCV sensitivity families, the `lambda = 0` MV-PLS limit is validated but
-excluded from the R1-fPLS iteration summaries because it is non-iterative.
+The result root must contain complete non-smoke `aggregate/all` trees for `1D`, `2D`, `GCV`, and
+`2D-predictive-order`. The generator fails if a required family, level, repetition, diagnostic,
+or finite solution is missing. The non-iterative `lambda = 0` MV-PLS benchmark in the GCV
+sensitivity families is validated but excluded from R1-fPLS iteration summaries.
 
-The iteration outputs are:
+Generated files under `paper-tables/csv/` are ignored:
 
-- `fixed_h_iterations.csv`: component-wise median and maximum for experiments
-  fitting four components;
-- `varying_h_iterations.csv`: long-format summaries for the two varying-H
-  experiments;
-- `convergence_summary.csv`: global checks used by the manuscript statement.
+- `fixed_h_iterations.csv`: component-wise median and maximum for four-component experiments;
+- `varying_h_iterations.csv`: long-format summaries for the two varying-H experiments;
+- `convergence_summary.csv`: global finite-solution, iteration-cap, monotonicity, median, and
+  maximum checks used by the manuscript text.
+
+The checked-in manuscript contains formatted values rather than including these CSV files
+directly. Regeneration therefore verifies the recorded aggregate evidence but does not edit the
+paper. Production diagnostics are external to Git; without them the tables cannot be rebuilt.

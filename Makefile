@@ -385,7 +385,7 @@ run_test: ensure_env
 		"$$runner" "$(TEST_SUITE)" "$(TEST_NAME)"; \
 	fi
 
-## Submit the complete reviewer campaign as one serial full-node Torque/PBS job
+## Optionally replay all retained production suites in one serial full-node Torque/PBS job
 kami_review_submit:
 	@PBS_DRY_RUN="$(PBS_DRY_RUN)" \
 	PBS_MULTI_CPUS="$(PBS_MULTI_CPUS)" \

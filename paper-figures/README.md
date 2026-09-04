@@ -1,49 +1,54 @@
-# Simulation-study figure assets
+# Manuscript figure sources
 
-`scripts/` contains one R entry point for each simulation-study figure in the
-current manuscript. Each script writes only the independent panels needed for
-the Affinity layout into `panels/<figure-name>/`.
+The R scripts in `scripts/` convert validated simulation results into vector panels. Final
+article and supplementary PDFs are assembled in the versioned Affinity document
+`layouts/figures.af`; generated panels and exports are ignored.
 
-Run a script from the simulation-study checkout, for example:
+## Figure map
+
+| Manuscript PDF | Script and result family |
+|---|---|
+| `1D_data.pdf` | `1D_data.R`; representative raw `1D/vary_k`, `k = 11` batch |
+| `1D_vary_k.pdf` | `1D_vary_k.R`; aggregate `1D/vary_k` |
+| `1D_qualitative.pdf` | `1D_qualitative.R`; aggregate and raw `1D/vary_k`, `k = 11,101` |
+| `1D_vary_n.pdf` | `1D_vary_n.R`; aggregate `1D/vary_n` |
+| `2D_qualitative.pdf` | `2D_qualitative.R`; representative raw `2D/vary_n`, `n = 100` batch |
+| `2D_vary_H.pdf` | `2D_vary_H.R`; aggregate `2D/vary_H` |
+| `S_1D_vary_m.pdf` | `S_1D_vary_m.R`; aggregate `1D/vary_m` |
+| `S_1D_vary_nsrx.pdf`, `S_1D_vary_nsry.pdf` | corresponding scripts; 1D noise families |
+| four `S_1D_gcv_*.pdf` exports | `S_1D_gcv_sensitivity.R`; two GCV sensitivity families |
+| `S_2D_vary_n.pdf`, `S_2D_vary_m.pdf`, `S_2D_vary_k.pdf` | corresponding scripts and 2D families |
+| `S_2D_vary_nsrx.pdf`, `S_2D_vary_nsry.pdf` | corresponding scripts and 2D noise families |
+| `S_2D_vary_H_extended.pdf` | `S_2D_vary_H_extended.R`; predictive-order `vary_H` |
+| `S_scheme.pdf` | editable Affinity master; no code-only generator |
+
+## Generate panels
+
+From the repository root, point `FPLS_RESULTS` to a result root containing the validated suite
+aggregates and run either one script or the complete target:
 
 ```sh
-Rscript paper-figures/scripts/1D_vary_k.R
+FPLS_RESULTS=/absolute/path/to/results Rscript paper-figures/scripts/1D_vary_k.R
+FPLS_RESULTS=/absolute/path/to/results make simulation_figure_panels
 ```
 
-To regenerate every simulation-study panel in one command, run:
+The scripts stop when required aggregate or representative raw files are missing. GCV
+performance panels use aggregate results; selected-penalty panels additionally require every
+raw `direction_gcv_h*.csv` and `loading_gcv_h*.csv` file from the production campaign.
 
-```sh
-make simulation_figure_panels
-```
+Panels are written below `panels/<figure-name>/`. Quantitative panels are 84.3 x 51.2 mm, 2D
+maps are 36.0 mm square, and the Simulation 1 data panels are 52.9 mm square and
+116.1 x 52.9 mm. They require R with Cairo PDF support and Arial. Place panels in Affinity at
+100%; do not rescale them.
 
-The scripts read this checkout's aggregated `results/` outputs. Set
-`FPLS_RESULTS` only if they live elsewhere.
+R produces scientific marks, numeric ticks, and shared legends. Panel letters, display titles,
+and final axis labels are maintained in Affinity. The 1D qualitative layout also contains the
+selection rectangles linking the `k = 11` and `k = 101` zoom panels.
 
-The PDFs are final-size vector panels for a 174 mm-wide figure. Do not resize
-them in Affinity: place them at 100%. The quantitative panels are 84.3 ×
-51.2 mm, the 2D maps are 36.0 mm square, and the two Simulation 1 data panels
-are 52.9 mm square and 116.1 × 52.9 mm. `layouts/figures.af` is the versioned
-Affinity master; `exports/` and regenerated panel PDFs are intentionally
-ignored.
+## Reproducibility limit
 
-Panel lettering, titles, and axis labels belong in Affinity. Numeric tick marks
-and the one shared legend supplied for each quantitative figure remain in the
-scientific graphic and are therefore produced by R.
-
-The 1D qualitative figure provides one linked zoom panel for each of `k = 11`
-and `k = 101`; draw the corresponding selection rectangles in Affinity.
-
-`S_1D_gcv_sensitivity.R` writes the panels for the two GCV sensitivity
-conditions. Performance panels are always regenerated from their aggregated
-results. Selection panels (combined GCV curves with selected-lambda markers)
-are written only when the Kami run has supplied every `*_gcv_h*.csv` raw file.
-
-`05_2d_vary_H.R` writes the RMSE and reconstructed-structure panels for the
-`vary_H` experiment, plus a vertical model legend for the bottom-right slot.
-
-The four supplementary noise-ratio scripts (`S_1D_vary_nsrx.R`,
-`S_1D_vary_nsry.R`, `S_2D_vary_nsrx.R`, and `S_2D_vary_nsry.R`) follow the same
-panel layouts as the corresponding `vary_n` figures.
-
-`S_2D_vary_H_extended.R` writes the same panel set for the
-ten-component predictive-order experiment (`H = 1, ..., 10`).
+`layouts/figures.af` is the editable assembly source, so final composition requires proprietary
+Affinity software and is not automated by Make. The final manuscript exports were identity-
+checked against the paper copies; running the panel scripts alone does not reproduce layout or
+prove identity. Any changed aggregate, panel, layout, or export requires a new provenance
+snapshot.

@@ -1,29 +1,25 @@
-# Predictive Component Ordering in 2D
+# Supplementary predictive-order experiment
 
-This separate diagnostic suite compares variance-ordered and response-relevant component
-extraction. Its only family is `vary_H` (and therefore also the suite target `all`).
+This suite implements the Supplementary Material experiment separating predictor variance from
+response relevance. The predictor has ten trigonometric components with decreasing score
+variance; only components 9 and 10 enter the two responses, scaled to equal response variance.
+MV-PLS, fPCR, and R1-fPLS are fitted once with ten components and evaluated at every prefix
+`H = 1,...,10`.
 
-## Design
+The only family is `vary_H`. Production settings are `n = 100`, `m = 1600`, `k = 900` on a
+`30 x 30` finite-element mesh, 30 replications, `NSR_X = 3`, `NSR_Y = 0.1`, tolerance `1e-8`,
+and at most 1000 iterations.
 
-The predictor contains ten trigonometric spatial components with decreasing score variance.
-Only components 9 and 10 enter the two responses, scaled to equal response variance. MV-PLS,
-fPCR, and R1-fPLS are each fitted once with ten components and evaluated at every progressive
-prefix `H = 1, ..., 10`.
-
-Production settings are `n = 100`, `m = 1600`, `k = 900` on a `30 x 30` finite-element mesh,
-30 replications, `NSR_X = 3`, `NSR_Y = 0.1`, `tol = 1e-8`, and `max_iter = 1000`.
-
-## Metrics and outputs
-
-For every prefix the suite records RMSE for noise-free Y and X reconstructions and separate
-sign-aligned unit-norm beta shape RMSEs for both responses. It also records reconstructed X and
-Y variance and reconstructed X--Y cross-covariance. Compute-only `fit_seconds`, peak RAM,
-selected penalties, iteration counts, monotonicity, and the imposed variance/relevance design
-plot are retained.
-
-## Commands
+The suite records noise-free Y/X reconstruction RMSE, separate sign-aligned unit-norm beta-shape
+RMSEs, and reconstructed X variance, Y variance, and X--Y cross-covariance. The experiment shows
+the difference between variance-ordered and response-oriented extraction. It does not establish
+that two PLS components are sufficient: exact reconstruction of the generative construction
+requires all ten, and `H = 10` is fixed by design rather than selected from data.
 
 ```sh
 make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=vary_H
 make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
 ```
+
+Expected paper inputs are `results/2D-predictive-order/aggregate/all/loaded_vary_H.rds`,
+`explained_structure.csv`, `latent_design.csv`, diagnostics, and the complete non-smoke status.
