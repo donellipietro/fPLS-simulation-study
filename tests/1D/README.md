@@ -5,9 +5,8 @@ analyses. It uses a predictor on `[0,1]`, one scalar response, four latent signa
 production replications, `NSR_X = 3`, `NSR_Y = 0.1`, tolerance `1e-8`, and at most 1000 solver
 iterations unless the selected family varies that quantity.
 
-The paper-facing comparisons are MV-PLS, B-fPLS with regression splines, B-fPLS with smoothing
-splines, PB-fPLS, and R1-fPLS. The runner also retains fPCR for source compatibility, but fPCR is
-not reported for Simulation 1.
+The manuscript comparisons are MV-PLS, B-fPLS with regression splines, B-fPLS with smoothing
+splines, PB-fPLS, and R1-fPLS.
 
 | Family | Production levels | Paper mapping |
 |---|---|---|
@@ -21,8 +20,8 @@ Here `n` is sample size, `m` is the number of observed locations, and `k` is the
 discretization size. B-fPLS/PB-fPLS use the family-specific basis settings encoded by
 `utils/generate_options.R`.
 
-For every retained prefix, the suite records noise-free Y- and X-reconstruction RMSE and the
-sign-aligned unit-norm beta-shape RMSE. Aggregates also retain compute-only fit time, peak RAM,
+For every component prefix, the suite records noise-free Y- and X-reconstruction RMSE and the
+sign-aligned unit-norm beta-shape RMSE. Aggregates also contain compute-only fit time, peak RAM,
 selected penalties, iteration counts, finite-solution flags, and monotonicity where available.
 
 ```sh

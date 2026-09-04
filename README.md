@@ -1,15 +1,14 @@
 # fPLS simulation study
 
 This repository contains the simulation code supporting the article and Supplementary Material
-for the R1-fPLS paper. The submitted branch is reviewer-facing: it contains the retained
-scientific suites, production/aggregation machinery, manuscript figure and table sources, and
-the editable Affinity layout. Generated data, fitted models, aggregate results, logs, panels,
-and exported PDFs are intentionally outside Git.
+for the R1-fPLS paper. It includes the simulation suites, production and aggregation machinery,
+manuscript figure and table sources, and the editable Affinity layout. Generated data, fitted
+models, aggregate results, logs, panels, and exported PDFs are intentionally outside Git.
 
-The accepted numerical evidence was produced from commit
-`a6f18492d821de36ee1093e30ffed4be9f4f8711`. Final manuscript figure sources were reviewed at
-`f098249e782b794d118d1da624ac0146bc1f6114`. This branch documents and packages those workflows;
-it does not claim that the production campaign was rerun after either commit.
+Production results were generated from commit
+`a6f18492d821de36ee1093e30ffed4be9f4f8711`. The manuscript figure-generation sources are at
+commit `f098249e782b794d118d1da624ac0146bc1f6114`. The production simulations were not rerun after
+these source changes.
 
 ## Paper map
 
@@ -19,7 +18,7 @@ it does not claim that the production campaign was rerun after either commit.
 | `1D/vary_n` | Article: Simulation 1 sample-size figure |
 | `1D/vary_m` | Supplement: varying observed locations |
 | `1D/vary_NSRX`, `1D/vary_NSRY` | Supplement: Simulation 1 noise robustness |
-| `2D/vary_H` | Article: Simulation 2 retained-component figure |
+| `2D/vary_H` | Article: Simulation 2 component-prefix figure |
 | `2D/vary_n` | Article: representative beta maps; Supplement: sample-size figure |
 | `2D/vary_m`, `2D/vary_k` | Supplement: observation- and mesh-resolution figures |
 | `2D/vary_NSRX`, `2D/vary_NSRY` | Supplement: Simulation 2 noise robustness |
@@ -27,9 +26,8 @@ it does not claim that the production campaign was rerun after either commit.
 | `GCV/small_lambda_m_gt_k`, `GCV/small_lambda_m_lt_k` | Supplement: fixed-penalty numerical checks for `m > k` and `m < k` |
 | `2D-predictive-order/vary_H` | Supplement: low-predictor-variance predictive-order experiment |
 
-fPCR is a reported benchmark only for Simulation 2 and the predictive-order experiment. The 1D
-runner retains an fPCR implementation for source compatibility, but the paper-facing 1D figures
-compare MV-PLS, the B-fPLS variants, PB-fPLS, and R1-fPLS.
+The Simulation 1 figures compare MV-PLS, the B-fPLS variants, PB-fPLS, and R1-fPLS. Simulation 2
+and the predictive-order experiment additionally report fPCR.
 
 ## Prerequisites
 
@@ -58,7 +56,7 @@ make build PROFILE=macbook
 make compile PROFILE=macbook MODEL=1D
 ```
 
-Run a retained family or all retained families in a suite:
+Run one family or every family in a suite:
 
 ```sh
 make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=vary_k
@@ -69,10 +67,10 @@ make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
 
 Production option cells use 30 replications and single-threaded model fits. `SMOKE_TEST=1`
 reduces option grids and replications for plumbing checks, but still fits models and is not a
-substitute for production evidence.
+substitute for a production run.
 
 `make kami_review_submit` is optional cluster-specific infrastructure. It builds and executes
-all retained suites serially inside one full-node Torque/PBS allocation, while individual fits
+all suites serially inside one full-node Torque/PBS allocation, while individual fits
 remain restricted to one computational thread. Use `PBS_DRY_RUN=1` to inspect the submission
 command without submitting a job.
 
@@ -98,7 +96,7 @@ external root contains `1D`, `2D`, `GCV`, and `2D-predictive-order`, each with a
 
 Paper-facing RMSE values compare fitted quantities with their noise-free references. Regression
 coefficient functions are normalized separately to unit Frobenius norm and sign-aligned before
-RMSE evaluation. The GCV sensitivity families additionally retain signed Frobenius cosine for
+RMSE evaluation. The GCV sensitivity families additionally report signed Frobenius cosine for
 the cumulative beta and absolute cosine for component-wise directions, loadings, and scores.
 
 `fit_seconds` is compute-only: it includes method-specific preprocessing/tuning, fitting, and
@@ -109,13 +107,12 @@ utilization claim is supported.
 
 ## Reproducibility boundary
 
-The manuscript figures were generated from complete validated aggregate trees with 30
-replications per option cell. The external raw archive is supporting evidence, not part of the
-submitted branch. Reproduction therefore requires external storage, the recorded fdaPDE commits,
-and substantial compute. GCV uses a deterministic seed of 0 and 100 stochastic trace probes,
-but exact timing and low-level numerics remain platform-dependent. Alternative initialization
-sensitivity was not studied.
+The manuscript figures were generated from complete aggregate trees with 30 replications per
+option cell. Raw results are stored externally and are not versioned in Git. Reproduction
+therefore requires external storage, the recorded fdaPDE commits, and substantial compute. GCV
+uses a deterministic seed of 0 and 100 stochastic trace probes, but exact timing and low-level
+numerics remain platform-dependent. Alternative initialization sensitivity was not studied.
 
-Figure panels require Cairo PDF support and Arial. Final assembly requires Affinity and the
+Figure panels require Cairo PDF support and Arial. Figure assembly requires Affinity and the
 versioned `paper-figures/layouts/figures.af`; this proprietary layout step is not automated.
 See `paper-figures/README.md` and `paper-tables/README.md` for post-processing commands.

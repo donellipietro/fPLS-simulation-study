@@ -1,7 +1,7 @@
 # Manuscript figure sources
 
-The R scripts in `scripts/` convert validated simulation results into vector panels. Final
-article and supplementary PDFs are assembled in the versioned Affinity document
+The R scripts in `scripts/` convert complete simulation results into vector panels. Article and
+supplementary PDFs are assembled in the versioned Affinity document
 `layouts/figures.af`; generated panels and exports are ignored.
 
 ## Figure map
@@ -24,7 +24,7 @@ article and supplementary PDFs are assembled in the versioned Affinity document
 
 ## Generate panels
 
-From the repository root, point `FPLS_RESULTS` to a result root containing the validated suite
+From the repository root, point `FPLS_RESULTS` to a result root containing the complete suite
 aggregates and run either one script or the complete target:
 
 ```sh
@@ -42,13 +42,12 @@ maps are 36.0 mm square, and the Simulation 1 data panels are 52.9 mm square and
 100%; do not rescale them.
 
 R produces scientific marks, numeric ticks, and shared legends. Panel letters, display titles,
-and final axis labels are maintained in Affinity. The 1D qualitative layout also contains the
+and axis labels are maintained in Affinity. The 1D qualitative layout also contains the
 selection rectangles linking the `k = 11` and `k = 101` zoom panels.
 
 ## Reproducibility limit
 
-`layouts/figures.af` is the editable assembly source, so final composition requires proprietary
-Affinity software and is not automated by Make. The final manuscript exports were identity-
-checked against the paper copies; running the panel scripts alone does not reproduce layout or
-prove identity. Any changed aggregate, panel, layout, or export requires a new provenance
-snapshot.
+`layouts/figures.af` is the editable assembly source, so composition requires proprietary
+Affinity software and is not automated by Make. Running the panel scripts alone does not
+reproduce the assembled layout. Recreating the manuscript PDFs requires opening the Affinity
+document, relinking generated panels when needed, and exporting the corresponding figures.

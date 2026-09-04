@@ -10,7 +10,7 @@ The only family is `vary_H`. Production settings are `n = 100`, `m = 1600`, `k =
 `30 x 30` finite-element mesh, 30 replications, `NSR_X = 3`, `NSR_Y = 0.1`, tolerance `1e-8`,
 and at most 1000 iterations.
 
-The suite records noise-free Y/X reconstruction RMSE, separate sign-aligned unit-norm beta-shape
+Outputs include noise-free Y/X reconstruction RMSE, separate sign-aligned unit-norm beta-shape
 RMSEs, and reconstructed X variance, Y variance, and X--Y cross-covariance. The experiment shows
 the difference between variance-ordered and response-oriented extraction. It does not establish
 that two PLS components are sufficient: exact reconstruction of the generative construction

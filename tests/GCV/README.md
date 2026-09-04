@@ -18,10 +18,10 @@ penalties separately after each deflation step. The `lambda = 0` cell is the non
 MV-PLS benchmark and has no objective history.
 
 Sensitivity outputs evaluate every fitted prefix against its matching noise-free prefix. They
-retain X/Y RMSE, sign-aligned unit-norm beta-shape RMSE, signed Frobenius cosine for cumulative
+include X/Y RMSE, sign-aligned unit-norm beta-shape RMSE, signed Frobenius cosine for cumulative
 beta, and absolute cosine for each direction, loading, and score in extraction order. The
-near-zero families retain finite-solution, iteration-cap, monotonicity, fit-time, and peak-RAM
-diagnostics against the final truth.
+near-zero families include finite-solution, iteration-cap, monotonicity, fit-time, and peak-RAM
+diagnostics against the four-component truth.
 
 ```sh
 make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity_review
