@@ -1,6 +1,6 @@
 # = ========================================================================== =
 # - Test: fPLS GCV and numerical-stability diagnostics
-# - Desc: One-dimensional tuning, asymptotic, and near-zero-lambda tests.
+# - Desc: One-dimensional tuning and near-zero-lambda tests reported in the supplement.
 # = ========================================================================== =
 
 ## Test suite full name and directory name ----
@@ -14,8 +14,7 @@ sensitivity_families <- c(
 test_groups <- list(
   sensitivity_review = sensitivity_families,
   all = c(
-    sensitivity_families, "lambda_to_zero",
-    "small_lambda_m_gt_k", "small_lambda_m_lt_k"
+    sensitivity_families, "small_lambda_m_gt_k", "small_lambda_m_lt_k"
   )
 )
 

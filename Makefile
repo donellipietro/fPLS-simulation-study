@@ -86,7 +86,7 @@ COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
         ensure_env \
         compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
-        run_test inspect_results kami_review_submit \
+        run_test kami_review_submit \
         simulation_figure_panels simulation_paper_tables
 
 
@@ -153,9 +153,6 @@ ensure_env:
 install_femR: write_env create_dirs
 	@printf '\nInstalling femR...\n'
 	@set -a; source .env; set +a; $(RSCRIPT) src/installation/install_femR.R
-# install_fdaPDE:
-# 	@printf '\nInstalling fdaPDE...\n'
-# 	@$(RSCRIPT) src/installation/install_fdaPDE.R
 install: install_femR
 	@printf '\nInstallation completed.\n'
 
@@ -398,46 +395,6 @@ kami_review_submit:
 	PBS_ACCOUNT="$(PBS_ACCOUNT)" \
 	PBS_EXCLUSIVE_RESOURCE="$(PBS_EXCLUSIVE_RESOURCE)" \
 		bash scripts/submit_kami_review.sh
-
-## Inspect results of a specific test interactively
-# Usage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>
-# Lists available result files in tmp/queue/<suite>/<test>, lets you select one,
-# and runs the corresponding R scripts to visualize or analyze it.
-inspect_results: ensure_env
-	@if [ -z "$(TEST_SUITE)" ] || [ -z "$(TEST_NAME)" ]; then \
-		printf '\nUsage: make inspect_results TEST_SUITE=<suite> TEST_NAME=<test_name>\n'; \
-		echo ""; \
-		echo "Available TEST_SUITEs:"; \
-		find tests -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | \
-		sed 's/^\(.*\)/- \1 (make inspect_results TEST_SUITE=\1 TEST_NAME=<test_name>)/'; \
-		echo ""; \
-		exit 0; \
-	else \
-		set -e; \
-		set -a; source .env; set +a; \
-		queue_directory="$${PATH_QUEUE}/$(TEST_SUITE)/$(TEST_NAME)"; \
-		SMOKE_TEST="$(SMOKE_TEST)" $(RSCRIPT) src/init.R "$(TEST_SUITE)" "$(TEST_NAME)"; \
-		echo "Available files in $$queue_directory:"; \
-		files=($$(ls -1 "$$queue_directory" 2>/dev/null)); \
-		if [ $${#files[@]} -eq 0 ]; then \
-			echo "No files found in $$queue_directory."; \
-			exit 1; \
-		fi; \
-		count=$${#files[@]}; \
-		for i in $$(seq 1 $$count); do \
-			echo "  $$i) $${files[$$((i-1))]}"; \
-		done; \
-		echo ""; \
-		read -p "Select a file number: " choice; \
-		if [ $$choice -ge 1 ] && [ $$choice -le $$count ]; then \
-			selected=$${files[$$((choice-1))]}; \
-			echo "Running RScript with selected file: $$selected"; \
-			$(RSCRIPT) "tests/$(TEST_SUITE)/inspect_results.R" "$(TEST_NAME)" "$$selected"; \
-		else \
-			echo "Invalid choice!"; \
-			exit 1; \
-		fi; \
-	fi
 
 # Show available targets and descriptions
 # Pretty printing for help (tweak width/color as you like)

@@ -51,13 +51,6 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       n_locs <- 200L
       source_k <- 51L
     },
-    lambda_to_zero = {
-      varying <- "n_stat_units"
-      lambda <- -1
-      n_stat_units <- if (SMOKE_TEST) c(50L, 200L) else c(50L, 100L, 200L, 500L, 1000L, 2000L, 5000L)
-      n_locs <- 100L
-      source_k <- 51L
-    },
     small_lambda_m_gt_k = {
       varying <- "lambda"
       lambda <- if (SMOKE_TEST) c(1e-300, 1e-20, 1e-9) else near_zero_grid
