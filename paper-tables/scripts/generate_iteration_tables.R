@@ -33,6 +33,7 @@ specs <- list(
   spec("1D", "vary_NSRX", c(1, 3, 5, 10)),
   spec("1D", "vary_NSRY", c(0.01, 0.1, 0.5, 1)),
   spec("2D", "vary_n", c(50, 100, 200)),
+  spec("2D", "vary_m", c(900, 1600, 2400)),
   spec("2D", "vary_k", c(25, 100, 400, 900, 1600, 2500)),
   spec("2D", "vary_NSRX", c(1, 3, 5, 10)),
   spec("2D", "vary_NSRY", c(0.01, 0.1, 0.5, 1)),
@@ -186,7 +187,7 @@ summary <- data.frame(
   all_solutions_finite = all(all_finite == 1)
 )
 
-if (nrow(fixed) != 11L || nrow(varying) != 15L || nrow(summary) != 1L ||
+if (nrow(fixed) != 12L || nrow(varying) != 15L || nrow(summary) != 1L ||
     any(fixed[grep("_median$", names(fixed))] > fixed[grep("_max$", names(fixed))]) ||
     any(varying$median_iterations > varying$max_iterations)) {
   stop("Generated iteration-table shape or summaries are inconsistent")

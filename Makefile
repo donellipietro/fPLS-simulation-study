@@ -103,10 +103,11 @@ simulation_figure_panels:
 	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_nsrx.R
 	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_nsry.R
 	@$(RSCRIPT) paper-figures/scripts/2D_qualitative.R
-	@$(RSCRIPT) paper-figures/scripts/2D_vary_n.R
+	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_n.R
 	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_nsrx.R
 	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_nsry.R
 	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_m.R
+	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_m.R
 	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_k.R
 	@FPLS_GCV_HORIZONTAL_FINAL=true $(RSCRIPT) paper-figures/scripts/S_1D_gcv_sensitivity.R
 	@$(RSCRIPT) paper-figures/scripts/2D_vary_H.R

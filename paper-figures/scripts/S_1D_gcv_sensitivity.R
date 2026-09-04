@@ -110,7 +110,7 @@ write_fit_time_panel <- function(loaded, filename) {
 }
 
 write_tuning_legend <- function(filename) {
-  labels <- c("R1-fPLS (GCV)", "MV-PLS", "R1-fPLS (fixed lambda)")
+  labels <- c("R1-fPLS (GCV)", "MV-PLS", "R1-fPLS (fixed λ)")
   colors <- unname(tuning_colors[c("GCV", "MV-PLS", "-9")])
   grDevices::cairo_pdf(filename, width = 3.8, height = 0.28, family = "Arial", bg = "white")
   on.exit(grDevices::dev.off(), add = TRUE)
