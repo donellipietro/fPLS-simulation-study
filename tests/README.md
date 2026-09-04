@@ -22,5 +22,5 @@ make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
 
 `GCV/sensitivity_review` is a convenience group containing the two GCV sensitivity families; it
 is not a separate experiment. Generated queue, data, result, image, log, and build trees are
-ignored. A manuscript-facing aggregate must have a complete non-smoke `run_status.json` and all
-expected replications before it is used by figure or table scripts.
+ignored. An aggregate must have a complete non-smoke `run_status.json` and all expected
+replications before figure or table scripts use it.

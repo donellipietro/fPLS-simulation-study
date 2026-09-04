@@ -7,8 +7,7 @@ models, aggregate results, logs, panels, and exported PDFs are intentionally out
 
 Production results were generated from commit
 `a6f18492d821de36ee1093e30ffed4be9f4f8711`. The manuscript figure-generation sources are at
-commit `f098249e782b794d118d1da624ac0146bc1f6114`. The production simulations were not rerun after
-these source changes.
+commit `f098249e782b794d118d1da624ac0146bc1f6114` and use those archived production results.
 
 ## Paper map
 
@@ -94,7 +93,7 @@ external root contains `1D`, `2D`, `GCV`, and `2D-predictive-order`, each with a
 
 ## Metrics and computational boundary
 
-Paper-facing RMSE values compare fitted quantities with their noise-free references. Regression
+Reported RMSE values compare fitted quantities with their noise-free references. Regression
 coefficient functions are normalized separately to unit Frobenius norm and sign-aligned before
 RMSE evaluation. The GCV sensitivity families additionally report signed Frobenius cosine for
 the cumulative beta and absolute cosine for component-wise directions, loadings, and scores.
