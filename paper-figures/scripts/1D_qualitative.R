@@ -9,13 +9,16 @@ for (k in c(11L, 101L)) {
   batch <- file.path(results_root, "1D", "vary_k", sprintf("vary_k_source_k_%04d", k), "batch_1")
   data <- readRDS(file.path(batch, "generated_data.rds"))
   truth <- normalize_shape(data$truth$Beta_reference[, 1])[, 1]
-  truth_locations <- normalize_shape(data$truth$Beta_locations[, 1])[, 1]
   observed <- data$evaluation[, 1] >= min(data$locations[, 1]) & data$evaluation[, 1] <= max(data$locations[, 1])
   estimates <- lapply(models, function(model) {
     fitted <- load_model(file.path(batch, paste0("batch_1_fitted_model_", model, ".RData")), model)
+    raw_evaluation <- fitted$results$Beta_evaluation[[4L]][, 1]
+    evaluation <- aligned_shape(raw_evaluation, truth)
+    # Use the same normalization and orientation on both sampling grids.
+    scale <- sign(sum(evaluation * raw_evaluation)) / sqrt(sum(raw_evaluation^2))
     list(
-      evaluation = aligned_shape(fitted$results$Beta_evaluation[[4L]][, 1], truth),
-      locations = aligned_shape(fitted$results$Beta_locations[[4L]][, 1], truth_locations)
+      evaluation = evaluation,
+      locations = scale * fitted$results$Beta_locations[[4L]][, 1]
     )
   })
   names(estimates) <- models
@@ -26,8 +29,8 @@ for (k in c(11L, 101L)) {
   plot(data$evaluation[, 1], truth, type = "n", ylim = range(values), xlab = "", ylab = "", xaxt = "n", yaxt = "n")
   grid(col = "grey90", lty = 3, lwd = 0.4)
   lines(data$evaluation[, 1], truth, col = "black", lty = 2, lwd = 1.15)
-  lines(data$locations[, 1], estimates$MV_PLS$locations, col = "grey70", lty = 2, lwd = 0.55)
-  points(data$locations[, 1], estimates$MV_PLS$locations, col = "grey70", pch = 16, cex = 0.48)
+  lines(data$locations[, 1], estimates$MV_PLS$locations, col = colours[["MV_PLS"]], lty = 2, lwd = 0.55)
+  points(data$locations[, 1], estimates$MV_PLS$locations, col = colours[["MV_PLS"]], pch = 16, cex = 0.48)
   for (model in models[-1]) lines(data$evaluation[observed, 1], estimates[[model]]$evaluation[observed], col = colours[[model]], lwd = if (model %in% c("B_fPLS_smooth", "R1_fPLS")) 1.35 else 0.8)
   grDevices::dev.off()
 
@@ -43,8 +46,8 @@ for (k in c(11L, 101L)) {
   plot(data$evaluation[selected, 1], truth[selected], type = "n", xlim = x_limits, ylim = range(zoom_values),
        xlab = "", ylab = "", xaxt = "n", yaxt = "n", bty = "n")
   lines(data$evaluation[selected, 1], truth[selected], col = "black", lty = 2, lwd = 1.15)
-  lines(data$locations[location_selected, 1], estimates$MV_PLS$locations[location_selected], col = "grey70", lty = 2, lwd = 0.55)
-  points(data$locations[location_selected, 1], estimates$MV_PLS$locations[location_selected], col = "grey70", pch = 16, cex = 0.48)
+  lines(data$locations[location_selected, 1], estimates$MV_PLS$locations[location_selected], col = colours[["MV_PLS"]], lty = 2, lwd = 0.55)
+  points(data$locations[location_selected, 1], estimates$MV_PLS$locations[location_selected], col = colours[["MV_PLS"]], pch = 16, cex = 0.48)
   for (model in models[-1]) lines(data$evaluation[selected, 1], estimates[[model]]$evaluation[selected], col = colours[[model]], lwd = if (model %in% c("B_fPLS_smooth", "R1_fPLS")) 1.35 else 0.8)
   box(col = "grey80", lwd = 0.8)
   grDevices::dev.off()
@@ -54,7 +57,7 @@ grDevices::cairo_pdf(panel_path("1D_qualitative", "legend.pdf"), width = 6.85, h
 grid.newpage()
 legend_items <- list(
   list("Ground truth", "black", 2, 1.5, NA, 5, 12.2),
-  list(labels[["MV_PLS"]], "grey70", 2, 1, 16, 5, 7.9),
+  list(labels[["MV_PLS"]], colours[["MV_PLS"]], 2, 1, 16, 5, 7.9),
   list(labels[["R1_fPLS"]], colours[["R1_fPLS"]], 1, 2, NA, 5, 3.6),
   list(labels[["B_fPLS"]], colours[["B_fPLS"]], 1, 1, NA, 91, 12.2),
   list(labels[["B_fPLS_smooth"]], colours[["B_fPLS_smooth"]], 1, 2, NA, 91, 7.9),

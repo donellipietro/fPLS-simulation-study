@@ -37,10 +37,18 @@ panel_path <- function(figure_id, filename) {
   file.path(directory, filename)
 }
 
+# Approved model palette; keep numerical result archives unchanged.
+model_palette <- c(MV_PLS = "#929292", B_fPLS = "#FA9FB5",
+                   B_fPLS_smooth = "#E65BA5", PB_fPLS = "#B92B7D",
+                   R1_fPLS = "#234B8A", fPCR = "#2D9950")
+
 read_family <- function(suite, family) {
   file <- file.path(results_root, suite, "aggregate", "all", paste0("loaded_", family, ".rds"))
   if (!file.exists(file)) stop("Missing aggregated simulation results: ", file)
-  readRDS(file)
+  loaded <- readRDS(file)
+  loaded$model_colors <- unname(model_palette[loaded$model_names])
+  if (anyNA(loaded$model_colors)) stop("Missing model palette entry.")
+  loaded
 }
 
 final_component <- function(data) {
@@ -93,17 +101,74 @@ write_metric_panel <- function(loaded, metric, filename, limits = NULL, include_
   save_panel(plot, filename, height = panel_height, y_axis_width = 8.5)
 }
 
+time_tick_labels <- function(x) {
+  vapply(10^x, function(value) {
+    format(signif(value, 2), trim = TRUE, scientific = FALSE)
+  }, character(1))
+}
+
 write_time_panel <- function(loaded, filename, include_fpcr = FALSE, panel_height = 2.02) {
   data <- loaded$fit_seconds
   models <- if (include_fpcr) loaded$model_names else setdiff(loaded$model_names, "fPCR")
   data$Group <- data[[loaded$varying_options[1]]]
   for (model in models) data[[model]] <- log10(data[[model]])
-  plot <- plot.grouped_boxplots(
-    data[, c("Group", models)], group_name = NULL, values_name = NULL,
-    subgroup_labels = loaded$model_labels[match(models, loaded$model_names)],
-    subgroup_colors = loaded$model_colors[match(models, loaded$model_names)],
-    Y_LABELS = fixed_y_labels(1), LEGEND = FALSE, MEDIAN_LINES = TRUE
-  ) + panel_theme()
+  data <- tidyr::pivot_longer(data[, c("Group", models)], -Group,
+                              names_to = "Model", values_to = "Seconds")
+  groups <- sort(unique(data$Group))
+  if (any(!is.finite(data$Group) | data$Group <= 0) ||
+      any(!is.finite(data$Seconds))) stop("Log-log time panels require positive finite inputs.")
+  variable <- switch(loaded$varying_options[1], source_k = "k", n_stat_units = "n",
+                     n_locs = "m", NSR_X_final_component = "NSR[X]", NSR_Y = "NSR[Y]")
+  if (is.null(variable)) stop("Unknown time-panel variable: ", loaded$varying_options[1])
+  medians <- aggregate(Seconds ~ Group + Model, data, median)
+  guides <- data.frame()
+  if (variable == "k") {
+    # Reference slopes only: vertical placement is arbitrary, not a complexity fit.
+    dx <- min(0.28 * diff(range(log10(groups))), 0.30)
+    start <- min(log10(groups)) + c(0.08, 0.60) * diff(range(log10(groups)))
+    guides <- data.frame(
+      x = 10^start, xend = 10^(start + dx),
+      y = max(medians$Seconds) + 0.18,
+      yend = max(medians$Seconds) + 0.18 + c(1, 2) * dx,
+      label_x = 10^(start + dx / 2),
+      label_y = max(medians$Seconds) + 0.36 + c(1, 2) * dx
+    )
+    if (variable == "k" && !include_fpcr) {
+      guides <- data.frame(x = c(6, 30), xend = c(25, 85),
+                           y = log10(c(0.6, 0.08)),
+                           yend = log10(c(2.5, 0.08 * (85 / 30)^2)),
+                           label_x = c(15, 70), label_y = log10(c(2.3, 0.20)))
+    } else {
+      guides[, c("y", "yend", "label_y")] <- guides[, c("y", "yend", "label_y")] - 1
+      guides[2, c("y", "yend", "label_y")] <- guides[2, c("y", "yend", "label_y")] + 0.5
+    }
+  }
+  y_range <- range(c(medians$Seconds, guides$y, guides$yend, guides$label_y))
+  y_breaks <- seq(floor(y_range[1]), ceiling(y_range[2]))
+  # Half-decades keep short time ranges readable without changing the log scale.
+  if (sum(y_breaks >= y_range[1] & y_breaks <= y_range[2]) < 2L) {
+    y_breaks <- seq(floor(2 * y_range[1]) / 2, ceiling(2 * y_range[2]) / 2, 0.5)
+  }
+  plot <- ggplot(data, aes(x = Group, y = Seconds, colour = Model, group = Model)) +
+    geom_vline(xintercept = groups, linewidth = 0.2, colour = "grey") +
+    stat_summary(fun = median, geom = "line", linewidth = 1.15) +
+    scale_colour_manual(values = setNames(
+      loaded$model_colors[match(models, loaded$model_names)], models
+    )) +
+    scale_x_log10(breaks = groups, labels = trimws(formatC(groups, format = "g", digits = 4))) +
+    scale_y_continuous(breaks = y_breaks,
+                       labels = time_tick_labels) +
+    panel_theme()
+  for (i in seq_len(nrow(guides))) {
+    plot <- plot +
+      annotate("segment", x = guides$x[i], xend = guides$xend[i],
+               y = guides$y[i], yend = guides$yend[i],
+               linetype = c("dashed", "dotdash")[i], colour = "grey25", linewidth = 0.45) +
+      annotate("label", x = guides$label_x[i], y = guides$label_y[i],
+               label = paste0("O(", variable, if (i == 2) "^2" else "", ")"),
+               parse = TRUE, size = 2.5, colour = "grey25", fill = "white",
+               linewidth = 0, label.padding = unit(0.5, "pt"))
+  }
   save_panel(plot, filename, height = panel_height, y_axis_width = 8.5)
 }
 

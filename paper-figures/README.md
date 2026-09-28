@@ -47,3 +47,15 @@ panel layouts as the corresponding `vary_n` figures.
 
 `S_2D_vary_H_extended.R` writes the same panel set for the
 ten-component predictive-order experiment (`H = 1, ..., 10`).
+
+The `vary` fit-time panels use log10 axes with ticks labelled in original units,
+median lines, and (only for `vary_k`) dashed/dot-dashed slope guides for
+linear/quadratic growth in k. These guides are references, not fitted complexity claims.
+Their labels have a small white background to stay clear of grid lines. GCV
+fit-time panels retain the original boxplots on a log10 time axis, with tick labels in seconds. Run
+`Rscript paper-figures/scripts/check_time_panels.R` to check both panel types.
+
+The approved model palette is defined once in `scripts/common.R` and applied
+when reading figure data, without modifying aggregated result archives. It is
+shared by quantitative panels, qualitative curves, legends, and GCV model colours.
+fPCR uses the approved green `#2D9950`; fixed-lambda GCV comparisons keep their light-blue category.
