@@ -51,3 +51,14 @@ selection rectangles linking the `k = 11` and `k = 101` zoom panels.
 Affinity software and is not automated by Make. Running the panel scripts alone does not
 reproduce the assembled layout. Recreating the manuscript PDFs requires opening the Affinity
 document, relinking generated panels when needed, and exporting the corresponding figures.
+
+The `vary` fit-time panels use log10 axes with ticks labelled in original units and median
+lines. `vary_k` also includes reference guides for linear and quadratic growth in `k`; these
+are not fitted complexity claims. GCV fit-time panels retain boxplots on a log10 time axis,
+with tick labels in seconds. Run `Rscript paper-figures/scripts/check_time_panels.R` to
+check both panel types.
+
+The approved model palette is defined in `scripts/common.R` and applied when reading figure
+data, without changing aggregated result archives. It is shared by quantitative panels,
+qualitative curves, legends, and GCV model colours. fPCR uses `#2D9950`; fixed-lambda GCV
+comparisons retain their light-blue category.

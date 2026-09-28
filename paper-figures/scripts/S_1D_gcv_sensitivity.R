@@ -28,10 +28,10 @@ tuning_levels <- c("gcv", "mv_pls", paste0("1e", -9:-2))
 tuning_labels <- c("GCV", "MV-PLS", as.character(-9:-2))
 tuning_axis_labels <- c("GCV", "MV", as.character(-9:-2))
 tuning_colors <- c(
-  "GCV" = "#377EB8", "MV-PLS" = "#666666",
+  "GCV" = unname(model_palette["R1_fPLS"]), "MV-PLS" = unname(model_palette["MV_PLS"]),
   stats::setNames(rep("#9ECAE1", 8L), as.character(-9:-2))
 )
-selection_color <- "#C58A00"
+selection_color <- "#754E00"
 
 family_suffix <- function(family) {
   if (grepl("_high_NSRX$", family)) "_high_nsrx" else ""
@@ -104,7 +104,7 @@ write_fit_time_panel <- function(loaded, filename) {
                  colour = "#333333") +
     scale_fill_manual(values = tuning_colors, guide = "none") +
     scale_x_discrete(labels = tuning_axis_labels) +
-    scale_y_continuous(labels = fixed_y_labels(1), expand = expansion(mult = c(0.04, 0.08))) +
+    scale_y_continuous(labels = time_tick_labels, expand = expansion(mult = c(0.04, 0.08))) +
     gcv_panel_theme()
   save_panel(plot, filename, width = 6.27, height = 1.18, y_axis_width = 7.5)
 }
@@ -195,7 +195,7 @@ horizontal_selection_plot <- function(loaded, curves, update, component) {
   summary <- curve_data |>
     dplyr::group_by(log_lambda) |>
     dplyr::summarise(
-      median = median(gcv), lower = quantile(gcv, 0.25), upper = quantile(gcv, 0.75),
+      median = median(gcv),
       .groups = "drop"
     )
   mode_counts <- table(selected$selected_log_lambda)
@@ -223,14 +223,10 @@ horizontal_selection_plot <- function(loaded, curves, update, component) {
   upper_limit <- 10^(log_ticks[length(log_ticks)] + 0.04)
   plot <- ggplot(curve_data, aes(x = log_lambda, y = gcv, group = batch)) +
     geom_line(colour = "grey55", alpha = 0.28, linewidth = 0.22) +
-    geom_ribbon(
-      data = summary, aes(x = log_lambda, ymin = lower, ymax = upper),
-      inherit.aes = FALSE, fill = "#377EB8", alpha = 0.22
-    ) +
     geom_line(data = summary, aes(x = log_lambda, y = median), inherit.aes = FALSE,
-              colour = "#377EB8", linewidth = 0.55) +
+              colour = unname(model_palette["R1_fPLS"]), linewidth = 0.55) +
     geom_point(data = summary, aes(x = log_lambda, y = median), inherit.aes = FALSE,
-               colour = "#377EB8", size = 0.8) +
+               colour = unname(model_palette["R1_fPLS"]), size = 0.8) +
     geom_text(data = replication_points,
               aes(x = log_lambda, y = gcv), inherit.aes = FALSE,
               label = "✦", family = "Arial", size = 1.45,
@@ -315,7 +311,7 @@ write_curve_legend <- function(filename) {
   }
 
   ## First row: the two curve styles.
-  curve_labels <- c("GCV curves (repetitions)", "GCV curves (median/IQR)")
+  curve_labels <- c("GCV curves (repetitions)", "GCV curves (median)")
   curve_items <- centered_items(curve_labels, c(10, 10))
   curve_y <- 10.5
   grid.segments(
@@ -324,15 +320,10 @@ write_curve_legend <- function(filename) {
     gp = gpar(col = "grey55", alpha = 0.5, lwd = 0.7)
   )
   draw_label(curve_labels[1], curve_items$x[1] + 10 + label_gap, curve_y)
-  grid.rect(
-    x = unit(curve_items$x[2], "mm"), y = unit(curve_y, "mm"),
-    width = unit(10, "mm"), height = unit(2.8, "mm"), just = c("left", "centre"),
-    gp = gpar(col = NA, fill = grDevices::adjustcolor("#377EB8", alpha.f = 0.22))
-  )
   grid.segments(
     x0 = unit(curve_items$x[2], "mm"), x1 = unit(curve_items$x[2] + 10, "mm"),
     y0 = unit(curve_y, "mm"), y1 = unit(curve_y, "mm"),
-    gp = gpar(col = "#377EB8", lwd = 1.2)
+    gp = gpar(col = unname(model_palette["R1_fPLS"]), lwd = 1.2)
   )
   draw_label(curve_labels[2], curve_items$x[2] + 10 + label_gap, curve_y)
 

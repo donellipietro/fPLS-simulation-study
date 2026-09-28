@@ -1,13 +1,14 @@
 # fPLS simulation study
 
 This repository contains the simulation code supporting the article and Supplementary Material
-for the R1-fPLS paper. It includes the simulation suites, production and aggregation machinery,
+for “Rank-One Functional Partial Least Squares Regression”. It includes the simulation suites, production and aggregation machinery,
 manuscript figure and table sources, and the editable Affinity layout. Generated data, fitted
 models, aggregate results, logs, panels, and exported PDFs are intentionally outside Git.
 
 Production results were generated from commit
-`a6f18492d821de36ee1093e30ffed4be9f4f8711`. The manuscript figure-generation sources are at
-commit `f098249e782b794d118d1da624ac0146bc1f6114` and use those archived production results.
+`a6f18492d821de36ee1093e30ffed4be9f4f8711`. The original manuscript figure-generation sources were recorded at
+commit `f098249e782b794d118d1da624ac0146bc1f6114`; later figure refinements in this branch
+use the same archived production results.
 
 ## Paper map
 
