@@ -1,7 +1,6 @@
 # fPLS Simulation Study
 
-This repository contains the simulation experiments used for the fPLS paper and its reviewer
-diagnostics. Production runs use 30 replications per option cell and single-threaded fits.
+This repository contains the simulation experiments used for the paper “Rank-One Functional Partial Least Squares Regression”. Production runs use 30 replications per option cell and single-threaded fits.
 
 ## Experiment catalog
 
