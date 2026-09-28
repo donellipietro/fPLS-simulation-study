@@ -36,8 +36,9 @@ and the predictive-order experiment additionally report fPCR.
 - the CRAN packages installed by `src/installation/install_femR.R`, plus `MASS`, `PRIMME`, and
   `cowplot` for data generation, 2D eigensolvers, and GCV figure composition;
 - `fdaPDE-cpp` with its `fdaPDE/core` dependency. `make build` obtains the configured
-  `develop_fPLS` branch through `cpp/clone_fdapde.sh` and pins outer commit `92ab954`
-  and core commit `1b75249`. Production provenance records the exact commits used by each fit;
+  `develop_fPLS` branch through `cpp/clone_fdapde.sh` and pins outer commit `fbf764f`
+  and core commit `472f9bd` from `codex/fpls-stable-parser` (stable plus the table-reader path fix).
+  Production provenance records the exact commits used by each fit;
 - Docker for the `windows` profile, or Apptainer/Singularity plus a scheduler for HPC profiles.
 
 Available profiles are `macbook`, `windows`, `hpc-slurm`, and `hpc-torque`. Profile defaults are
