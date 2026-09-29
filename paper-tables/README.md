@@ -4,7 +4,18 @@
 summaries supporting the Supplementary Material's R1-fPLS convergence table and the article's
 global convergence statements.
 
-From the repository root:
+Follow the [setup and execution instructions](../README.md#setup-and-execution), then run each
+suite (`1D`, `2D`, `GCV`, and `2D-predictive-order`) with `TEST_NAME=all` to prepare the complete
+results. `make build` installs the required R packages.
+
+From the repository root, generate all manuscript CSV tables with:
+
+```sh
+make simulation_paper_tables
+```
+
+The target loads `.env` when present, including the configured R library paths, and reads
+`results/` by default. To use results stored elsewhere:
 
 ```sh
 FPLS_RESULTS=/absolute/path/to/results make simulation_paper_tables
@@ -15,7 +26,7 @@ The result root must contain complete production `aggregate/all` trees for `1D`,
 or finite solution is missing. The non-iterative `lambda = 0` MV-PLS benchmark in the GCV
 sensitivity families is checked but excluded from R1-fPLS iteration summaries.
 
-Generated files under `paper-tables/csv/` are ignored:
+The generated files are saved in `paper-tables/csv/`, relative to the repository root:
 
 - `fixed_h_iterations.csv`: component-wise median and maximum for four-component experiments;
 - `varying_h_iterations.csv`: long-format summaries for the two varying-H experiments;

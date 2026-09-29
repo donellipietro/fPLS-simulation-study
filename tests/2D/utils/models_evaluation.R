@@ -9,20 +9,8 @@ normalize_beta_shape <- function(value) {
   value / value_norm
 }
 
-align_beta_shape <- function(estimate, truth) {
-  estimate <- normalize_beta_shape(estimate)
-  truth <- normalize_beta_shape(truth)
-  positive_error <- source_figure_rmse(estimate, truth)
-  negative_error <- source_figure_rmse(-estimate, truth)
-  if (is.finite(positive_error) && is.finite(negative_error) &&
-      positive_error > negative_error) {
-    estimate <- -estimate
-  }
-  estimate
-}
-
 source_figure_beta_rmse <- function(estimate, truth) {
-  source_figure_rmse(align_beta_shape(estimate, truth), normalize_beta_shape(truth))
+  source_figure_rmse(normalize_beta_shape(estimate), normalize_beta_shape(truth))
 }
 
 component_result <- function(model, name, n_comp) {
@@ -36,6 +24,10 @@ component_result <- function(model, name, n_comp) {
 }
 
 evaluate_results <- function(model, data, test_options) {
+  if (identical(model$MODE, "fPCR") &&
+      !identical(model$results$telemetry$fpcr_score_map, "sequential_projection_v1")) {
+    stop("Outdated fPCR score-to-beta map. Re-run make run_test for this suite to refit fPCR before evaluating or aggregating results.")
+  }
   n_comp <- data$dimensions$n_comp
   n_responses <- data$dimensions$n_responses
   rmse <- list(
@@ -66,6 +58,8 @@ evaluate_results <- function(model, data, test_options) {
 
   list(
     rmse = rmse,
+    beta_sign_alignment = FALSE,
+    fpcr_score_map = model$results$telemetry$fpcr_score_map,
     data_seed = data$data_seed,
     location_seed = data$location_seed,
     dimension = data$dimension,

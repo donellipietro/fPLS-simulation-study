@@ -8,7 +8,7 @@ checks <- quote({
  for(model in models){
   fit<-load_model(file.path(batch,paste0('batch_1_fitted_model_',model,'.RData')),model)
   raw<-fit$results$Beta_evaluation[[4]][,1]
-  expected<-aligned_shape(raw,truth)
+  expected<-normalize_shape(raw)[,1]
   stopifnot(isTRUE(all.equal(estimates[[model]]$evaluation,expected)))
  }
  idx<-match(data$locations[,1],data$evaluation[,1])

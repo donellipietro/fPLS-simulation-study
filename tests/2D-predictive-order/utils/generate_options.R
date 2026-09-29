@@ -74,7 +74,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
     provenance = list(
       metric_formula = paste(
         "Y/X: sqrt(mean((estimate-truth)^2));",
-        "beta: sign-aligned unit-norm shape RMSE"
+        "beta: unit-norm shape RMSE without sign alignment"
       ),
       smoke_test = SMOKE_TEST
     )

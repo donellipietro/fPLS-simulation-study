@@ -1,6 +1,8 @@
 #ifndef FPLS_SIMULATION_FPCR_DRIVER_H
 #define FPLS_SIMULATION_FPCR_DRIVER_H
 
+#include "fpcr_score_map.h"
+
 template <typename Domain, typename Space, typename Penalty>
 int run_fpcr(
   const json& params, Domain& domain, Space& space, Penalty&& penalty,
@@ -53,7 +55,9 @@ int run_fpcr(
     const matrix_t basis_at_locations = internals::point_basis_eval(space, locations);
     const matrix_t basis_at_evaluation = internals::point_basis_eval(space, evaluation);
     const matrix_t F_locations = basis_at_locations * model.F();
-    const matrix_t full_regression = model.S().colPivHouseholderQr().solve(Y);
+    const auto [score_directions, projected_scores] = fpcr_score_map(X, basis_at_locations, model.F(), model.S());
+    const matrix_t direction_locations = basis_at_locations * score_directions;
+    const matrix_t full_regression = projected_scores.colPivHouseholderQr().solve(Y);
     matrix_t fpca_lambdas = model.lambda();
     if (fpca_lambdas.rows() == 1 && fpca_lambdas.cols() == n_comp) {
         fpca_lambdas.transposeInPlace();
@@ -87,9 +91,9 @@ int run_fpcr(
           !history.empty() && std::isfinite(history.back()) ? 1.0 : 0.0;
 
         const int component = h + 1;
-        const matrix_t scores = model.S().leftCols(component);
+        const matrix_t scores = projected_scores.leftCols(component);
         const matrix_t coefficients = scores.colPivHouseholderQr().solve(Y);
-        beta_coefficients[h] = model.F().leftCols(component) * coefficients;
+        beta_coefficients[h] = score_directions.leftCols(component) * coefficients;
         Y_hat[h] = scores * coefficients;
         X_hat_locations[h] = scores * F_locations.leftCols(component).transpose();
         beta_locations[h] = basis_at_locations * beta_coefficients[h];
@@ -107,13 +111,11 @@ int run_fpcr(
     const auto postprocess_end = std::chrono::steady_clock::now();
 
     std::filesystem::create_directories(output_dir);
-    write_csv(output_file(output_dir, "x_space_directions_coefficients.csv"), model.F());
-    write_csv(output_file(output_dir, "x_space_directions_locations.csv"), F_locations);
+    write_csv(output_file(output_dir, "x_space_directions_coefficients.csv"), score_directions);
+    write_csv(output_file(output_dir, "x_space_directions_locations.csv"), direction_locations);
     write_csv(output_file(output_dir, "y_space_directions.csv"), Y_space_directions);
-    write_csv(output_file(output_dir, "x_latent_scores.csv"), model.S());
-    write_csv(
-      output_file(output_dir, "y_latent_scores.csv"),
-      nan_scores);
+    write_csv(output_file(output_dir, "x_latent_scores.csv"), projected_scores);
+    write_csv(output_file(output_dir, "y_latent_scores.csv"), nan_scores);
     write_csv(output_file(output_dir, "x_loadings_coefficients.csv"), model.F());
     write_csv(output_file(output_dir, "x_loadings_locations.csv"), F_locations);
     write_csv(output_file(output_dir, "y_loadings.csv"), Y_space_directions);
@@ -159,6 +161,7 @@ int run_fpcr(
     telemetry << json {
       {"schema_version", 4},
       {"model", "fPCR"},
+      {"fpcr_score_map", "sequential_projection_v1"},
       {"mode", "native_fdaPDE_cpp"},
       {"discretization", discretization},
       {"center", false},

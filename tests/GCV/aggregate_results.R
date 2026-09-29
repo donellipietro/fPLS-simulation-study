@@ -24,6 +24,7 @@ source("src/utils/plotting_utils.R")
 source("src/utils/diagnostic_plot_utils.R")
 source("tests/GCV/config.R")
 source("tests/GCV/utils/generate_options.R")
+source("tests/1D/utils/models_evaluation.R")
 
 ## Select requested families ----
 args <- commandArgs(trailingOnly = TRUE)

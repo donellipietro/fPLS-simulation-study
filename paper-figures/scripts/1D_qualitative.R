@@ -13,9 +13,9 @@ for (k in c(11L, 101L)) {
   estimates <- lapply(models, function(model) {
     fitted <- load_model(file.path(batch, paste0("batch_1_fitted_model_", model, ".RData")), model)
     raw_evaluation <- fitted$results$Beta_evaluation[[4L]][, 1]
-    evaluation <- aligned_shape(raw_evaluation, truth)
-    # Use the same normalization and orientation on both sampling grids.
-    scale <- sign(sum(evaluation * raw_evaluation)) / sqrt(sum(raw_evaluation^2))
+    evaluation <- normalize_shape(raw_evaluation)[, 1]
+    # Use the same normalization on both sampling grids.
+    scale <- 1 / sqrt(sum(raw_evaluation^2))
     list(
       evaluation = evaluation,
       locations = scale * fitted$results$Beta_locations[[4L]][, 1]

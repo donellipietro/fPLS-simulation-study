@@ -21,13 +21,17 @@ of R1-fPLS basis functions. In `vary_k`, B-fPLS and PB-fPLS use the same basis s
 In the other families, B-fPLS and PB-fPLS use 11 basis functions and R1-fPLS uses 51.
 
 For every component prefix, the suite records noise-free Y- and X-reconstruction RMSE and the
-sign-aligned unit-norm beta-shape RMSE. Aggregates also contain compute-only fit time, peak RAM,
-selected penalties, iteration counts, finite-solution flags, and monotonicity where available.
+unit-norm beta-shape RMSE preserving the coefficient signs. Aggregates also contain compute-only
+fit time, peak RAM, selected penalties, iteration counts, finite-solution flags, and monotonicity
+where available.
+
+After completing the [repository setup](../../README.md#setup-and-execution), run from the
+repository root. Choose `TEST_NAME=all` to prepare the complete manuscript inputs, or select
+one family:
 
 ```sh
-make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=all
-make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=vary_k
-make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=vary_NSRX
+make run_test TEST_SUITE=1D TEST_NAME=vary_k
+make run_test TEST_SUITE=1D TEST_NAME=all
 ```
 
 Expected paper inputs are `results/1D/aggregate/all/loaded_<family>.rds`, the corresponding

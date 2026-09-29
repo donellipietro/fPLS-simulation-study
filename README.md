@@ -5,11 +5,6 @@ for “Rank-One Functional Partial Least Squares Regression”. It includes the 
 execution and aggregation scripts, manuscript figure and table sources, and the editable Affinity layout. Generated data, fitted
 models, aggregate results, logs, panels, and exported PDFs are intentionally outside Git.
 
-Production results were generated from commit
-`a6f18492d821de36ee1093e30ffed4be9f4f8711`. The original manuscript figure-generation sources were recorded at
-commit `f098249e782b794d118d1da624ac0146bc1f6114`; later figure refinements in this branch
-use the same archived production results.
-
 ## Paper map
 
 | Suite/family | Article or Supplementary Material output |
@@ -31,17 +26,22 @@ and the predictive-order experiment compare MV-PLS, fPCR, and R1-fPLS.
 
 ## Prerequisites
 
-- GNU Make, Bash, Git, R and a C++20 compiler;
-- Eigen and the system libraries needed by the selected profile;
-- the CRAN packages installed by `src/installation/install_femR.R`, plus `MASS`, `PRIMME`, and
-  `cowplot` for data generation, 2D eigensolvers, and GCV figure composition;
-- `fdaPDE-cpp` with its `fdaPDE/core` dependency. `make build` obtains the revisions pinned
-  in `config.R`: fdaPDE-cpp commit `fbf764f` and core commit `472f9bd`.
-  Production provenance records the exact commits used by each fit;
-- Docker for the `windows` profile, or Apptainer/Singularity plus a scheduler for HPC profiles.
+Install the following on your machine before running the workflow:
 
-Available profiles are `macbook`, `windows`, `hpc-slurm`, and `hpc-torque`. Profile defaults are
-machine-specific and may need environment overrides; inspect them with:
+- GNU Make, Bash, Git and R;
+- a C++20 compiler and Eigen for native compilation with the `macbook` or `linux` profile;
+- GNU Parallel and `bc` for parallel execution;
+- Docker Desktop with WSL2 integration for the `windows` profile.
+
+`make build` automatically installs missing R packages listed in
+[`src/installation/install_packages.R`](src/installation/install_packages.R) and `femR`, and downloads
+the nlohmann/json headers and `fdaPDE-cpp` with its `fdaPDE/core` dependency. The native revisions
+are pinned in `config.R`: fdaPDE-cpp commit `fbf764f` and core commit `472f9bd`. For the `windows`
+profile, the build also prepares the configured Docker image.
+
+For local execution, choose `macbook` on macOS, `linux` on Linux, or `windows` on Windows.
+The Linux profile uses `gcc`, `g++`, and Eigen in `/usr/include/eigen3`; override `CC`, `CXX`,
+or `PATH_EIGEN_INCLUDE` if your installation uses different paths. Inspect a profile with:
 
 ```sh
 make config PROFILE=macbook
@@ -49,51 +49,52 @@ make config PROFILE=macbook
 
 ## Setup and execution
 
-Prepare a runtime and compile one suite:
+Select a profile when preparing the runtime. The build saves it in `.env`, and subsequent
+commands reuse it:
 
 ```sh
 make build PROFILE=macbook
-make compile PROFILE=macbook MODEL=1D
 ```
 
-Run one family or every family in a suite:
+Use `PROFILE=linux` or `PROFILE=windows` for the corresponding platform.
+Then run one family or every family in a suite; `make run_test` automatically compiles
+the selected suite before execution:
 
 ```sh
-make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=vary_k
-make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity_review
-make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
+# Run one experiment in the 1D suite
+make run_test TEST_SUITE=1D TEST_NAME=vary_k
+
+# Run all experiments in the 1D suite
+make run_test TEST_SUITE=1D TEST_NAME=all
 ```
 
 Production option cells use 30 replications and single-threaded model fits.
 
-The paper's simulations ran serially within one full-node Torque/PBS allocation on the Kami
-cluster, with each fit restricted to one computational thread. `make kami_review_submit`
-provides this execution mode; its resource requests and paths are specific to that cluster.
+## Results
 
-## Result flow and expected outputs
+After `make run_test`, aggregated results are available in
+`results/<TEST_SUITE>/aggregate/<TEST_NAME>/` and figures in
+`images/<TEST_SUITE>/<TEST_NAME>/` for a single-family run, relative to the repository root.
+For example, running `TEST_SUITE=1D TEST_NAME=vary_k` writes results to
+`results/1D/aggregate/vary_k/` and figures to `images/1D/vary_k/`.
 
-The standard flow is:
+To generate all manuscript panels and convergence tables, first run each suite (`1D`, `2D`,
+`GCV`, and `2D-predictive-order`) with `TEST_NAME=all`. Once the complete `aggregate/all`
+results and the associated raw files are available, run from the repository root:
 
-```text
-generate_options.R -> queued JSON -> main.R batches -> fitted/evaluation files
-                   -> aggregate_results.R -> results/<suite>/aggregate/<group>
+```sh
+make simulation_figure_panels
+make simulation_paper_tables
 ```
 
-A complete aggregate contains `run_status.json`, completeness information, diagnostics, paper
-metrics, and `loaded_<family>.rds` files. Serial production runs also write runtime metadata with
-host, CPU, RAM, scheduler allocation, thread settings, timestamp, and Git commit.
-
-Set `TESTBENCH_OUTPUT` before setup to place generated trees outside the checkout. For existing
-aggregates, figure and table scripts accept `FPLS_RESULTS=/absolute/path/to/results`. The expected
-external root contains `1D`, `2D`, `GCV`, and `2D-predictive-order`, each with an
-`aggregate/all` directory. Never substitute incomplete raw subtrees for validated aggregates.
+See the [figure guide](paper-figures/README.md) and [table guide](paper-tables/README.md)
+for output locations and further options.
 
 ## Metrics and computational boundary
 
 Reported RMSE values compare fitted quantities with their noise-free references. Regression
-coefficient functions are normalized separately to unit Frobenius norm and sign-aligned before
-RMSE evaluation. The GCV sensitivity figures report these errors at each retained component prefix.
+coefficient functions are normalized separately to unit Frobenius norm, preserving their signs,
+before RMSE evaluation. The GCV sensitivity figures report these errors at each retained component prefix.
 
 `fit_seconds` is compute-only: it includes method-specific preprocessing/tuning, fitting, and
 in-memory post-processing, but excludes data generation, result I/O, and accuracy evaluation.

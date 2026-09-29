@@ -1,8 +1,7 @@
 # Simulation suites
 
-Each suite follows the same production contract: generate explicit JSON options, execute one or
-more batches, save fitted models and evaluations, then aggregate only complete matching results.
-Production cells use 30 replications.
+Each suite saves generated data, fitted models and accuracy metrics, then aggregates complete
+simulation results. Each option cell uses 30 replications.
 
 | Suite | Families | Paper mapping |
 |---|---|---|
@@ -11,16 +10,18 @@ Production cells use 30 replications.
 | [`GCV`](GCV/README.md) | `sensitivity`, `sensitivity_high_NSRX`, `small_lambda_m_gt_k`, `small_lambda_m_lt_k` | Supplementary GCV sensitivity and near-zero-penalty experiments |
 | [`2D-predictive-order`](2D-predictive-order/README.md) | `vary_H` | Supplementary predictive-order experiment |
 
-Run one family or every family in a suite:
+First follow the [repository setup](../README.md#setup-and-execution) to select a platform
+profile with `make build`. The build installs missing R dependencies through
+[`install_packages.R`](../src/installation/install_packages.R) and saves the profile in `.env`.
+Subsequent commands reuse that profile, and `make run_test` compiles the selected suite
+automatically. From the repository root, run one family or every family in a suite:
 
 ```sh
-make run_test PROFILE=macbook TEST_SUITE=1D TEST_NAME=vary_k
-make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity_review
-make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
+make run_test TEST_SUITE=1D TEST_NAME=vary_k
+make run_test TEST_SUITE=1D TEST_NAME=all
 ```
 
-`GCV/sensitivity_review` is a convenience group containing the two GCV sensitivity families; it
-is not a separate experiment. Generated queue, data, result, image, log, and build trees are
-ignored. An aggregate must have a complete `run_status.json` and all 30 expected
-replications per option cell before figure or table scripts use it.
+For all manuscript panels and tables, run each suite with
+`TEST_NAME=all`; the scripts read complete results from `results/<TEST_SUITE>/aggregate/all/`,
+with 30 replications per option cell. See the [figure guide](../paper-figures/README.md) and
+[table guide](../paper-tables/README.md) for the required raw files and output locations.

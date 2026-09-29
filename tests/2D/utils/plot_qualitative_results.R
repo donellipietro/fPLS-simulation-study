@@ -49,7 +49,7 @@ plot_representative_beta_2d <- function(path_list, family_options, image_dir) {
     fields <- c(
       list(truth),
       lapply(estimates, function(value) {
-        align_beta_shape(value[, response], truth)[, 1]
+        normalize_beta_shape(value[, response])[, 1]
       })
     )
     limits <- range(truth)

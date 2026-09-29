@@ -84,6 +84,7 @@ fixed_axis_grob <- function(plot, width = 9.5) {
 }
 
 write_performance_panel <- function(loaded, metric, component, filename) {
+  check_beta_metrics(loaded, metric)
   data <- prepare_tuning_data(loaded$rmse[[metric]], component)
   plot <- ggplot(data, aes(x = tuning, y = value, fill = tuning)) +
     geom_boxplot(width = 0.62, outlier.size = 0.65, linewidth = 0.28,

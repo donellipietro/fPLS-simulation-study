@@ -196,6 +196,41 @@ extract_new_results <- function(results_evaluation, names_models, name_result) {
 }
 
 
+evaluation_uses_signed_beta <- function(file, model_names) {
+  if (!file.exists(file)) return(FALSE)
+  contents <- new.env(parent = emptyenv())
+  tryCatch({
+    load(file, envir = contents)
+    all(vapply(model_names, function(name) {
+      evaluation <- contents$results_evaluation[[name]]
+      identical(evaluation$beta_sign_alignment, FALSE) &&
+        (name != "fPCR" || identical(evaluation$fpcr_score_map, "sequential_projection_v1"))
+    }, logical(1)))
+  }, error = function(error) FALSE)
+}
+
+# Refresh obsolete metrics from saved fits without changing or refitting the models.
+load_batch_evaluations <- function(test_options, path_batch, batch_index) {
+  file <- file.path(path_batch, paste0("batch_", batch_index, "_results_evaluation.RData"))
+  if (evaluation_uses_signed_beta(file, test_options$model_names)) {
+    contents <- new.env(parent = emptyenv())
+    load(file, envir = contents)
+    return(contents$results_evaluation)
+  }
+
+  data <- readRDS(file.path(path_batch, "generated_data.rds"))
+  results_evaluation <- setNames(lapply(test_options$model_names, function(name) {
+    contents <- new.env(parent = emptyenv())
+    object_name <- paste0("model_", name)
+    load(file.path(path_batch, paste0("batch_", batch_index, "_fitted_model_", name, ".RData")),
+         envir = contents)
+    evaluate_results(contents[[object_name]], data, test_options)
+  }), test_options$model_names)
+  save(index_batch = batch_index, results_evaluation, file = file)
+  results_evaluation
+}
+
+
 ## Function: load_quantitative_results
 # - Args:
 #   * test_options: list containing test and model configuration
@@ -224,9 +259,10 @@ load_quantitative_results <- function(test_options, path_list) {
   batch_index <- 1
   ok <- tryCatch({
     path_batch <- file.path(path_list$results, glue::glue("batch_{batch_index}"))
-    load(file.path(path_batch, glue::glue("batch_{batch_index}_results_evaluation.RData")))
+    results_evaluation <- load_batch_evaluations(test_options, path_batch, batch_index)
     TRUE
   }, error = function(e) {
+    if ("fPCR" %in% model_names) stop(conditionMessage(e), call. = FALSE)
     cat(glue::glue(
       "Error in test {test_options$name_test} - batch {batch_index}: ",
       "{conditionMessage(e)}\n",
@@ -238,7 +274,7 @@ load_quantitative_results <- function(test_options, path_list) {
 
   ## Create containers for each entry in results_evaluation
   res <- list()
-  for (entry in names(results_evaluation[[1]])) {
+  for (entry in setdiff(names(results_evaluation[[1]]), c("beta_sign_alignment", "fpcr_score_map"))) {
     if (!is.list(results_evaluation[[1]][[entry]])) {
       res[[entry]] <- empty_df
     } else {
@@ -256,9 +292,10 @@ load_quantitative_results <- function(test_options, path_list) {
     ## Safely load batch file
     ok <- tryCatch({
       path_batch <- file.path(path_list$results, glue::glue("batch_{batch_index}"))
-      load(file.path(path_batch, glue::glue("batch_{batch_index}_results_evaluation.RData")))
+      results_evaluation <- load_batch_evaluations(test_options, path_batch, batch_index)
       TRUE
     }, error = function(e) {
+      if ("fPCR" %in% model_names) stop(conditionMessage(e), call. = FALSE)
       cat(glue::glue(
         "Error in test {test_options$name_test} - batch {batch_index}: ",
         "{conditionMessage(e)}\n",
@@ -304,6 +341,8 @@ load_quantitative_results <- function(test_options, path_list) {
   res$model_labels <- model_labels
   res$model_colors <- model_colors
   res$varying_options <- test_options$test_options$varying_options
+  res$beta_sign_alignment <- FALSE
+  if ("fPCR" %in% model_names) res$fpcr_score_map <- "sequential_projection_v1"
 
   return(res)
 }

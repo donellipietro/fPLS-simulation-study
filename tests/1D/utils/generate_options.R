@@ -130,7 +130,7 @@ generate_options <- function(test_suite, name_main_test, path_queue) {
       template_commit = "e92e1a14b567572fea8b67a99c320c239e366dec",
       reference_implementation_commit = "7fb91720b97661c8f83f675f8915ac96f7465912",
       models_in_run = models$names,
-      metric_formula = "Y/X: sqrt(mean((estimate-truth)^2)); beta: sign-aligned unit-norm shape RMSE",
+      metric_formula = "Y/X: sqrt(mean((estimate-truth)^2)); beta: unit-norm shape RMSE without sign alignment",
       smoke_test = SMOKE_TEST
     )
   )

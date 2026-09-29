@@ -92,7 +92,7 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
   )
   data_current <- batch_matches_options(data_file, test_options, batch_index)
   if (!FORCE_FIT && !FORCE_EVALUATE && data_current &&
-      file.exists(evaluation_file) &&
+      evaluation_uses_signed_beta(evaluation_file, test_options$model_names) &&
       models_match_options(model_files, test_options$model_names, test_options)) {
     cat("- Existing complete batch; skipped\n")
     next

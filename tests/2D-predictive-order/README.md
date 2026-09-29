@@ -10,15 +10,18 @@ The only family is `vary_H`. Production settings are `n = 100`, `m = 1600`, `k =
 `30 x 30` finite-element mesh, 30 replications, `NSR_X = 3`, `NSR_Y = 0.1`, tolerance `1e-8`,
 and at most 1000 iterations.
 
-Outputs include noise-free Y/X reconstruction RMSE, separate sign-aligned unit-norm beta-shape
-RMSEs, and reconstructed X and Y variance. The experiment shows
+Outputs include noise-free Y/X reconstruction RMSE, separate unit-norm beta-shape
+RMSEs preserving the coefficient signs, and explained X and Y variance. The experiment shows
 the difference between variance-ordered and response-oriented extraction. It does not establish
 that two PLS components are sufficient: exact reconstruction of the generative construction
 requires all ten, and `H = 10` is fixed by design rather than selected from data.
 
+After completing the [repository setup](../../README.md#setup-and-execution), run from the
+repository root. `TEST_NAME=all` runs the sole family, `vary_H`, and prepares the complete
+manuscript inputs:
+
 ```sh
-make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=vary_H
-make run_test PROFILE=macbook TEST_SUITE=2D-predictive-order TEST_NAME=all
+make run_test TEST_SUITE=2D-predictive-order TEST_NAME=all
 ```
 
 Expected paper inputs are `results/2D-predictive-order/aggregate/all/loaded_vary_H.rds`,

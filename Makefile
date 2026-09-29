@@ -84,7 +84,7 @@ COMPILE_STRATEGY := $(call config_value,COMPILE_STRATEGY)
 
 
 # Targets ----
-.PHONY: help config write_env install install_femR build create_dirs \
+.PHONY: help config write_env install install_packages build create_dirs \
         ensure_env \
         compile compile_all \
         clean_tmp clean_compiled clean_links clean clean_test distclean \
@@ -96,28 +96,24 @@ all: build
 
 
 # Manuscript figure panels ----
-## Regenerate every simulation-study panel PDF for the Affinity layouts.
+SIMULATION_FIGURES := 1D_data 1D_vary_k 1D_qualitative 1D_vary_n \
+                     S_1D_vary_nsrx S_1D_vary_nsry 2D_qualitative S_2D_vary_n \
+                     S_2D_vary_nsrx S_2D_vary_nsry S_1D_vary_m S_2D_vary_m \
+                     S_2D_vary_k S_1D_gcv_sensitivity 2D_vary_H S_2D_vary_H_extended
+
+## Regenerate all manuscript panels, or select one script with FIGURE=<name>.
 simulation_figure_panels:
-	@$(RSCRIPT) paper-figures/scripts/1D_data.R
-	@$(RSCRIPT) paper-figures/scripts/1D_vary_k.R
-	@$(RSCRIPT) paper-figures/scripts/1D_qualitative.R
-	@$(RSCRIPT) paper-figures/scripts/1D_vary_n.R
-	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_nsrx.R
-	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_nsry.R
-	@$(RSCRIPT) paper-figures/scripts/2D_qualitative.R
-	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_n.R
-	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_nsrx.R
-	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_nsry.R
-	@$(RSCRIPT) paper-figures/scripts/S_1D_vary_m.R
-	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_m.R
-	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_k.R
-	@FPLS_GCV_HORIZONTAL_FINAL=true $(RSCRIPT) paper-figures/scripts/S_1D_gcv_sensitivity.R
-	@$(RSCRIPT) paper-figures/scripts/2D_vary_H.R
-	@$(RSCRIPT) paper-figures/scripts/S_2D_vary_H_extended.R
+	$(if $(filter-out $(SIMULATION_FIGURES),$(FIGURE)),$(error Unknown FIGURE. Choose from: $(SIMULATION_FIGURES)))
+	@set -e; if [ -f .env ]; then set -a; . ./.env; set +a; fi; \
+	for figure in $(if $(strip $(FIGURE)),$(FIGURE),$(SIMULATION_FIGURES)); do \
+		( if [ "$$figure" = S_1D_gcv_sensitivity ]; then export FPLS_GCV_HORIZONTAL_FINAL=true; fi; \
+		  $(RSCRIPT) "paper-figures/scripts/$$figure.R" ); \
+	done
 
 ## Regenerate every CSV table used by the simulation-study manuscript.
 simulation_paper_tables:
-	@$(RSCRIPT) paper-tables/scripts/generate_iteration_tables.R
+	@set -e; if [ -f .env ]; then set -a; . ./.env; set +a; fi; \
+	$(RSCRIPT) paper-tables/scripts/generate_iteration_tables.R
 
 
 # Config targets ----
@@ -152,10 +148,10 @@ ensure_env:
 
 
 # Installation targets ----
-install_femR: write_env create_dirs
-	@printf '\nInstalling femR...\n'
-	@set -a; source .env; set +a; $(RSCRIPT) src/installation/install_femR.R
-install: install_femR
+install_packages: write_env create_dirs
+	@printf '\nInstalling R packages...\n'
+	@set -a; source .env; set +a; $(RSCRIPT) src/installation/install_packages.R
+install: install_packages
 	@printf '\nInstallation completed.\n'
 
 

@@ -4,6 +4,10 @@
 # = ========================================================================== =
 
 native_model_matches_options <- function(model, model_name, test_options) {
+  if (model_name == "fPCR" &&
+      !identical(model$results$telemetry$fpcr_score_map, "sequential_projection_v1")) {
+    return(FALSE)
+  }
   native_model <- model_name %in% c("R1_fPLS", "fPCR") && identical(model$MODE, model_name)
   timing_current <- if (native_model) {
     identical(model$results$telemetry$timing_scope, "compute_v2")

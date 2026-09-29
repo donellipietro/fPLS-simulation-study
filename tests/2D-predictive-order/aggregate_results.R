@@ -24,6 +24,7 @@ source("src/utils/plotting_utils.R")
 source("src/utils/diagnostic_plot_utils.R")
 source("tests/2D-predictive-order/config.R")
 source("tests/2D-predictive-order/utils/generate_options.R")
+source("tests/2D/utils/models_evaluation.R")
 
 load_model <- function(file, model_name) {
   env <- new.env(parent = emptyenv())

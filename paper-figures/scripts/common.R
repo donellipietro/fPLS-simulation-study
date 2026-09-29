@@ -94,8 +94,19 @@ fixed_y_labels <- function(digits) {
   }
 }
 
+check_beta_metrics <- function(loaded, metric, include_fpcr = TRUE) {
+  if (startsWith(metric, "Beta") && !identical(loaded$beta_sign_alignment, FALSE)) {
+    stop("Beta metrics use an obsolete sign convention. Re-run the suite's aggregate_results.R with saved fits before generating beta panels.")
+  }
+  if (startsWith(metric, "Beta") && include_fpcr && "fPCR" %in% loaded$model_names &&
+      !identical(loaded$fpcr_score_map, "sequential_projection_v1")) {
+    stop("Outdated fPCR score-to-beta map. Re-run make run_test for this suite to refit fPCR and rebuild its aggregates before generating fPCR beta panels.")
+  }
+}
+
 write_metric_panel <- function(loaded, metric, filename, limits = NULL, include_fpcr = FALSE,
                               panel_height = 2.02, group_labels = NULL) {
+  check_beta_metrics(loaded, metric, include_fpcr)
   data <- final_component(loaded$rmse[[metric]])
   models <- if (include_fpcr) loaded$model_names else setdiff(loaded$model_names, "fPCR")
   data$Group <- data[[loaded$varying_options[1]]]
@@ -316,18 +327,17 @@ write_quantitative_figure <- function(figure_id, suite, family, metrics,
 load_model <- function(file, model_name) {
   env <- new.env(parent = emptyenv())
   load(file, envir = env)
-  get(paste0("model_", model_name), envir = env, inherits = FALSE)
+  model <- get(paste0("model_", model_name), envir = env, inherits = FALSE)
+  if (model_name == "fPCR" &&
+      !identical(model$results$telemetry$fpcr_score_map, "sequential_projection_v1")) {
+    stop("Outdated fPCR score-to-beta map. Re-run make run_test for this suite to refit fPCR before generating its beta maps.")
+  }
+  model
 }
 
 normalize_shape <- function(values) {
   values <- as.matrix(values)
   values / sqrt(sum(values^2))
-}
-
-aligned_shape <- function(values, truth) {
-  values <- normalize_shape(values)[, 1]
-  if (sqrt(mean((values - truth)^2)) > sqrt(mean((-values - truth)^2))) values <- -values
-  values
 }
 
 write_field_panel <- function(nodes, values, limits, filename, size = 36 / 25.4) {

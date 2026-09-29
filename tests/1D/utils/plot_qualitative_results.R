@@ -40,11 +40,9 @@ plot_qualitative_beta_1d <- function(path_list, family_options, image_dir) {
         model_name
       )
       raw_evaluation <- model$results$Beta_evaluation[[options$model$n_comp]][, 1]
-      sign <- if (source_figure_rmse(normalize_beta_shape(raw_evaluation), truth) >
-                    source_figure_rmse(-normalize_beta_shape(raw_evaluation), truth)) -1 else 1
       list(
-        evaluation = sign * normalize_beta_shape(raw_evaluation)[, 1],
-        locations = sign * model$results$Beta_locations[[options$model$n_comp]][, 1] /
+        evaluation = normalize_beta_shape(raw_evaluation)[, 1],
+        locations = model$results$Beta_locations[[options$model$n_comp]][, 1] /
           norm(as.matrix(raw_evaluation), "F")
       )
     }), options$model_names)

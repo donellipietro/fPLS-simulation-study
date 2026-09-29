@@ -10,7 +10,7 @@ for (response in 1:2) {
   truth <- normalize_shape(data$truth$Beta_reference[, response])[, 1]
   fields <- c(list(Truth = truth), setNames(lapply(models, function(model) {
     fitted <- load_model(file.path(batch, paste0("batch_1_fitted_model_", model, ".RData")), model)
-    aligned_shape(fitted$results$Beta_evaluation[[4L]][, response], truth)
+    normalize_shape(fitted$results$Beta_evaluation[[4L]][, response])[, 1]
   }), models))
   limits <- range(truth)
   for (name in names(fields)) {

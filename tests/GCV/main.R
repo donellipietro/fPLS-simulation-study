@@ -88,7 +88,7 @@ models_match_options <- function(files, names, options) {
 }
 
 evaluation_matches_options <- function(file, options) {
-  if (!file.exists(file)) return(FALSE)
+  if (!evaluation_uses_signed_beta(file, options$model_names)) return(FALSE)
   if (!identical(options$evaluation$truth_target, "prefix")) return(TRUE)
 
   contents <- new.env(parent = emptyenv())

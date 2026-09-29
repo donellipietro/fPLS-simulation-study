@@ -18,17 +18,17 @@ penalties separately after each deflation step. The `lambda = 0` cell is the non
 MV-PLS benchmark and has no objective history.
 
 Sensitivity outputs evaluate every fitted prefix against its matching noise-free prefix. They
-include X/Y RMSE, sign-aligned unit-norm beta-shape RMSE, and fit time. The near-zero families
-provide the finite-solution results reported in the Supplementary Material for `m > k` and
-`m < k`.
+include X/Y RMSE, unit-norm beta-shape RMSE preserving the coefficient signs, and fit time. The
+near-zero families provide the finite-solution results reported in the Supplementary Material
+for `m > k` and `m < k`.
+
+After completing the [repository setup](../../README.md#setup-and-execution), run from the
+repository root. Choose `TEST_NAME=all` to prepare the complete manuscript inputs, or select
+one family:
 
 ```sh
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity_review
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity_high_NSRX
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=small_lambda_m_gt_k
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=small_lambda_m_lt_k
-make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=all
+make run_test TEST_SUITE=GCV TEST_NAME=sensitivity
+make run_test TEST_SUITE=GCV TEST_NAME=all
 ```
 
 Selection-panel regeneration additionally requires every raw

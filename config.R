@@ -253,6 +253,15 @@ TESTBENCH_CONFIG_PROFILES <- list(
   })
 )
 
+TESTBENCH_CONFIG_PROFILES$linux <- modifyList(
+  TESTBENCH_CONFIG_PROFILES$macbook,
+  list(
+    CC = Sys.getenv("CC", unset = "gcc"),
+    CXX = Sys.getenv("CXX", unset = "g++"),
+    PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = "/usr/include/eigen3")
+  )
+)
+
 
 # Command line entry point ----
 

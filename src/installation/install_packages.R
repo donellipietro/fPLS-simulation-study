@@ -1,3 +1,5 @@
+# Install the R packages required by the simulation workflows.
+
 #' Split a path-list environment variable into usable path entries.
 #'
 #' @param value Value to process.
@@ -27,7 +29,7 @@ print(.libPaths())
 cat("CRAN mirror:", getOption("repos")[["CRAN"]], "\n")
 
 cran_packages <- c(
-  "dplyr", "expm", "fda", "ggplot2", "glue", "gridExtra", "jsonlite", "pls",
+  "dplyr", "expm", "fda", "ggplot2", "glue", "gridExtra", "jsonlite", "MASS", "pls",
   "RColorBrewer", "tidyr"
 )
 missing_packages <- cran_packages[

@@ -18,14 +18,18 @@ and at most 1000 iterations unless the family varies the named quantity.
 | `vary_NSRY` | `NSR_Y = 0.01, 0.1, 0.5, 1`; `n = 100`, `m = 1600`, `k = 900` | Supplementary response-noise figure |
 | `vary_H` | prefixes `H = 1,...,5` from one five-component fit | Article component-prefix figure |
 
-The suite records Y- and X-reconstruction RMSE and separate sign-aligned unit-norm beta-shape
-RMSEs for both responses. `vary_H` also reports reconstructed X and Y variance at each prefix. Fit time is compute-only and excludes data generation, I/O, and
-accuracy evaluation.
+The suite records Y- and X-reconstruction RMSE and separate unit-norm beta-shape
+RMSEs for both responses, preserving the coefficient signs. `vary_H` also reports
+explained X and Y variance at each prefix. Fit time is
+compute-only and excludes data generation, I/O, and accuracy evaluation.
+
+After completing the [repository setup](../../README.md#setup-and-execution), run from the
+repository root. Choose `TEST_NAME=all` to prepare the complete manuscript inputs, or select
+one family:
 
 ```sh
-make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=all
-make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=vary_n
-make run_test PROFILE=macbook TEST_SUITE=2D TEST_NAME=vary_H
+make run_test TEST_SUITE=2D TEST_NAME=vary_n
+make run_test TEST_SUITE=2D TEST_NAME=all
 ```
 
 Expected paper inputs are `results/2D/aggregate/all/loaded_<family>.rds`, diagnostics, paper

@@ -1,8 +1,8 @@
 # Manuscript figure sources
 
-The R scripts in `scripts/` convert complete simulation results into vector panels. Article and
-supplementary PDFs are assembled in the versioned Affinity document
-`layouts/figures.af`; generated panels and exports are ignored.
+The R scripts in `scripts/` convert complete simulation results into vector PDF panels for
+“Rank-One Functional Partial Least Squares Regression”. Article and supplementary figures
+are assembled in the Affinity document [`layouts/figures.af`](layouts/figures.af).
 
 ## Figure map
 
@@ -24,21 +24,43 @@ supplementary PDFs are assembled in the versioned Affinity document
 
 ## Generate panels
 
-From the repository root, point `FPLS_RESULTS` to a result root containing the complete suite
-aggregates and run either one script or the complete target:
+Follow the [setup and execution instructions](../README.md#setup-and-execution), then run each
+suite (`1D`, `2D`, `GCV`, and `2D-predictive-order`) with `TEST_NAME=all` to prepare the complete
+results. Panel export also requires R with Cairo PDF support and the Arial font installed on
+your machine; `make build` installs the required R packages.
+
+From the repository root, generate all manuscript panels with:
 
 ```sh
-FPLS_RESULTS=/absolute/path/to/results Rscript paper-figures/scripts/1D_vary_k.R
+make simulation_figure_panels
+```
+
+The target loads `.env` when present, including the configured R library paths, and reads
+`results/` by default. It requires complete `aggregate/all` trees for `1D`, `2D`, `GCV`, and
+`2D-predictive-order`, together with the representative raw batches used by the figure scripts.
+To use results stored elsewhere:
+
+```sh
 FPLS_RESULTS=/absolute/path/to/results make simulation_figure_panels
 ```
 
-The scripts stop when required aggregate or representative raw files are missing. GCV
-performance panels use aggregate results; selected-penalty panels additionally require every
-raw `direction_gcv_h*.csv` and `loading_gcv_h*.csv` file from the production campaign.
+To generate only the panels produced by one script, set `FIGURE` to its name without `.R`:
 
-Panels are written below `panels/<figure-name>/` at the sizes defined by the scripts.
-They require R with Cairo PDF support and Arial. Place panels in Affinity at 100% of their
-generated size.
+```sh
+make simulation_figure_panels FIGURE=1D_vary_k
+```
+
+Make loads the saved environment automatically for both commands. The same `FPLS_RESULTS`
+prefix can also be used when selecting a single figure.
+
+The RMSE panels use the noise-free references and normalization described in the
+[metric definitions](../README.md#metrics-and-computational-boundary), preserving the signs of
+the regression coefficient functions. GCV performance panels use aggregate results;
+selected-penalty panels additionally require every raw `direction_gcv_h*.csv` and
+`loading_gcv_h*.csv` file from the simulation run.
+
+Panels are written below `paper-figures/panels/<figure-name>/`, relative to the repository root,
+at the sizes defined by the scripts. Place panels in Affinity at 100% of their generated size.
 
 R produces scientific marks, numeric ticks, and shared legends. Panel letters, display titles,
 and axis labels are maintained in Affinity. The 1D qualitative layout also contains the
