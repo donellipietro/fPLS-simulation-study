@@ -83,7 +83,15 @@ save_panel <- function(plot, filename, width = 3.33, height = 2.02, y_axis_width
 }
 
 fixed_y_labels <- function(digits) {
-  function(values) formatC(values, format = "f", digits = digits, width = 5, flag = " ")
+  function(values) {
+    ticks <- unique(values[is.finite(values)])
+    if (anyDuplicated(round(ticks, digits))) {
+      while (!isTRUE(all.equal(ticks, round(ticks, digits), tolerance = 1e-10))) {
+        digits <- digits + 1L
+      }
+    }
+    formatC(values, format = "f", digits = digits, width = 5, flag = " ")
+  }
 }
 
 write_metric_panel <- function(loaded, metric, filename, limits = NULL, include_fpcr = FALSE,
