@@ -36,10 +36,9 @@ The scripts stop when required aggregate or representative raw files are missing
 performance panels use aggregate results; selected-penalty panels additionally require every
 raw `direction_gcv_h*.csv` and `loading_gcv_h*.csv` file from the production campaign.
 
-Panels are written below `panels/<figure-name>/`. Quantitative panels are 84.3 x 51.2 mm, 2D
-maps are 36.0 mm square, and the Simulation 1 data panels are 52.9 mm square and
-116.1 x 52.9 mm. They require R with Cairo PDF support and Arial. Place panels in Affinity at
-100%; do not rescale them.
+Panels are written below `panels/<figure-name>/` at the sizes defined by the scripts.
+They require R with Cairo PDF support and Arial. Place panels in Affinity at 100% of their
+generated size.
 
 R produces scientific marks, numeric ticks, and shared legends. Panel letters, display titles,
 and axis labels are maintained in Affinity. The 1D qualitative layout also contains the
@@ -55,10 +54,7 @@ document, relinking generated panels when needed, and exporting the correspondin
 The `vary` fit-time panels use log10 axes with ticks labelled in original units and median
 lines. `vary_k` also includes reference guides for linear and quadratic growth in `k`; these
 are not fitted complexity claims. GCV fit-time panels retain boxplots on a log10 time axis,
-with tick labels in seconds. Run `Rscript paper-figures/scripts/check_time_panels.R` to
-check both panel types.
+with tick labels in seconds.
 
-The approved model palette is defined in `scripts/common.R` and applied when reading figure
-data, without changing aggregated result archives. It is shared by quantitative panels,
-qualitative curves, legends, and GCV model colours. fPCR uses `#2D9950`; fixed-lambda GCV
-comparisons retain their light-blue category.
+The model colours used in the manuscript are defined in `scripts/common.R` and shared by
+quantitative panels, qualitative curves, legends, and GCV comparisons.

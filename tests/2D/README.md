@@ -19,8 +19,7 @@ and at most 1000 iterations unless the family varies the named quantity.
 | `vary_H` | prefixes `H = 1,...,5` from one five-component fit | Article component-prefix figure |
 
 The suite records Y- and X-reconstruction RMSE and separate sign-aligned unit-norm beta-shape
-RMSEs for both responses. `vary_H` also records reconstructed X variance, Y variance, and X--Y
-cross-covariance at each prefix. Fit time is compute-only and excludes data generation, I/O, and
+RMSEs for both responses. `vary_H` also reports reconstructed X and Y variance at each prefix. Fit time is compute-only and excludes data generation, I/O, and
 accuracy evaluation.
 
 ```sh

@@ -1,7 +1,7 @@
-# Supplementary GCV and numerical checks
+# Supplementary GCV and fixed-penalty experiments
 
 This one-dimensional suite supports the Supplementary Material's GCV sensitivity figures and
-near-zero fixed-penalty checks. Every production option cell uses 30 replications, four fitted
+near-zero fixed-penalty experiments. Every production option cell uses 30 replications, four fitted
 components, GCV seed `0`, 100 Rademacher trace probes, tolerance `1e-8`, and at most 1000
 iterations.
 
@@ -18,10 +18,9 @@ penalties separately after each deflation step. The `lambda = 0` cell is the non
 MV-PLS benchmark and has no objective history.
 
 Sensitivity outputs evaluate every fitted prefix against its matching noise-free prefix. They
-include X/Y RMSE, sign-aligned unit-norm beta-shape RMSE, signed Frobenius cosine for cumulative
-beta, and absolute cosine for each direction, loading, and score in extraction order. The
-near-zero families include finite-solution, iteration-cap, monotonicity, fit-time, and peak-RAM
-diagnostics against the four-component truth.
+include X/Y RMSE, sign-aligned unit-norm beta-shape RMSE, and fit time. The near-zero families
+provide the finite-solution results reported in the Supplementary Material for `m > k` and
+`m < k`.
 
 ```sh
 make run_test PROFILE=macbook TEST_SUITE=GCV TEST_NAME=sensitivity_review

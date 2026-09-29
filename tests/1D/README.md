@@ -16,9 +16,9 @@ splines, PB-fPLS, and R1-fPLS.
 | `vary_NSRX` | `NSR_X = 1, 3, 5, 10`; `n = 100`, `m = 200`, source `k = 51` | Supplementary predictor-noise figure |
 | `vary_NSRY` | `NSR_Y = 0.01, 0.1, 0.5, 1`; `n = 100`, `m = 200`, source `k = 51` | Supplementary response-noise figure |
 
-Here `n` is sample size, `m` is the number of observed locations, and `k` is the source
-discretization size. B-fPLS/PB-fPLS use the family-specific basis settings encoded by
-`utils/generate_options.R`.
+Here `n` is sample size, `m` is the number of observed locations, and `k` is the number
+of R1-fPLS basis functions. In `vary_k`, B-fPLS and PB-fPLS use the same basis sizes.
+In the other families, B-fPLS and PB-fPLS use 11 basis functions and R1-fPLS uses 51.
 
 For every component prefix, the suite records noise-free Y- and X-reconstruction RMSE and the
 sign-aligned unit-norm beta-shape RMSE. Aggregates also contain compute-only fit time, peak RAM,
