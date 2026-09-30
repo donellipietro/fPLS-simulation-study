@@ -6,7 +6,7 @@ LATEXMK ?= latexmk
 
 ACTIVE_ENV_PROFILE := $(strip $(shell if [ -f .env ]; then set -a; . ./.env >/dev/null 2>&1; printf '%s' "$$TESTBENCH_PROFILE"; fi))
 REQUESTED_PROFILE := $(strip $(PROFILE))
-TESTBENCH_PROFILE ?= $(if $(ACTIVE_ENV_PROFILE),$(ACTIVE_ENV_PROFILE),macbook)
+TESTBENCH_PROFILE ?= $(if $(ACTIVE_ENV_PROFILE),$(ACTIVE_ENV_PROFILE),macos)
 ifneq ($(REQUESTED_PROFILE),)
 override TESTBENCH_PROFILE := $(REQUESTED_PROFILE)
 endif

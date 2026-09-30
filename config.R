@@ -10,7 +10,7 @@ source("src/utils/config.R")
 # Profiles ----
 
 TESTBENCH_CONFIG_PROFILES <- list(
-  macbook = local({
+  macos = local({
     PATH_REPO <- normalizePath(".", mustWork = FALSE)
     PATH_OUTPUT <- Sys.getenv("TESTBENCH_OUTPUT", unset = PATH_REPO)
     PATH_TMP <- file.path(PATH_OUTPUT, "tmp")
@@ -258,7 +258,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
 )
 
 TESTBENCH_CONFIG_PROFILES$linux <- modifyList(
-  TESTBENCH_CONFIG_PROFILES$macbook,
+  TESTBENCH_CONFIG_PROFILES$macos,
   list(
     CC = Sys.getenv("CC", unset = "gcc"),
     CXX = Sys.getenv("CXX", unset = "g++"),

@@ -29,7 +29,7 @@ and the predictive-order experiment compare MV-PLS, fPCR, and R1-fPLS.
 Install the following on your machine before running the workflow:
 
 - GNU Make, Bash, Git and R;
-- a C++20 compiler and Eigen for native compilation with the `macbook` or `linux` profile;
+- a C++20 compiler and Eigen for native compilation with the `macos` or `linux` profile;
 - GNU Parallel and `bc` for parallel execution;
 - Docker Desktop with WSL2 integration for the `windows` profile.
 
@@ -38,12 +38,12 @@ Install the following on your machine before running the workflow:
 the nlohmann/json headers and the pinned `fdaPDE-cpp` stack. The native revisions
 are pinned in `config.R`. For the `windows` profile, the build also prepares the configured Docker image.
 
-For local execution, choose `macbook` on macOS, `linux` on Linux, or `windows` on Windows.
+For local execution, choose `macos` on macOS, `linux` on Linux, or `windows` on Windows.
 The Linux profile uses `gcc`, `g++`, and Eigen in `/usr/include/eigen3`; override `CC`, `CXX`,
 or `PATH_EIGEN_INCLUDE` if your installation uses different paths. Inspect a profile with:
 
 ```sh
-make config PROFILE=macbook
+make config PROFILE=macos
 ```
 
 ## Setup and execution
@@ -52,7 +52,7 @@ Select a profile when preparing the runtime. The build saves it in `.env`, and s
 commands reuse it:
 
 ```sh
-make build PROFILE=macbook
+make build PROFILE=macos
 ```
 
 Use `PROFILE=linux` or `PROFILE=windows` for the corresponding platform.
