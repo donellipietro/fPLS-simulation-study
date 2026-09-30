@@ -25,5 +25,5 @@ manuscript inputs:
 make run_test TEST_SUITE=2D-predictive-order TEST_NAME=all
 ```
 
-Expected paper inputs are `results/2D-predictive-order/aggregate/all/loaded_vary_H.rds`,
+Expected paper inputs are `results/2D-predictive-order/aggregate/vary_H/loaded_vary_H.rds`,
 `explained_structure.csv`, `latent_design.csv`, diagnostics, and the complete production status.

@@ -25,6 +25,7 @@ make run_test TEST_SUITE=1D TEST_NAME=all
 ```
 
 For all manuscript panels and tables, run each suite with
-`TEST_NAME=all`; the scripts read complete results from `results/<TEST_SUITE>/aggregate/all/`,
-with 30 replications per option cell. See the [figure guide](../paper-figures/README.md) and
+`TEST_NAME=all`, which runs and aggregates each experiment separately. The scripts read complete
+results from `results/<TEST_SUITE>/aggregate/<TEST_NAME>/`, with 30 replications per option cell.
+See the [figure guide](../paper-figures/README.md) and
 [table guide](../paper-tables/README.md) for the required raw files and output locations.

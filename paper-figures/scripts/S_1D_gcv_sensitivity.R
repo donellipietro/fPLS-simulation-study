@@ -14,15 +14,6 @@ families <- trimws(strsplit(
   fixed = TRUE
 )[[1]])
 families <- families[nzchar(families)]
-aggregate_request <- Sys.getenv("FPLS_GCV_AGGREGATE", unset = "all")
-
-read_gcv_family <- function(family) {
-  file <- file.path(
-    results_root, "GCV", "aggregate", aggregate_request, paste0("loaded_", family, ".rds")
-  )
-  if (!file.exists(file)) stop("Missing aggregated GCV results: ", file)
-  readRDS(file)
-}
 
 tuning_levels <- c("gcv", "mv_pls", paste0("1e", -9:-2))
 tuning_labels <- c("GCV", "MV-PLS", as.character(-9:-2))
@@ -364,7 +355,7 @@ write_performance_panels <- function(family, loaded) {
 }
 
 for (family in families) {
-  loaded <- read_gcv_family(family)
+  loaded <- read_family("GCV", family)
   if (identical(Sys.getenv("FPLS_GCV_LEGENDS_ONLY"), "true")) {
     figure_id <- paste0("S_1D_gcv_performance", family_suffix(family))
     write_tuning_legend(panel_path(figure_id, "tuning_legend.pdf"))

@@ -35,7 +35,8 @@ make run_test TEST_SUITE=2D TEST_NAME=vary_n
 make run_test TEST_SUITE=2D TEST_NAME=all
 ```
 
-With `TEST_NAME=all`, paper inputs include `results/2D/aggregate/all/loaded_<TEST_NAME>.rds`
+`TEST_NAME=all` runs and aggregates every experiment separately. Paper inputs include
+`results/2D/aggregate/<TEST_NAME>/loaded_<TEST_NAME>.rds`
 for each experiment name in the table above, such as `loaded_vary_n.rds`, plus diagnostics,
 paper metrics, explained-structure CSV files, and the representative `vary_n` raw batch
 used for the qualitative beta maps.

@@ -19,6 +19,7 @@ invisible(suppressMessages(sapply(
 source("src/utils/cat.R")
 source("src/utils/directories.R")
 source("src/utils/options.R")
+source("src/utils/test_groups.R")
 source("src/utils/load_results_utils.R")
 source("src/utils/plotting_utils.R")
 source("src/utils/diagnostic_plot_utils.R")
@@ -107,6 +108,8 @@ structure_plot_data <- function(rows, metric, model_names) {
 ## Select and validate the requested family ----
 args <- commandArgs(trailingOnly = TRUE)
 requested <- if (length(args)) args[1] else name_main_test_default
+# aggregate grouped requests through the same per-test path used by individual runs
+aggregate_test_group(test_suite, requested)
 families <- if (!is.null(test_groups[[requested]])) test_groups[[requested]] else requested
 if (!identical(families, "vary_H")) stop("unknown predictive-order experiment family")
 

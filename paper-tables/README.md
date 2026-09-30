@@ -21,8 +21,9 @@ The target loads `.env` when present, including the configured R library paths, 
 FPLS_RESULTS=/absolute/path/to/results make simulation_paper_tables
 ```
 
-The result root must contain complete production `aggregate/all` trees for `1D`, `2D`, `GCV`, and
-`2D-predictive-order`. The generator fails if a required family, level, repetition, diagnostic,
+The result root must contain complete production results under
+`results/<TEST_SUITE>/aggregate/<TEST_NAME>/` for the required experiments in `1D`, `2D`, `GCV`,
+and `2D-predictive-order`. The generator fails if a required family, level, repetition, diagnostic,
 or finite solution is missing. The non-iterative `lambda = 0` MV-PLS benchmark in the GCV
 sensitivity families is checked but excluded from R1-fPLS iteration summaries.
 

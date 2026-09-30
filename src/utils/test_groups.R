@@ -52,6 +52,24 @@ resolve_test_names <- function(test_suite, name_main_test) {
 }
 
 
+#' Aggregate each test in a requested group using its own output directory.
+#'
+#' @param test_suite Test-suite directory name.
+#' @param name_main_test Main test name or test-group name.
+#' @return Returns for a single test; exits after a group has been aggregated.
+aggregate_test_group <- function(test_suite, name_main_test) {
+  config <- load_test_suite_config_env(test_suite)
+  if (is.null(config$test_groups[[name_main_test]])) return(invisible(NULL))
+
+  script <- file.path("tests", test_suite, "aggregate_results.R")
+  for (test_name in resolve_test_names(test_suite, name_main_test)) {
+    status <- system2("Rscript", shQuote(c(script, test_name)))
+    if (status != 0L) stop("aggregation failed for ", test_suite, "/", test_name)
+  }
+  quit(save = "no", status = 0)
+}
+
+
 #' Resolve the threading mode declared by a test option.
 #'
 #' @param test_options Nested option object loaded from JSON.

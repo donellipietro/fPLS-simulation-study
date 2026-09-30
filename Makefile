@@ -302,8 +302,8 @@ clean_test: clean
 			$(RM) -r "$(PATH_RESULTS)/$(TEST_SUITE)/$$test_name"; \
 			$(RM) -r "$(PATH_IMAGES)/$(TEST_SUITE)/$$test_name"; \
 			$(RM) -r "$(PATH_TEST_DATA)/$(TEST_SUITE)/$$test_name"; \
+			$(RM) -r "$(PATH_RESULTS)/$(TEST_SUITE)/aggregate/$$test_name"; \
 		done; \
-		$(RM) -r "$(PATH_RESULTS)/$(TEST_SUITE)/aggregate/$(TEST_NAME)"; \
 		echo "Cleanup completed for: $(TEST_SUITE)/$(TEST_NAME)"; \
 	fi
 

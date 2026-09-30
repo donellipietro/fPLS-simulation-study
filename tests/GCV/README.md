@@ -12,6 +12,9 @@ iterations.
 | `small_lambda_m_gt_k` | fixed exponents `-300,-200,-100,-50,-30,-20,...,-9`; `n = 100`, `m = 100`, `k = 51` | Reported finite-solution check for `m > k` |
 | `small_lambda_m_lt_k` | fixed exponents `-300,-200,-100`, every two from `-50` to `-30`, then `-20,...,-9`; `n = 100`, `m = 25`, `k = 51` | Reported finite-solution threshold check for `m < k` |
 
+As in the 1D suite, `k` counts mesh nodes, including endpoints; cubic B-splines give
+`k + 2` basis functions, so `k = 51` uses 53 basis functions.
+
 The sensitivity grid is intentionally restricted to `1e-9,...,1e-2` because it contains the
 observed GCV optima and makes the displayed curves readable. GCV chooses direction and loading
 penalties separately after each deflation step. The `lambda = 0` cell is the non-iterative
@@ -33,6 +36,9 @@ make run_test TEST_SUITE=GCV TEST_NAME=sensitivity
 # Run all experiments in the GCV suite
 make run_test TEST_SUITE=GCV TEST_NAME=all
 ```
+
+`TEST_NAME=all` runs and aggregates every experiment separately under
+`results/GCV/aggregate/<TEST_NAME>/`.
 
 Selection-panel regeneration additionally requires every raw
 `direction_gcv_h*.csv` and `loading_gcv_h*.csv` file. Aggregated performance data alone are not

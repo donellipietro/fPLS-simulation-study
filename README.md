@@ -57,8 +57,8 @@ make build PROFILE=macos
 
 Use `PROFILE=linux` or `PROFILE=windows` for the corresponding platform.
 `TEST_SUITE` selects the simulation suite, and `TEST_NAME` selects an experiment or
-`all` for every experiment in that suite. `make run_test` automatically compiles
-the selected suite before execution:
+`all` to run and aggregate every experiment in that suite separately. `make run_test`
+automatically compiles the selected suite before execution:
 
 ```sh
 # Run one experiment in the 1D suite
@@ -79,8 +79,8 @@ For example, running `TEST_SUITE=1D TEST_NAME=vary_k` writes results to
 `results/1D/aggregate/vary_k/` and figures to `images/1D/vary_k/`.
 
 To generate all manuscript panels and convergence tables, first run each suite (`1D`, `2D`,
-`GCV`, and `2D-predictive-order`) with `TEST_NAME=all`. Once the complete `aggregate/all`
-results and the associated raw files are available, run from the repository root:
+`GCV`, and `2D-predictive-order`) with `TEST_NAME=all`. Once complete results for each
+experiment and the associated raw files are available, run from the repository root:
 
 ```sh
 make simulation_figure_panels

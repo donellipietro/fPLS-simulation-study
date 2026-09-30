@@ -36,18 +36,25 @@ make simulation_figure_panels
 ```
 
 The target loads `.env` when present, including the configured R library paths, and reads
-`results/` by default. It requires complete `aggregate/all` trees for `1D`, `2D`, `GCV`, and
-`2D-predictive-order`, together with the representative raw batches used by the figure scripts.
+`results/` by default. It reads complete production results from
+`results/<TEST_SUITE>/aggregate/<TEST_NAME>/`, together with the representative raw batches
+used by the figure scripts.
 To use results stored elsewhere:
 
 ```sh
 FPLS_RESULTS=/absolute/path/to/results make simulation_figure_panels
 ```
 
-To generate only the panels produced by one script, set `FIGURE` to its name without `.R`:
+To generate only the panels produced by one script, set `FIGURE` to its name without `.R`.
+Only complete production results for that figure's experiments and any required raw batches
+are needed. For example:
 
 ```sh
-make simulation_figure_panels FIGURE=1D_vary_k
+# Run the experiment used by this figure
+make run_test TEST_SUITE=1D TEST_NAME=vary_m
+
+# Generate its manuscript panels
+make simulation_figure_panels FIGURE=S_1D_vary_m
 ```
 
 Make loads the saved environment automatically for both commands. The same `FPLS_RESULTS`

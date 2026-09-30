@@ -39,7 +39,7 @@ panel_path <- function(figure_id, filename) {
 }
 
 read_family <- function(suite, family) {
-  file <- file.path(results_root, suite, "aggregate", "all", paste0("loaded_", family, ".rds"))
+  file <- file.path(results_root, suite, "aggregate", family, paste0("loaded_", family, ".rds"))
   if (!file.exists(file)) stop("Missing aggregated simulation results: ", file)
   loaded <- readRDS(file)
   # retain the five paper methods when reading older one-dimensional aggregates
@@ -196,7 +196,7 @@ write_time_panel <- function(loaded, filename, include_fpcr = FALSE, panel_heigh
 write_structure_panel <- function(loaded, suite, family, metric, filename,
                                   limits, y_breaks, panel_height = 2.02,
                                   group_labels = NULL) {
-  structure_dir <- file.path(results_root, suite, "aggregate", "all")
+  structure_dir <- file.path(results_root, suite, "aggregate", family)
   candidates <- file.path(
     structure_dir,
     c(paste0(family, "_explained_structure.csv"), "explained_structure.csv")

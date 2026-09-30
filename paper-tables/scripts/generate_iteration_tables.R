@@ -60,8 +60,8 @@ validate_status <- function(item, aggregate_dir) {
   status <- fromJSON(file, simplifyVector = TRUE)
   if (!identical(as.integer(status$schema_version), schema_versions[[item$suite]]) ||
       !identical(status$suite, item$suite) ||
-      !identical(status$requested, "all") ||
-      !item$family %in% as.character(status$families) ||
+      !identical(status$requested, item$family) ||
+      !identical(as.character(status$families), item$family) ||
       !identical(status$run_complete, TRUE) ||
       !identical(status$smoke_test, FALSE)) {
     stop("Aggregate status is not a complete production run: ", file)
@@ -85,7 +85,7 @@ cell_key <- function(rows) paste(
 )
 
 read_diagnostics <- function(item) {
-  aggregate_dir <- file.path(results_root, item$suite, "aggregate", "all")
+  aggregate_dir <- file.path(results_root, item$suite, "aggregate", item$family)
   validate_status(item, aggregate_dir)
   file <- file.path(aggregate_dir, paste0(item$family, "_diagnostics.csv"))
   if (!file.exists(file)) stop("Missing paper-facing diagnostics: ", file)
