@@ -18,7 +18,6 @@
 !/paper-figures/layouts/*.af
 /paper-tables/csv
 /reports
-/tests/smoke_generate_review_tables.R
 /logs
 /queue
 /data
