@@ -78,5 +78,6 @@ lines. `vary_k` also includes reference guides for linear and quadratic growth i
 are not fitted complexity claims. GCV fit-time panels retain boxplots on a log10 time axis,
 with tick labels in seconds.
 
-The model colours used in the manuscript are defined in `scripts/common.R` and shared by
-quantitative panels, qualitative curves, legends, and GCV comparisons.
+The model colours are defined in [`src/utils/model_colors.R`](../src/utils/model_colors.R)
+and shared by simulation options, quantitative panels, qualitative curves, legends, and
+GCV comparisons.

@@ -3,15 +3,15 @@
 # - Desc: Generates the experimental 2D predictive-order experiment.
 # = ========================================================================== =
 
+# use the same model colours in simulation output and manuscript figures
+source("src/utils/model_colors.R", local = TRUE)
+
 predictive_order_model_catalog <- function() {
+  model_names <- c("MV_PLS", "fPCR", "R1_fPLS")
   list(
-    names = c("MV_PLS", "fPCR", "R1_fPLS"),
+    names = model_names,
     labels = c("MV-PLS", "fPCR", "R1-fPLS"),
-    colors = c(
-      RColorBrewer::brewer.pal(3, "Greys")[3],
-      RColorBrewer::brewer.pal(3, "Greens")[3],
-      RColorBrewer::brewer.pal(3, "Blues")[3]
-    )
+    colors = unname(model_palette[model_names])
   )
 }
 

@@ -3,21 +3,20 @@
 # - Desc: Generates the 1D paper and noise-robustness experiment families.
 # = ========================================================================== =
 
+# use the same model colours in simulation output and manuscript figures
+source("src/utils/model_colors.R", local = TRUE)
+
 paper_model_catalog <- function() {
+  model_names <- c(
+    "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "fPCR", "R1_fPLS"
+  )
   list(
-    names = c(
-      "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "fPCR", "R1_fPLS"
-    ),
+    names = model_names,
     labels = c(
       "MV-PLS", "B-fPLS (Regression Splines)",
       "B-fPLS (Smoothing Splines)", "PB-fPLS", "fPCR", "R1-fPLS"
     ),
-    colors = c(
-      RColorBrewer::brewer.pal(3, "Greys")[3],
-      RColorBrewer::brewer.pal(9, "RdPu")[c(4, 6, 9)],
-      RColorBrewer::brewer.pal(3, "Greens")[3],
-      RColorBrewer::brewer.pal(3, "Blues")[3]
-    )
+    colors = unname(model_palette[model_names])
   )
 }
 

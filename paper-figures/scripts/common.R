@@ -28,6 +28,7 @@ suppressPackageStartupMessages({
 })
 working_directory <- getwd()
 setwd(simulation_root)
+source("src/utils/model_colors.R", local = TRUE)
 source("src/utils/plotting_utils.R")
 setwd(working_directory)
 
@@ -36,11 +37,6 @@ panel_path <- function(figure_id, filename) {
   dir.create(directory, recursive = TRUE, showWarnings = FALSE)
   file.path(directory, filename)
 }
-
-# Approved model palette; keep numerical result archives unchanged.
-model_palette <- c(MV_PLS = "#929292", B_fPLS = "#FA9FB5",
-                   B_fPLS_smooth = "#E65BA5", PB_fPLS = "#B92B7D",
-                   R1_fPLS = "#234B8A", fPCR = "#2D9950")
 
 read_family <- function(suite, family) {
   file <- file.path(results_root, suite, "aggregate", "all", paste0("loaded_", family, ".rds"))

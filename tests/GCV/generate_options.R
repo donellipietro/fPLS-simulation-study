@@ -3,11 +3,15 @@
 # - Desc: Generates the one-dimensional GCV diagnostic experiment families.
 # = ========================================================================== =
 
+# use the same model colours in simulation output and manuscript figures
+source("src/utils/model_colors.R", local = TRUE)
+
 gcv_model_catalog <- function() {
+  model_names <- "R1_fPLS"
   list(
-    names = "R1_fPLS",
+    names = model_names,
     labels = "R1-fPLS",
-    colors = RColorBrewer::brewer.pal(3, "Blues")[3]
+    colors = unname(model_palette[model_names])
   )
 }
 
