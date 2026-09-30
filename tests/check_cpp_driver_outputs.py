@@ -280,20 +280,15 @@ def main():
                         if calibration == "gcv":
                             validate_gcv(first, case)
                         print(f"OK public {target}: {model}, {calibration}, seed={seed}, responses={responses}", flush=True)
-            # omitted and unrecognized model names retain the existing simulation fPLS fallback
+            # an omitted model name selects the default simulation fPLS model
             if dimension != 3:
                 case = {**params, "model": "R1_fPLS", "calibration": "fixed"}
                 expected = run(binary, case, directory / "explicit-fpls")
-                for label, model in (("default", None), ("unknown", "unknown")):
-                    fallback = {**case}
-                    if model is None:
-                        fallback.pop("model")
-                    else:
-                        fallback["model"] = model
-                    actual = run(binary, fallback, directory / f"fallback-{label}")
-                    # identical fitted fields and metadata verify that both paths select the same fPLS model
-                    compare_repeated(expected, actual)
-            for changes in ({"center": True}, {"n_comp": 0}, {"calibration": "invalid"}, {"lambda_grid": []}, {"gcv_probes": 0}):
+                case.pop("model")
+                actual = run(binary, case, directory / "default-fpls")
+                # identical fitted fields and metadata verify that the default uses the explicit fPLS path
+                compare_repeated(expected, actual)
+            for changes in ({"center": True}, {"n_comp": 0}, {"calibration": "invalid"}, {"lambda_grid": []}, {"gcv_probes": 0}, {"model": "unknown"}):
                 for model in ("R1_fPLS", "fPCR"):
                     case = {**params, "model": model, "calibration": "gcv", **changes,
                             "output_dir": str(directory / "invalid-output")}
@@ -302,6 +297,9 @@ def main():
                     result = subprocess.run([str(binary), str(path)], capture_output=True, timeout=60)
                     # trust-boundary validation rejects invalid inputs before exporting a successful fit
                     assert result.returncode != 0, (target, model, changes)
+                    if changes.get("model") == "unknown":
+                        # unsupported names report the model-selection error instead of fitting another model
+                        assert b"model must be R1_fPLS or fPCR" in result.stderr, (target, result.stderr)
     print("Compatible baseline outputs, all response prefixes and reproducible GCV diagnostics verified.")
 
 
