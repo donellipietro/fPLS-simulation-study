@@ -25,7 +25,7 @@ native_model_matches_options <- function(model, model_name, test_options) {
   if (is.null(telemetry)) return(FALSE)
   same <- function(left, right) isTRUE(all.equal(left, right))
   timing_current &&
-    same(telemetry$schema_version, 4L) &&
+    same(telemetry$schema_version, if (model_name == "fPCR") 5L else 4L) &&
     identical(telemetry$model, model_name) &&
     identical(telemetry$calibration, test_options$regularization$calibration) &&
     same(telemetry$n_components, test_options$model$n_comp) &&
@@ -38,7 +38,7 @@ native_model_matches_options <- function(model, model_name, test_options) {
       same(telemetry$fixed_direction_lambda, test_options$regularization$fixed_direction_lambda) &&
         same(telemetry$fixed_loading_lambda, test_options$regularization$fixed_loading_lambda)
     }) &&
-    (model_name != "R1_fPLS" || telemetry$calibration != "gcv" ||
+    (telemetry$calibration != "gcv" ||
        (same(telemetry$gcv_probes, test_options$regularization$gcv_probes) &&
         same(telemetry$gcv_seed, test_options$regularization$gcv_seed)))
 }

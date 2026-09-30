@@ -115,6 +115,8 @@ check_beta_rmse <- function() {
     }
 
     model_fPCR$results$telemetry$fpcr_score_map <- "sequential_projection_v1"
+    model_fPCR$results$telemetry$schema_version <- 5L
+    # the public model schema and corrected score map make the fixed fPCR cache current
     stopifnot(env$native_model_matches_options(model_fPCR, "fPCR", options))
     save(model_fPCR, file = model_file)
     refreshed <- env$load_batch_evaluations(options, batch, 1L)

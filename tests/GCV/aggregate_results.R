@@ -102,10 +102,12 @@ validate_gcv_curves <- function(raw_dir, options) {
         file.path(raw_dir, glue::glue("{prefix}_gcv_h{component}.csv")),
         check.names = FALSE
       ))
-      if (!identical(names(curve), c("lambda", "gcv")) ||
+      if (!identical(names(curve), c("lambda", "edf", "gcv", "selected_by_fit")) ||
           nrow(curve) != length(expected_lambda) ||
           !isTRUE(all.equal(curve$lambda, expected_lambda)) ||
-          any(!is.finite(curve$gcv))) {
+          any(!is.finite(curve$gcv)) || any(!is.finite(curve$edf)) ||
+          any(!curve$selected_by_fit %in% c(0, 1)) || sum(curve$selected_by_fit) != 1L ||
+          which(curve$selected_by_fit == 1L) != which.min(curve$gcv)) {
         stop(glue::glue("invalid {prefix} GCV curve for component {component}"))
       }
     }
@@ -238,7 +240,7 @@ for (family in families) {
         }
         telemetry <- fromJSON(file.path(raw_dir, "telemetry.json"))
         saves_gcv_curves <- identical(options$regularization$calibration, "gcv")
-        expected_schema <- if (saves_gcv_curves) 5L else 4L
+        expected_schema <- if (saves_gcv_curves) 6L else 4L
         gcv_curve_setting_current <- if (saves_gcv_curves) {
           identical(telemetry$save_gcv_curves, TRUE)
         } else {

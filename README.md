@@ -34,10 +34,23 @@ Install the following on your machine before running the workflow:
 - Docker Desktop with WSL2 integration for the `windows` profile.
 
 `make build` automatically installs missing R packages listed in
-[`src/installation/install_packages.R`](src/installation/install_packages.R) and `femR`, and downloads
-the nlohmann/json headers and `fdaPDE-cpp` with its `fdaPDE/core` dependency. The native revisions
-are pinned in `config.R`: fdaPDE-cpp commit `fbf764f` and core commit `472f9bd`. For the `windows`
+[`src/installation/install_packages.R`](src/installation/install_packages.R) and `femR`, and prepares
+the nlohmann/json headers and the pinned local `fdaPDE-cpp` stack. The native revisions
+are pinned in `config.R`: fdaPDE-cpp commit `9864fa6` and core commit `472f9bd`. For the `windows`
 profile, the build also prepares the configured Docker image.
+
+The default source is the sibling local checkout `../../../fdaPDE/fdaPDE-cpp`.
+Set `FDAPDE_CPP_REPOSITORY` to another local clone containing commit
+`9864fa6eb94072ad2b79de989db8a46e4ae81b1e` before regenerating `.env` with
+`Rscript config.R --profile macbook --write-env`. `FDAPDE_CORE_REPOSITORY` can
+select a local core clone; otherwise the source checkout supplies it.
+`cpp/compile.sh` validates or refreshes `libraries/fdaPDE-cpp` at the pinned
+outer commit and its core gitlink without requiring a published branch. It
+refuses a dirty destination, including submodule edits. Set `FDAPDE_CPP_MANAGED=false`
+to validate an existing checkout without changing it. Unpublished commits must
+be copied as Git objects when transferring the workflow to another machine.
+Run `python3 tests/check_fdapde_dependency.py` in fPLS-simulation-study to check
+both consumers using temporary local fixture repositories.
 
 For local execution, choose `macbook` on macOS, `linux` on Linux, or `windows` on Windows.
 The Linux profile uses `gcc`, `g++`, and Eigen in `/usr/include/eigen3`; override `CC`, `CXX`,
@@ -100,6 +113,30 @@ before RMSE evaluation. The GCV sensitivity figures report these errors at each 
 in-memory post-processing, but excludes data generation, result I/O, and accuracy evaluation.
 It is not total campaign runtime and must not be compared across different hardware as though it
 were. The paper reports fit time, peak resident memory, and iteration counts.
+
+## Native model diagnostics
+
+The four C++ drivers use the public `fPLS` and `fPCR` models from `fdaPDE/models.h`.
+`fPCR` fits native smooth fPCA components, projects final loadings sequentially, and refits OLS
+for each retained score prefix. Its beta coefficients map the original predictors through all
+preceding deflations. Prediction and beta CSVs retain every response column;
+`response_diagnostics.csv` records SSE and MSE per component prefix and response.
+
+fPCR telemetry schema 5 records the explicit `gcv_probes` and `gcv_seed`. Each GCV component
+also writes `fpca_gcv_h<component>.csv`. fPLS schema 6 applies when GCV curves are requested;
+other fPLS outputs retain schema 4. GCV curves contain `lambda,edf,gcv,selected_by_fit`, copied
+from evaluations saved during the fit. Output performs no diagnostic refits or additional EDF estimates.
+The R cache checks and GCV aggregator accept these schemas and require the fitted minimum marker.
+
+Fixed fPCR retains the previous sequential-score regression algorithm. GCV fPCR now uses the
+configured EDF probes/seed and a real-valued residual degrees-of-freedom denominator, replacing
+the previous implicit random seed and integer truncation. These intentional calibration changes
+can alter selected lambdas and invalidate old cached GCV fits.
+
+Run `python3 tests/check_cpp_driver_outputs.py` after compiling both projects to check scalar
+and three-response fits, three score prefixes, fixed/GCV calibration and reproducible seeds 0/42.
+An optional baseline-binary directory additionally checks compatible older outputs.
+`Rscript tests/check_native_model_diagnostics.R` checks R cache invalidation and the GCV curve validator.
 
 ## Reproducibility boundary
 
