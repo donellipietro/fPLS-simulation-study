@@ -7,7 +7,7 @@ models, aggregate results, logs, panels, and exported PDFs are intentionally out
 
 ## Paper map
 
-| Suite/family | Article or Supplementary Material output |
+| TEST_SUITE/TEST_NAME | Article or Supplementary Material output |
 |---|---|
 | `1D/vary_k` | Article: Simulation 1 data, varying-basis and qualitative-beta figures |
 | `1D/vary_n` | Article: Simulation 1 sample-size figure |
@@ -39,19 +39,6 @@ the nlohmann/json headers and the pinned `fdaPDE-cpp` stack. The native revision
 are pinned in `config.R`: fdaPDE-cpp commit `d32e453` and core commit `472f9bd`. For the `windows`
 profile, the build also prepares the configured Docker image.
 
-The default source is the published
-[`develop_fPLS` branch of fdaPDE-cpp](https://github.com/fdaPDE/fdaPDE-cpp/tree/develop_fPLS).
-`cpp/compile.sh` prepares `libraries/fdaPDE-cpp` at the pinned outer commit and
-its exact core gitlink. The core is fetched from the submodule URL recorded in
-that commit.
-Set `FDAPDE_CPP_REPOSITORY` to another remote or local clone containing the
-pinned commit, or `FDAPDE_CORE_REPOSITORY` to a matching core clone, before
-regenerating `.env` with `Rscript config.R --profile macbook --write-env`.
-The preparation script refuses a dirty destination, including submodule edits.
-Set `FDAPDE_CPP_MANAGED=false` to validate an existing checkout without changing it.
-Run `python3 tests/check_fdapde_dependency.py` in fPLS-simulation-study to check
-both consumers using temporary local fixture repositories.
-
 For local execution, choose `macbook` on macOS, `linux` on Linux, or `windows` on Windows.
 The Linux profile uses `gcc`, `g++`, and Eigen in `/usr/include/eigen3`; override `CC`, `CXX`,
 or `PATH_EIGEN_INCLUDE` if your installation uses different paths. Inspect a profile with:
@@ -70,7 +57,8 @@ make build PROFILE=macbook
 ```
 
 Use `PROFILE=linux` or `PROFILE=windows` for the corresponding platform.
-Then run one family or every family in a suite; `make run_test` automatically compiles
+`TEST_SUITE` selects the simulation suite, and `TEST_NAME` selects an experiment or
+`all` for every experiment in that suite. `make run_test` automatically compiles
 the selected suite before execution:
 
 ```sh

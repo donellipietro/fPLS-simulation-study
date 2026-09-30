@@ -3,7 +3,7 @@
 Each suite saves generated data, fitted models and accuracy metrics, then aggregates complete
 simulation results. Each option cell uses 30 replications.
 
-| Suite | Families | Paper mapping |
+| TEST_SUITE | TEST_NAME values | Paper mapping |
 |---|---|---|
 | [`1D`](1D/README.md) | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY` | Article Simulation 1 and its supplementary resolution/noise analyses |
 | [`2D`](2D/README.md) | `vary_k`, `vary_n`, `vary_m`, `vary_NSRX`, `vary_NSRY`, `vary_H` | Article Simulation 2 and its supplementary analyses |
@@ -17,7 +17,10 @@ Subsequent commands reuse that profile, and `make run_test` compiles the selecte
 automatically. From the repository root, run one family or every family in a suite:
 
 ```sh
+# Run one experiment in the 1D suite
 make run_test TEST_SUITE=1D TEST_NAME=vary_k
+
+# Run all experiments in the 1D suite
 make run_test TEST_SUITE=1D TEST_NAME=all
 ```
 

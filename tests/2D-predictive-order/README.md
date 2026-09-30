@@ -21,6 +21,7 @@ repository root. `TEST_NAME=all` runs the sole family, `vary_H`, and prepares th
 manuscript inputs:
 
 ```sh
+# Run the predictive-order experiment
 make run_test TEST_SUITE=2D-predictive-order TEST_NAME=all
 ```
 

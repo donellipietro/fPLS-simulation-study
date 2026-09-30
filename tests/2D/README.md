@@ -9,7 +9,7 @@ response on the corresponding score prefix.
 Production cells use 30 replications, baseline `NSR_X = 3`, `NSR_Y = 0.1`, tolerance `1e-8`,
 and at most 1000 iterations unless the family varies the named quantity.
 
-| Family | Production levels | Paper mapping |
+| TEST_NAME | Production levels | Paper mapping |
 |---|---|---|
 | `vary_n` | `n = 50, 100, 200`; `m = 1600`, `k = 900`, `H = 4` | Article representative beta maps at `n = 100`; Supplementary sample-size figure |
 | `vary_m` | `m = 900, 1600, 2400`; `n = 100`, `k = 900`, `H = 4` | Supplementary observation-resolution figure |
@@ -28,10 +28,14 @@ repository root. Choose `TEST_NAME=all` to prepare the complete manuscript input
 one family:
 
 ```sh
+# Run one experiment in the 2D suite
 make run_test TEST_SUITE=2D TEST_NAME=vary_n
+
+# Run all experiments in the 2D suite
 make run_test TEST_SUITE=2D TEST_NAME=all
 ```
 
-Expected paper inputs are `results/2D/aggregate/all/loaded_<family>.rds`, diagnostics, paper
-metrics, explained-structure CSV files, and the representative `vary_n` raw batch used for the
-qualitative beta maps.
+With `TEST_NAME=all`, paper inputs include `results/2D/aggregate/all/loaded_<TEST_NAME>.rds`
+for each experiment name in the table above, such as `loaded_vary_n.rds`, plus diagnostics,
+paper metrics, explained-structure CSV files, and the representative `vary_n` raw batch
+used for the qualitative beta maps.

@@ -8,7 +8,7 @@ iterations unless the selected family varies that quantity.
 The manuscript comparisons are MV-PLS, B-fPLS with regression splines, B-fPLS with smoothing
 splines, PB-fPLS, and R1-fPLS.
 
-| Family | Production levels | Paper mapping |
+| TEST_NAME | Production levels | Paper mapping |
 |---|---|---|
 | `vary_k` | `k = 5, 11, 21, 51, 101`; `n = 100`, `m = 200` | Article varying-basis figure; `k = 11,101` qualitative beta figure; `k = 11` data figure |
 | `vary_n` | `n = 50, 100, 200`; `m = 200`, source `k = 51` | Article sample-size figure |
@@ -30,9 +30,14 @@ repository root. Choose `TEST_NAME=all` to prepare the complete manuscript input
 one family:
 
 ```sh
+# Run one experiment in the 1D suite
 make run_test TEST_SUITE=1D TEST_NAME=vary_k
+
+# Run all experiments in the 1D suite
 make run_test TEST_SUITE=1D TEST_NAME=all
 ```
 
-Expected paper inputs are `results/1D/aggregate/all/loaded_<family>.rds`, the corresponding
-diagnostic/metric CSV files, and representative raw batches for the data and qualitative panels.
+With `TEST_NAME=all`, paper inputs include `results/1D/aggregate/all/loaded_<TEST_NAME>.rds`
+for each experiment name in the table above, such as `loaded_vary_k.rds`, plus the
+corresponding diagnostic/metric CSV files and representative raw batches for the data and
+qualitative panels.
