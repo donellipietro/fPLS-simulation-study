@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
         if (params.model_name == "fPCR") return run_fpcr(params);
         throw std::runtime_error("model must be R1_fPLS or fPCR");
     } catch (const std::exception& error) {
-        std::cerr << "fPLS simulation failed: " << error.what() << '\n';
+        std::cerr << "simulation failed: " << error.what() << '\n';
         return 2;
     }
 }
