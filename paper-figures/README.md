@@ -66,9 +66,6 @@ the regression coefficient functions. GCV performance panels use aggregate resul
 selected-penalty panels additionally require every raw `direction_gcv_h*.csv` and
 `loading_gcv_h*.csv` file from the simulation run.
 
-Panels are written below `paper-figures/panels/<figure-name>/`, relative to the repository root,
-at the sizes defined by the scripts. Place panels in Affinity at 100% of their generated size.
-
 R produces scientific marks, numeric ticks, and shared legends. Panel letters, display titles,
 and axis labels are maintained in Affinity. The 1D qualitative layout also contains the
 selection rectangles linking the `k = 11` and `k = 101` zoom panels.
