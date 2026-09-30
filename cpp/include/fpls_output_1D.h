@@ -1,15 +1,18 @@
 #ifndef FPLS_SIMULATION_1D_OUTPUT_H
 #define FPLS_SIMULATION_1D_OUTPUT_H
 
-#include "../include/simulation_utils.h"
+#include "simulation_utils.h"
 
 /** @brief export fPLS component prefixes, evaluated fields, convergence diagnostics and run metadata */
 template <typename Space, typename Model>
 int write_fpls_output(
   const simulation_parameters& params, const Space& space, const Model& model, const matrix_t& X, const matrix_t& Y,
-  const matrix_t& locations, const matrix_t& evaluation, const matrix_t& direction_lambdas,
-  const matrix_t& loading_lambdas, time_point_t wall_start, time_point_t setup_end, time_point_t fit_end,
-  const char* discretization) {
+  const matrix_t& locations, const matrix_t& evaluation, time_point_t wall_start, time_point_t setup_end,
+  time_point_t fit_end, const char* discretization) {
+    // read the fitted lambda schedules directly from the model for both fixed and GCV calibration
+    const auto& direction_lambdas = model.direction_lambda();
+    const auto& loading_lambdas = model.loading_lambda();
+
     // evaluate coefficient-space directions and loadings on the observed and independent evaluation grids
     const matrix_t basis_at_locations = internals::point_basis_eval(space, locations);
     const matrix_t basis_at_evaluation = internals::point_basis_eval(space, evaluation);
