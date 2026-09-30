@@ -178,8 +178,12 @@ int main(int argc, char* argv[]) {
         }
         const auto params = read_parameters(read_parameter_file(argv[1]), true);
 
-        // dispatch the requested statistical model
-        return params.model_name != "fPCR" ? run_fpls(params) : run_fpcr(params);
+        // dispatch fPLS as the base model, with fPCR as the alternative
+        if (params.model_name == "R1_fPLS") {
+            return run_fpls(params);
+        } else {
+            return run_fpcr(params);
+        }
     } catch (const std::exception& error) {
         std::cerr << "fPLS simulation failed: " << error.what() << '\n';
         return 2;

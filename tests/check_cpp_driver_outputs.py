@@ -280,6 +280,19 @@ def main():
                         if calibration == "gcv":
                             validate_gcv(first, case)
                         print(f"OK public {target}: {model}, {calibration}, seed={seed}, responses={responses}", flush=True)
+            # omitted and unrecognized model names retain the existing simulation fPLS fallback
+            if dimension != 3:
+                case = {**params, "model": "R1_fPLS", "calibration": "fixed"}
+                expected = run(binary, case, directory / "explicit-fpls")
+                for label, model in (("default", None), ("unknown", "unknown")):
+                    fallback = {**case}
+                    if model is None:
+                        fallback.pop("model")
+                    else:
+                        fallback["model"] = model
+                    actual = run(binary, fallback, directory / f"fallback-{label}")
+                    # identical fitted fields and metadata verify that both paths select the same fPLS model
+                    compare_repeated(expected, actual)
             for changes in ({"center": True}, {"n_comp": 0}, {"calibration": "invalid"}, {"lambda_grid": []}, {"gcv_probes": 0}):
                 for model in ("R1_fPLS", "fPCR"):
                     case = {**params, "model": model, "calibration": "gcv", **changes,

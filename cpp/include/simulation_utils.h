@@ -102,6 +102,8 @@ inline simulation_parameters read_parameters(const json& values, bool spline) {
     simulation_parameters params;
     params.n_mesh_nodes = values.at(spline ? "n_mesh_nodes" : "n_mesh_nodes_per_axis").get<int>();
     params.model_name = values.value("model", std::string("R1_fPLS"));
+    // retain the existing fPLS fallback for unrecognized model names
+    if (params.model_name != "R1_fPLS" && params.model_name != "fPCR") params.model_name = "R1_fPLS";
     params.n_comp = values.at("n_comp").get<int>();
     params.max_iter = values.at("max_iter").get<int>();
     params.tolerance = values.at("tolerance").get<double>();
