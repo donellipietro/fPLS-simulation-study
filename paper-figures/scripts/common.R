@@ -42,6 +42,12 @@ read_family <- function(suite, family) {
   file <- file.path(results_root, suite, "aggregate", "all", paste0("loaded_", family, ".rds"))
   if (!file.exists(file)) stop("Missing aggregated simulation results: ", file)
   loaded <- readRDS(file)
+  # retain the five paper methods when reading older one-dimensional aggregates
+  if (suite == "1D") {
+    keep <- loaded$model_names != "fPCR"
+    loaded$model_names <- loaded$model_names[keep]
+    loaded$model_labels <- loaded$model_labels[keep]
+  }
   loaded$model_colors <- unname(model_palette[loaded$model_names])
   if (anyNA(loaded$model_colors)) stop("Missing model palette entry.")
   loaded

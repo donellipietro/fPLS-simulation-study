@@ -144,7 +144,7 @@ failed_native_model <- function(model_name, data, test_options, raw_dir,
 }
 
 fit_native_model <- function(model_name, data, path_list, test_options) {
-  if (!model_name %in% c("R1_fPLS", "fPCR")) {
+  if (model_name != "R1_fPLS") {
     stop(glue::glue("The model {model_name} does not exist"))
   }
 
@@ -281,11 +281,7 @@ fit_native_model <- function(model_name, data, path_list, test_options) {
     loading_lambdas = read_cpp_matrix(file.path(raw_dir, "loading_lambdas.csv")),
     X_mean_locations = read_cpp_matrix(file.path(raw_dir, "x_mean_locations.csv")),
     Y_mean = read_cpp_matrix(file.path(raw_dir, "y_mean.csv")),
-    fpca_lambdas = if (identical(model_name, "fPCR")) {
-      read_cpp_matrix(file.path(raw_dir, "fpca_lambdas.csv"))
-    } else {
-      matrix(NaN, n_comp, 1L)
-    },
+    fpca_lambdas = matrix(NaN, n_comp, 1L),
     iteration_counts = component_diagnostics$iterations,
     monotone = component_diagnostics$monotone,
     objective = component_diagnostics$objective,
@@ -359,7 +355,7 @@ fit_model <- function(model_name, domain, data, path_list, test_options) {
       identical(test_options$regularization$calibration, "multivariate")) {
     return(fit_mv_pls_competitor(data, test_options))
   }
-  if (model_name %in% c("R1_fPLS", "fPCR")) {
+  if (identical(model_name, "R1_fPLS")) {
     return(fit_native_model(model_name, data, path_list, test_options))
   }
   if (identical(model_name, "MV_PLS")) {

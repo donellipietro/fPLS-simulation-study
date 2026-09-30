@@ -8,13 +8,13 @@ source("src/utils/model_colors.R", local = TRUE)
 
 paper_model_catalog <- function() {
   model_names <- c(
-    "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "fPCR", "R1_fPLS"
+    "MV_PLS", "B_fPLS", "B_fPLS_smooth", "PB_fPLS", "R1_fPLS"
   )
   list(
     names = model_names,
     labels = c(
       "MV-PLS", "B-fPLS (Regression Splines)",
-      "B-fPLS (Smoothing Splines)", "PB-fPLS", "fPCR", "R1-fPLS"
+      "B-fPLS (Smoothing Splines)", "PB-fPLS", "R1-fPLS"
     ),
     colors = unname(model_palette[model_names])
   )

@@ -74,6 +74,8 @@ check_beta_rmse <- function() {
       abs(loaded$rmse$Beta1_locations$R1_fPLS - sqrt(2)) < 1e-14
     )
 
+    # fPCR cache compatibility belongs to the two-dimensional comparison
+    if (suite == "1D") next
     model_fPCR <- model_R1_fPLS
     model_fPCR$MODE <- "fPCR"
     model_fPCR$results$telemetry <- list(

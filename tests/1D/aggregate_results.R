@@ -75,13 +75,9 @@ validate_family_files <- function(path_list, family, family_options, cfg) {
             length(model$results$Beta_locations) != 4L) {
           stop(glue::glue("invalid component-wise result shape for {model_name}"))
         }
-        if (model_name %in% c("R1_fPLS", "fPCR")) {
+        if (model_name == "R1_fPLS") {
           raw_dir <- file.path(batch_dir, "raw", model_name)
-          model_required_raw <- c(
-            required_raw,
-            if (model_name == "fPCR") "fpca_lambdas.csv" else character()
-          )
-          missing_raw <- model_required_raw[!file.exists(file.path(raw_dir, model_required_raw))]
+          missing_raw <- required_raw[!file.exists(file.path(raw_dir, required_raw))]
           if (length(missing_raw)) stop("native raw output is incomplete")
           telemetry <- fromJSON(file.path(raw_dir, "telemetry.json"))
           if (!identical(telemetry$model, model_name) ||

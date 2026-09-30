@@ -4,17 +4,15 @@
 # = ========================================================================== =
 
 native_model_matches_options <- function(model, model_name, test_options) {
-  if (model_name == "fPCR" &&
-      !identical(model$results$telemetry$fpcr_score_map, "sequential_projection_v1")) {
-    return(FALSE)
-  }
-  native_model <- model_name %in% c("R1_fPLS", "fPCR") && identical(model$MODE, model_name)
+  # reject saved fPCR fits from former one-dimensional option files
+  if (model_name == "fPCR") return(FALSE)
+  native_model <- model_name == "R1_fPLS" && identical(model$MODE, model_name)
   timing_current <- if (native_model) {
     identical(model$results$telemetry$timing_scope, "compute_v2")
   } else {
     !is.null(model$results$execution_time)
   }
-  if (!model_name %in% c("R1_fPLS", "fPCR")) {
+  if (model_name != "R1_fPLS") {
     telemetry <- model$results$telemetry
     return(isTRUE(telemetry$schema_version == 3L) &&
              timing_current &&
@@ -39,7 +37,7 @@ native_model_matches_options <- function(model, model_name, test_options) {
   cfg <- load_config()
   core_path <- file.path(cfg$PATH_FDAPDE_CPP, "fdaPDE", "core")
   timing_current &&
-    same(telemetry$schema_version, if (model_name == "fPCR") 5L else if (saves_gcv_curves) 6L else 4L) &&
+    same(telemetry$schema_version, if (saves_gcv_curves) 6L else 4L) &&
     identical(telemetry$model, model_name) &&
     identical(telemetry$calibration, test_options$regularization$calibration) &&
     gcv_curve_setting_current &&
@@ -60,12 +58,10 @@ native_model_matches_options <- function(model, model_name, test_options) {
       telemetry$provenance$core_diff_fingerprint,
       git_diff_fingerprint(core_path)
     ) &&
-    (telemetry$calibration != "fixed" || if (model_name == "fPCR") {
-      same(telemetry$fixed_loading_lambda, test_options$regularization$fixed_loading_lambda)
-    } else {
+    (telemetry$calibration != "fixed" || (
       same(telemetry$fixed_direction_lambda, test_options$regularization$fixed_direction_lambda) &&
         same(telemetry$fixed_loading_lambda, test_options$regularization$fixed_loading_lambda)
-    }) &&
+    )) &&
     (telemetry$calibration != "gcv" ||
        (same(telemetry$gcv_probes, test_options$regularization$gcv_probes) &&
         same(telemetry$gcv_seed, test_options$regularization$gcv_seed)))

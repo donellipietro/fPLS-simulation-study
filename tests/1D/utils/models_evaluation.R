@@ -48,10 +48,6 @@ component_result <- function(model, name, n_comp) {
 }
 
 evaluate_results <- function(model, data, test_options) {
-  if (identical(model$MODE, "fPCR") &&
-      !identical(model$results$telemetry$fpcr_score_map, "sequential_projection_v1")) {
-    stop("Outdated fPCR score-to-beta map. Re-run make run_test for this suite to refit fPCR before evaluating or aggregating results.")
-  }
   n_comp <- data$dimensions$n_comp
   n_true_comp <- data$dimensions$n_true_comp
   if (is.null(n_true_comp)) n_true_comp <- n_comp
@@ -137,7 +133,6 @@ evaluate_results <- function(model, data, test_options) {
   evaluation <- list(
     rmse = rmse,
     beta_sign_alignment = FALSE,
-    fpcr_score_map = model$results$telemetry$fpcr_score_map,
     data_seed = data$data_seed,
     location_seed = data$location_seed,
     dimension = data$dimension,

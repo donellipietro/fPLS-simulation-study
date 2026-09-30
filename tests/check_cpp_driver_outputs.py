@@ -242,6 +242,7 @@ def main():
             directory = work / target
             directory.mkdir()
             params = inputs(directory, dimension)
+            models = ("R1_fPLS",) if dimension == 1 else ("R1_fPLS", "fPCR")
             binary = (application if target == "brain" else simulation) / "build" / target / "fit_model"
             if baseline:
                 cases = [("R1_fPLS", calibration, {}) for calibration in ("fixed", "gcv")]
@@ -257,6 +258,7 @@ def main():
                     cases += [(model, "fixed", {"write_beta": False, "write_reconstructions": False})
                               for model in ("R1_fPLS", "fPCR")]
                     cases += [("R1_fPLS", "fixed", {"fixed_fpca_lambda": "unused"})]
+                cases = [case for case in cases if case[0] in models]
                 for index, (model, calibration, extra) in enumerate(cases):
                     case = {**params, "model": model, "calibration": calibration, **extra}
                     old = run(baseline / target, case, directory / f"old-{index}")
@@ -265,7 +267,7 @@ def main():
                     print(f"OK baseline {target}: {model}, {calibration}, {extra}", flush=True)
             for responses in (1, 3):
                 params = inputs(directory, dimension, responses)
-                for model in ("R1_fPLS", "fPCR"):
+                for model in models:
                     for calibration, seed in (("fixed", 42), ("gcv", 0), ("gcv", 42)):
                         case = {**params, "model": model, "calibration": calibration, "gcv_seed": seed,
                                 "n_comp": 3, "lambda_grid": [0.0001, 0.01, 1]}
@@ -288,8 +290,11 @@ def main():
                 actual = run(binary, case, directory / "default-fpls")
                 # identical fitted fields and metadata verify that the default uses the explicit fPLS path
                 compare_repeated(expected, actual)
-            for changes in ({"center": True}, {"n_comp": 0}, {"calibration": "invalid"}, {"lambda_grid": []}, {"gcv_probes": 0}, {"model": "unknown"}):
-                for model in ("R1_fPLS", "fPCR"):
+            invalid_settings = ({"center": True}, {"n_comp": 0}, {"calibration": "invalid"}, {"lambda_grid": []}, {"gcv_probes": 0}, {"model": "unknown"})
+            if dimension == 1:
+                invalid_settings += ({"model": "fPCR"},)
+            for changes in invalid_settings:
+                for model in models:
                     case = {**params, "model": model, "calibration": "gcv", **changes,
                             "output_dir": str(directory / "invalid-output")}
                     path = directory / "invalid.json"
@@ -297,9 +302,13 @@ def main():
                     result = subprocess.run([str(binary), str(path)], capture_output=True, timeout=60)
                     # trust-boundary validation rejects invalid inputs before exporting a successful fit
                     assert result.returncode != 0, (target, model, changes)
-                    if changes.get("model") == "unknown":
+                    if changes.get("model") in ("unknown", "fPCR"):
                         # unsupported names report the model-selection error instead of fitting another model
-                        assert b"model must be R1_fPLS or fPCR" in result.stderr, (target, result.stderr)
+                        expected = b"model must be R1_fPLS" if dimension == 1 else b"model must be R1_fPLS or fPCR"
+                        assert expected in result.stderr, (target, result.stderr)
+                        if dimension == 1:
+                            # obsolete one-dimensional fPCR requests export no fitted fields or telemetry
+                            assert not list((directory / "invalid-output").glob("*")), target
     print("Compatible baseline outputs, all response prefixes and reproducible GCV diagnostics verified.")
 
 

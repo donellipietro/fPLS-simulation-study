@@ -116,7 +116,8 @@ were. The paper reports fit time, peak resident memory, and iteration counts.
 
 ## Native model diagnostics
 
-The four C++ drivers use the public `fPLS` and `fPCR` models from `fdaPDE/models.h`.
+The four C++ drivers use the public `fPLS` model from `fdaPDE/models.h`; the 2D and
+predictive-order drivers also use the public `fPCR` model.
 `fPCR` fits native smooth fPCA components, projects final loadings sequentially, and refits OLS
 for each retained score prefix. Its beta coefficients map the original predictors through all
 preceding deflations. Prediction and beta CSVs retain every response column;

@@ -10,10 +10,45 @@ check_batch_cache <- function() {
     sys.source("src/utils/load_results_utils.R", env)
     sys.source("src/utils/batch_cache_utils.R", env)
     sys.source(file.path("tests", suite, "utils", "cache_utils.R"), env)
+    sys.source(file.path("tests", suite, "generate_options.R"), env)
+    catalog <- switch(suite,
+      "1D" = env$paper_model_catalog(),
+      "2D" = env$paper_model_catalog(),
+      "GCV" = env$gcv_model_catalog(),
+      "2D-predictive-order" = env$predictive_order_model_catalog()
+    )
+    # the one-dimensional comparisons retain five paper methods; fPCR remains a 2D competitor
+    stopifnot(if (suite == "1D") {
+      length(catalog$names) == 5L && !"fPCR" %in% catalog$names
+    } else if (suite == "GCV") {
+      identical(catalog$names, "R1_fPLS")
+    } else {
+      "fPCR" %in% catalog$names
+    })
+    if (suite == "1D") {
+      # older aggregates may include fPCR; paper readers select the current methods without rewriting archives
+      env$results_root <- directory
+      definition <- Filter(function(expr) {
+        is.call(expr) && identical(expr[[1]], as.name("<-")) &&
+          identical(expr[[2]], as.name("read_family"))
+      }, as.list(parse("paper-figures/scripts/common.R")))
+      eval(definition[[1]], env)
+      aggregate_file <- file.path(directory, suite, "aggregate", "all", "loaded_old.rds")
+      dir.create(dirname(aggregate_file), recursive = TRUE)
+      old <- list(model_names = c(catalog$names, "fPCR"),
+                  model_labels = c(catalog$labels, "fPCR"))
+      saveRDS(old, aggregate_file)
+      before <- tools::md5sum(aggregate_file)
+      loaded <- env$read_family(suite, "old")
+      stopifnot(identical(loaded$model_names, catalog$names),
+                identical(loaded$model_labels, catalog$labels),
+                identical(loaded$model_colors, catalog$colors),
+                identical(before, tools::md5sum(aggregate_file)))
+    }
     options <- list(
       dimensions = list(n_stat_units = 10L, n_locs = 5L, source_k = 11L,
                         n_reference_points = 4L, n_reference_per_axis = 2L),
-      model = list(n_comp = 2L), model_names = c("R1_fPLS", "fPCR"),
+      model = list(n_comp = 2L), model_names = catalog$names,
       noise = list(NSR_X_final_component = 0.1, NSR_Y = 0.2),
       data = list(n_true_comp = 3L, n_signal_components = 1L,
                   design_version = "design-v1", score_variance = c(1, 0.5)),
@@ -88,7 +123,7 @@ check_batch_cache <- function() {
     stale <- options
     stale$model$n_comp <- 3L
     stopifnot(!env$models_match_options(model_files, options$model_names, stale))
-    unlink(model_files[2L])
+    unlink(model_files[length(model_files)])
     # an incomplete model set or absent generated sample cannot be reused as a complete batch
     stopifnot(!env$models_match_options(model_files, options$model_names, options))
     unlink(data_file)
@@ -97,19 +132,19 @@ check_batch_cache <- function() {
     if (suite == "GCV") {
       metric <- rep(0, options$model$n_comp)
       evaluation <- list(
-        beta_sign_alignment = FALSE, fpcr_score_map = "sequential_projection_v1",
+        beta_sign_alignment = FALSE,
         truth_target = "prefix",
         rmse = list(Y_reconstruction = metric, X_reconstruction_locations = metric,
                     Beta1_locations = metric),
         cosine = list(Beta_locations = metric, X_direction_locations = metric,
                       X_loading_locations = metric, X_latent_scores = metric)
       )
-      results_evaluation <- list(R1_fPLS = evaluation, fPCR = evaluation)
+      results_evaluation <- list(R1_fPLS = evaluation)
       file <- file.path(directory, "evaluation.RData")
       save(results_evaluation, file = file)
-      # prefix evaluations must contain every requested component for both models
+      # prefix evaluations must contain every requested component for the fitted fPLS model
       stopifnot(env$evaluation_matches_options(file, options))
-      results_evaluation$fPCR$rmse$Beta1_locations <- 0
+      results_evaluation$R1_fPLS$rmse$Beta1_locations <- 0
       save(results_evaluation, file = file)
       stopifnot(!env$evaluation_matches_options(file, options))
     }
