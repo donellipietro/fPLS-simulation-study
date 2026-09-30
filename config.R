@@ -17,7 +17,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
     FDAPDE_CPP_REPOSITORY <- Sys.getenv(
       "FDAPDE_CPP_REPOSITORY",
-      unset = normalizePath("../../../fdaPDE/fdaPDE-cpp", mustWork = FALSE)
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
     )
 
     list(
@@ -46,8 +46,9 @@ TESTBENCH_CONFIG_PROFILES <- list(
         unset = "/opt/homebrew/opt/eigen/include/eigen3"
       ),
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
-      # Outer branch selected by this profile for the local fdaPDE stack
-      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
+      FDAPDE_CORE_REPOSITORY = Sys.getenv("FDAPDE_CORE_REPOSITORY", unset = ""),
+      # Outer branch selected by this profile for the pinned fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop_fPLS"),
       FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
@@ -74,7 +75,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
     FDAPDE_CPP_REPOSITORY <- Sys.getenv(
       "FDAPDE_CPP_REPOSITORY",
-      unset = normalizePath("../../../fdaPDE/fdaPDE-cpp", mustWork = FALSE)
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
     )
     DOCKER_BIND_PATHS <- unique(c(PATH_REPO, PATH_OUTPUT, PATH_FDAPDE_CPP))
     DOCKER_BIND_PATHS <- DOCKER_BIND_PATHS[nzchar(DOCKER_BIND_PATHS)]
@@ -98,8 +99,9 @@ TESTBENCH_CONFIG_PROFILES <- list(
       PATH_FDAPDE_CORE = file.path(PATH_FDAPDE_CPP, "fdaPDE/core"),
       PATH_EIGEN_INCLUDE = "/usr/include/eigen3",
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
-      # Outer branch selected by this profile for the local fdaPDE stack
-      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
+      FDAPDE_CORE_REPOSITORY = Sys.getenv("FDAPDE_CORE_REPOSITORY", unset = ""),
+      # Outer branch selected by this profile for the pinned fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop_fPLS"),
       FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
@@ -132,7 +134,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
     PATH_FDAPDE_CPP <- file.path(PATH_REPO, "libraries", "fdaPDE-cpp")
     FDAPDE_CPP_REPOSITORY <- Sys.getenv(
       "FDAPDE_CPP_REPOSITORY",
-      unset = normalizePath("../../../fdaPDE/fdaPDE-cpp", mustWork = FALSE)
+      unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
     )
     SINGULARITY_IMAGE <- Sys.getenv(
       "SINGULARITY_IMAGE",
@@ -167,8 +169,9 @@ TESTBENCH_CONFIG_PROFILES <- list(
         unset = "/usr/include/eigen3"
       ),
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
-      # Outer branch selected by this profile for the local fdaPDE stack
-      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
+      FDAPDE_CORE_REPOSITORY = Sys.getenv("FDAPDE_CORE_REPOSITORY", unset = ""),
+      # Outer branch selected by this profile for the pinned fdaPDE stack
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop_fPLS"),
       FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
@@ -224,9 +227,10 @@ TESTBENCH_CONFIG_PROFILES <- list(
       PATH_FDAPDE_CORE = file.path(PATH_FDAPDE_CPP, "fdaPDE/core"),
       PATH_EIGEN_INCLUDE = Sys.getenv("PATH_EIGEN_INCLUDE", unset = "/usr/include/eigen3"),
       FDAPDE_CPP_REPOSITORY = Sys.getenv(
-        "FDAPDE_CPP_REPOSITORY", unset = normalizePath("../../../fdaPDE/fdaPDE-cpp", mustWork = FALSE)
+        "FDAPDE_CPP_REPOSITORY", unset = "https://github.com/fdaPDE/fdaPDE-cpp.git"
       ),
-      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
+      FDAPDE_CORE_REPOSITORY = Sys.getenv("FDAPDE_CORE_REPOSITORY", unset = ""),
+      FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "develop_fPLS"),
       FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
