@@ -48,7 +48,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
       # Outer branch selected by this profile for the local fdaPDE stack
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
-      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "9864fa6eb94072ad2b79de989db8a46e4ae81b1e"),
+      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
       FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
@@ -100,7 +100,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
       # Outer branch selected by this profile for the local fdaPDE stack
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
-      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "9864fa6eb94072ad2b79de989db8a46e4ae81b1e"),
+      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
       FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
@@ -169,7 +169,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
       FDAPDE_CPP_REPOSITORY = FDAPDE_CPP_REPOSITORY,
       # Outer branch selected by this profile for the local fdaPDE stack
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
-      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "9864fa6eb94072ad2b79de989db8a46e4ae81b1e"),
+      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       # Set false to use PATH_FDAPDE_CPP without modifying its Git checkout
       FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
@@ -227,7 +227,7 @@ TESTBENCH_CONFIG_PROFILES <- list(
         "FDAPDE_CPP_REPOSITORY", unset = normalizePath("../../../fdaPDE/fdaPDE-cpp", mustWork = FALSE)
       ),
       FDAPDE_CPP_BRANCH = Sys.getenv("FDAPDE_CPP_BRANCH", unset = "codex/fpls-diagnostics-fpcr"),
-      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "9864fa6eb94072ad2b79de989db8a46e4ae81b1e"),
+      FDAPDE_CPP_COMMIT = Sys.getenv("FDAPDE_CPP_COMMIT", unset = "d32e45361200b16deb03ebdfad5ee55a703ff73a"),
       FDAPDE_CORE_COMMIT = Sys.getenv("FDAPDE_CORE_COMMIT", unset = "472f9bd374a63fbf851106e5c45f8870e31e8189"),
       FDAPDE_CPP_MANAGED = Sys.getenv("FDAPDE_CPP_MANAGED", unset = "true"),
       SINGULARITY_IMAGE = "",

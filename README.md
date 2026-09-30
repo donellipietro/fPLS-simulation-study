@@ -36,12 +36,12 @@ Install the following on your machine before running the workflow:
 `make build` automatically installs missing R packages listed in
 [`src/installation/install_packages.R`](src/installation/install_packages.R) and `femR`, and prepares
 the nlohmann/json headers and the pinned local `fdaPDE-cpp` stack. The native revisions
-are pinned in `config.R`: fdaPDE-cpp commit `9864fa6` and core commit `472f9bd`. For the `windows`
+are pinned in `config.R`: fdaPDE-cpp commit `d32e453` and core commit `472f9bd`. For the `windows`
 profile, the build also prepares the configured Docker image.
 
 The default source is the sibling local checkout `../../../fdaPDE/fdaPDE-cpp`.
 Set `FDAPDE_CPP_REPOSITORY` to another local clone containing commit
-`9864fa6eb94072ad2b79de989db8a46e4ae81b1e` before regenerating `.env` with
+`d32e45361200b16deb03ebdfad5ee55a703ff73a` before regenerating `.env` with
 `Rscript config.R --profile macbook --write-env`. `FDAPDE_CORE_REPOSITORY` can
 select a local core clone; otherwise the source checkout supplies it.
 `cpp/compile.sh` validates or refreshes `libraries/fdaPDE-cpp` at the pinned
