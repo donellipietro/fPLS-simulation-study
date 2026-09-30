@@ -23,7 +23,7 @@ source("src/utils/load_results_utils.R")
 source("src/utils/plotting_utils.R")
 source("src/utils/diagnostic_plot_utils.R")
 source("tests/1D/config.R")
-source("tests/1D/utils/generate_options.R")
+source("tests/1D/generate_options.R")
 source("tests/1D/utils/models_evaluation.R")
 source("tests/1D/utils/plot_qualitative_results.R")
 
