@@ -36,8 +36,7 @@ Install the following on your machine before running the workflow:
 `make build` automatically installs missing R packages listed in
 [`src/installation/install_packages.R`](src/installation/install_packages.R) and `femR`, and prepares
 the nlohmann/json headers and the pinned `fdaPDE-cpp` stack. The native revisions
-are pinned in `config.R`: fdaPDE-cpp commit `d32e453` and core commit `472f9bd`. For the `windows`
-profile, the build also prepares the configured Docker image.
+are pinned in `config.R`. For the `windows` profile, the build also prepares the configured Docker image.
 
 For local execution, choose `macbook` on macOS, `linux` on Linux, or `windows` on Windows.
 The Linux profile uses `gcc`, `g++`, and Eigen in `/usr/include/eigen3`; override `CC`, `CXX`,
@@ -101,31 +100,6 @@ before RMSE evaluation. The GCV sensitivity figures report these errors at each 
 in-memory post-processing, but excludes data generation, result I/O, and accuracy evaluation.
 It is not total campaign runtime and must not be compared across different hardware as though it
 were. The paper reports fit time, peak resident memory, and iteration counts.
-
-## Native model diagnostics
-
-The four C++ drivers use the public `fPLS` model from `fdaPDE/models.h`; the 2D and
-predictive-order drivers also use the public `fPCR` model.
-`fPCR` fits native smooth fPCA components, projects final loadings sequentially, and refits OLS
-for each retained score prefix. Its beta coefficients map the original predictors through all
-preceding deflations. Prediction and beta CSVs retain every response column;
-`response_diagnostics.csv` records SSE and MSE per component prefix and response.
-
-fPCR telemetry schema 5 records the explicit `gcv_probes` and `gcv_seed`. Each GCV component
-also writes `fpca_gcv_h<component>.csv`. fPLS schema 6 applies when GCV curves are requested;
-other fPLS outputs retain schema 4. GCV curves contain `lambda,edf,gcv,selected_by_fit`, copied
-from evaluations saved during the fit. Output performs no diagnostic refits or additional EDF estimates.
-The R cache checks and GCV aggregator accept these schemas and require the fitted minimum marker.
-
-Fixed fPCR retains the previous sequential-score regression algorithm. GCV fPCR now uses the
-configured EDF probes/seed and a real-valued residual degrees-of-freedom denominator, replacing
-the previous implicit random seed and integer truncation. These intentional calibration changes
-can alter selected lambdas and invalidate old cached GCV fits.
-
-Run `python3 tests/check_cpp_driver_outputs.py` after compiling both projects to check scalar
-and three-response fits, three score prefixes, fixed/GCV calibration and reproducible seeds 0/42.
-An optional baseline-binary directory additionally checks compatible older outputs.
-`Rscript tests/check_native_model_diagnostics.R` checks R cache invalidation and the GCV curve validator.
 
 ## Reproducibility boundary
 
