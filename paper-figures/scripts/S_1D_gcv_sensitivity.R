@@ -163,7 +163,8 @@ load_gcv_raw_curves <- function(family, n_reps, n_components) {
     for (batch in seq_along(dirs)) {
       for (component in seq_len(n_components)) {
         curve <- read.csv(file.path(dirs[batch], paste0(update, "_gcv_h", component, ".csv")))
-        if (!identical(names(curve), c("lambda", "gcv"))) stop("Invalid GCV curve schema")
+        # The plots use lambda and GCV; current fits also save EDF and selection metadata.
+        if (!all(c("lambda", "gcv") %in% names(curve))) stop("Invalid GCV curve schema")
         curve_rows[[index]] <- transform(curve, update = update, batch = batch, component = component)
         index <- index + 1L
       }

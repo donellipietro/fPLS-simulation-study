@@ -308,15 +308,17 @@ clean_test: clean
 	fi
 
 ## DANGER ZONE: Full cleanup of all generated files
-distclean: clean clean_compiled
+distclean:
 	@echo "Attention! This will remove ALL the additional files and directories generated so far."
 	@read -p "Are you sure you want to continue? [y/n]: " confirm && [ "$$confirm" = "y" ] || (echo "Cleanup aborted." && false)
+	@$(MAKE) --no-print-directory clean clean_compiled PROFILE="$(TESTBENCH_PROFILE)"
 	@$(RSCRIPT) config.R --profile "$(TESTBENCH_PROFILE)" --remove-links
 	@echo "Removing additional generated files..."
 	@$(RM) -r "$(PATH_IMAGES)"
 	@$(RM) -r "$(PATH_RESULTS)"
 	@$(RM) -r "$(PATH_TEST_DATA)"
 	@$(RM) -r "$(PATH_TMP)"
+	@$(RM) -r "$(PATH_REPO)/paper-figures/panels" "$(PATH_REPO)/paper-figures/exports" "$(PATH_REPO)/paper-tables/csv"
 	@if [ -n "$(PATH_REPO)" ]; then $(RM) -r "$(PATH_REPO)/libraries"; fi
 	@$(RM) .env
 	@printf 'Additional cleanup completed.\n\n'
