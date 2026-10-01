@@ -280,6 +280,12 @@ for (family in families) {
       file.path(aggregate_dir, "vary_H_explained_structure.csv"),
       row.names = FALSE
     )
+  }
+
+  # Keep explained-structure tables even when the run omits test images.
+  if (!test_images_enabled()) next
+
+  if (family == "vary_H") {
     structure_metrics <- c(
       X_variance_explained = "X variance explained (%)",
       Y_variance_explained = "Y variance explained (%)",

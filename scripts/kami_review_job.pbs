@@ -33,9 +33,20 @@ trap finish EXIT
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
+export SMOKE_TEST=0
+# Kami produces numerical results; figures can be generated after the campaign.
+export GENERATE_TEST_IMAGES="${GENERATE_TEST_IMAGES:-0}"
 
 printf 'Simulation campaign job: %s\nHost: %s\nStarted: %s\n' \
   "${PBS_JOBID}" "$(hostname)" "${STARTED_AT}"
+
+# PBS exposes node capacity, so verify the actual paper CPU before any build or fit.
+CURRENT_STAGE="hardware_check"
+LC_ALL=C lscpu > "${KAMI_RUN_DIR}/node-info.txt"
+if ! grep -q 'AMD EPYC 7413' "${KAMI_RUN_DIR}/node-info.txt"; then
+  echo "Error: CPU differs from the paper's AMD EPYC 7413; campaign not started." >&2
+  exit 1
+fi
 
 CURRENT_STAGE="build"
 FDAPDE_CPP_MANAGED=true make --no-print-directory build PROFILE=hpc-torque

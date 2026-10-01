@@ -9,6 +9,12 @@ mkdir <- function(paths) {
     }
   }
 }
+
+#' Keep test images enabled unless the execution explicitly disables them.
+test_images_enabled <- function() {
+  tolower(Sys.getenv("GENERATE_TEST_IMAGES", "true")) %in% c("1", "true", "yes", "y")
+}
+
 #' Load the root configuration and return the selected profile.
 #'
 #' @return The value produced by `load_config`.

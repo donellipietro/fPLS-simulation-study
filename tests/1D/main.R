@@ -109,8 +109,9 @@ for (batch_index in seq_len(test_options$test_options$n_reps)) {
     if (batch_index == 1L) {
       saveRDS(data, file.path(path_list$data, glue::glue("{test_options$name_test}.rds")))
 
-      # write the 1D data illustration for the eleven-basis setting in vary_k
-      if (name_main_test == "vary_k" && test_options$dimensions$source_k == 11L) {
+      # write the 1D data illustration for the eleven-node setting when images are enabled
+      if (test_images_enabled() && name_main_test == "vary_k" &&
+          test_options$dimensions$source_k == 11L) {
         write_data_illustration(data, file.path(path_list$images, "data_1D.pdf"))
       }
     }

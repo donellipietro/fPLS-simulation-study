@@ -236,49 +236,51 @@ write.csv(completeness, file.path(aggregate_dir, "completeness.csv"), row.names 
 diagnostics <- write_family_diagnostics(loaded, "vary_H", aggregate_dir, image_dir)
 
 ## Create standard metric plots and model legend ----
-for (metric in metrics) {
-  pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)
-  plot.aggregated_data(
-    loaded, loaded$rmse[[metric]],
-    "Predictive component ordering", "RMSE",
-    plots_catalog = list(
-      boxplots = TRUE, lines = FALSE, logx = FALSE,
-      loglog = FALSE, normalized = FALSE
+if (test_images_enabled()) {
+  for (metric in metrics) {
+    pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)
+    plot.aggregated_data(
+      loaded, loaded$rmse[[metric]],
+      "Predictive component ordering", "RMSE",
+      plots_catalog = list(
+        boxplots = TRUE, lines = FALSE, logx = FALSE,
+        loglog = FALSE, normalized = FALSE
+      )
     )
+    dev.off()
+  }
+
+  structure_metrics <- c(
+    X_variance_explained = "X variance explained (%)",
+    Y_variance_explained = "Y variance explained (%)",
+    XY_cross_covariance_explained = "X-Y cross-covariance explained (%)"
+  )
+  for (metric in names(structure_metrics)) {
+    pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)
+    plot.aggregated_data(
+      loaded,
+      structure_plot_data(structure_rows, metric, loaded$model_names),
+      "Predictive component ordering", structure_metrics[[metric]],
+      limits = c(0, 100),
+      y_breaks = seq(0, 100, 25),
+      plots_catalog = list(
+        boxplots = TRUE, lines = FALSE, logx = FALSE,
+        loglog = FALSE, normalized = FALSE
+      )
+    )
+    dev.off()
+  }
+
+  pdf(file.path(image_dir, "legend.pdf"), width = 6, height = 1.5, bg = "white")
+  par(mar = rep(0, 4))
+  plot.new()
+  legend(
+    "center", legend = loaded$model_labels, col = "black",
+    pt.bg = loaded$model_colors, pch = 22, pt.cex = 1.5,
+    horiz = TRUE, bty = "n"
   )
   dev.off()
 }
-
-structure_metrics <- c(
-  X_variance_explained = "X variance explained (%)",
-  Y_variance_explained = "Y variance explained (%)",
-  XY_cross_covariance_explained = "X-Y cross-covariance explained (%)"
-)
-for (metric in names(structure_metrics)) {
-  pdf(file.path(image_dir, glue::glue("{metric}.pdf")), width = 8, height = 5)
-  plot.aggregated_data(
-    loaded,
-    structure_plot_data(structure_rows, metric, loaded$model_names),
-    "Predictive component ordering", structure_metrics[[metric]],
-    limits = c(0, 100),
-    y_breaks = seq(0, 100, 25),
-    plots_catalog = list(
-      boxplots = TRUE, lines = FALSE, logx = FALSE,
-      loglog = FALSE, normalized = FALSE
-    )
-  )
-  dev.off()
-}
-
-pdf(file.path(image_dir, "legend.pdf"), width = 6, height = 1.5, bg = "white")
-par(mar = rep(0, 4))
-plot.new()
-legend(
-  "center", legend = loaded$model_labels, col = "black",
-  pt.bg = loaded$model_colors, pch = 22, pt.cex = 1.5,
-  horiz = TRUE, bty = "n"
-)
-dev.off()
 
 ## Record and plot the latent design used by the experiment ----
 first_batch <- file.path(
@@ -292,19 +294,22 @@ design <- data.frame(
     colSums(first_data$design$response_loadings^2)
 )
 write.csv(design, file.path(aggregate_dir, "latent_design.csv"), row.names = FALSE)
-design_long <- tidyr::pivot_longer(
-  design, -component, names_to = "quantity", values_to = "value"
-)
-design_plot <- ggplot(design_long, aes(x = component, y = value)) +
-  geom_col(fill = RColorBrewer::brewer.pal(3, "Blues")[3], width = 0.75) +
-  facet_wrap(~quantity, ncol = 1L, scales = "free_y") +
-  scale_x_continuous(breaks = seq_len(n_comp)) +
-  labs(x = "Component", y = NULL) +
-  theme_bw()
-ggsave(
-  file.path(image_dir, "latent_design.pdf"), design_plot,
-  width = 8, height = 6, units = "in"
-)
+# Keep the design CSV above even when its plot is disabled.
+if (test_images_enabled()) {
+  design_long <- tidyr::pivot_longer(
+    design, -component, names_to = "quantity", values_to = "value"
+  )
+  design_plot <- ggplot(design_long, aes(x = component, y = value)) +
+    geom_col(fill = RColorBrewer::brewer.pal(3, "Blues")[3], width = 0.75) +
+    facet_wrap(~quantity, ncol = 1L, scales = "free_y") +
+    scale_x_continuous(breaks = seq_len(n_comp)) +
+    labs(x = "Component", y = NULL) +
+    theme_bw()
+  ggsave(
+    file.path(image_dir, "latent_design.pdf"), design_plot,
+    width = 8, height = 6, units = "in"
+  )
+}
 
 write_json(
   list(

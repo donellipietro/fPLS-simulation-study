@@ -160,6 +160,9 @@ write_family_diagnostics <- function(
             row.names = FALSE)
 
   plot_status <- list()
+  # Retain diagnostic CSV rows when the run omits test images.
+  if (!test_images_enabled()) return(list(rows = rows, plots = plot_status))
+
   for (name in names(scalar_diagnostics)) {
     plot_data <- loaded[[name]]
     values_name <- scalar_diagnostics[[name]]

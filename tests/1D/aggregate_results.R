@@ -174,6 +174,9 @@ for (family in families) {
   all_diagnostics[[family]] <- diagnostics$rows
   diagnostic_outputs[[family]] <- diagnostics$plots
 
+  # Metrics, diagnostics and loaded results are complete; images are optional.
+  if (!test_images_enabled()) next
+
   ## Create the standard standalone model legend
   pdf(file.path(image_dir, "legend.pdf"), width = 14, height = 1.5, bg = "white")
   par(mar = rep(0, 4))

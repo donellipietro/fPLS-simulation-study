@@ -318,14 +318,18 @@ for (family in families) {
   all_diagnostics[[family]] <- diagnostics$rows
   diagnostic_outputs[[family]] <- diagnostics$plots
 
-  gcv_curve_outputs <- unlist(lapply(
-    family_options,
-    function(options) {
-      write_gcv_curve_plots(
-        load_gcv_curves(path_list, family, options), image_dir, options$name_test
-      )
-    }
-  ), use.names = FALSE)
+  gcv_curve_outputs <- if (test_images_enabled()) {
+    unlist(lapply(
+      family_options,
+      function(options) {
+        write_gcv_curve_plots(
+          load_gcv_curves(path_list, family, options), image_dir, options$name_test
+        )
+      }
+    ), use.names = FALSE)
+  } else {
+    character()
+  }
   diagnostic_outputs[[family]]$gcv_curves <- gcv_curve_outputs
 
   plot_specs <- if (prefix_sensitivity) {
@@ -364,32 +368,35 @@ for (family in families) {
     }
     value
   })
-  for (i in seq_len(nrow(plot_specs))) {
-    spec <- plot_specs[i, ]
-    pdf(file.path(image_dir, glue::glue("{spec$metric}.pdf")), width = 10, height = 5)
-    plot.aggregated_data(
-      loaded, plot_data[[i]], family, spec$value_label,
-      plots_catalog = list(
-        boxplots = TRUE, lines = FALSE, logx = FALSE,
-        loglog = FALSE, normalized = FALSE
+  # Rendering is optional; all metric and raw-curve validation still runs.
+  if (test_images_enabled()) {
+    for (i in seq_len(nrow(plot_specs))) {
+      spec <- plot_specs[i, ]
+      pdf(file.path(image_dir, glue::glue("{spec$metric}.pdf")), width = 10, height = 5)
+      plot.aggregated_data(
+        loaded, plot_data[[i]], family, spec$value_label,
+        plots_catalog = list(
+          boxplots = TRUE, lines = FALSE, logx = FALSE,
+          loglog = FALSE, normalized = FALSE
+        )
       )
+      dev.off()
+    }
+    pdf(
+      file.path(image_dir, "legend.pdf"),
+      width = max(4, 2.8 * length(loaded$model_labels)), height = 1.5, bg = "white"
+    )
+    par(mar = rep(0, 4))
+    plot.new()
+    legend(
+      "center", legend = loaded$model_labels, col = "black",
+      pt.bg = loaded$model_colors, pch = 22, pt.cex = 1.5,
+      horiz = TRUE, bty = "n"
     )
     dev.off()
   }
-  pdf(
-    file.path(image_dir, "legend.pdf"),
-    width = max(4, 2.8 * length(loaded$model_labels)), height = 1.5, bg = "white"
-  )
-  par(mar = rep(0, 4))
-  plot.new()
-  legend(
-    "center", legend = loaded$model_labels, col = "black",
-    pt.bg = loaded$model_colors, pch = 22, pt.cex = 1.5,
-    horiz = TRUE, bty = "n"
-  )
-  dev.off()
 
-  # Stage only after every metric and plot for this family has validated.
+  # Stage only after every metric and any requested plots have validated.
   saveRDS(loaded, file.path(staging_dir, glue::glue("loaded_{family}.rds")))
 }
 

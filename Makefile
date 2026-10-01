@@ -387,9 +387,10 @@ run_test: ensure_env
 		"$$runner" "$(TEST_SUITE)" "$(TEST_NAME)"; \
 	fi
 
-## Optionally replay all retained production suites in one serial full-node Torque/PBS job
+## Select an idle Kami node and run all production suites serially in one exclusive PBS job
 kami_review_submit:
-	@PBS_DRY_RUN="$(PBS_DRY_RUN)" \
+	@GENERATE_TEST_IMAGES="$(GENERATE_TEST_IMAGES)" \
+	PBS_DRY_RUN="$(PBS_DRY_RUN)" \
 	PBS_MULTI_CPUS="$(PBS_MULTI_CPUS)" \
 	PBS_MULTI_MEM="$(PBS_MULTI_MEM)" \
 	PBS_MULTI_TIME="$(PBS_MULTI_TIME)" \
