@@ -35,8 +35,8 @@ Install the following on your machine before running the workflow:
 
 `make build` automatically installs missing R packages listed in
 [`src/installation/install_packages.R`](src/installation/install_packages.R) and `femR`, and prepares
-the nlohmann/json headers and the pinned `fdaPDE-cpp` stack. The native revisions
-are pinned in `config.R`. For the `windows` profile, the build also prepares the configured Docker image.
+the nlohmann/json headers and the pinned `fdaPDE-cpp` stack. For the `windows` profile,
+the build also prepares the configured Docker image.
 
 For local execution, choose `macos` on macOS, `linux` on Linux, or `windows` on Windows.
 The Linux profile uses `gcc`, `g++`, and Eigen in `/usr/include/eigen3`; override `CC`, `CXX`,
@@ -114,3 +114,33 @@ Figure panels require Cairo PDF support and Arial. Figure assembly requires Affi
 versioned `paper-figures/layouts/figures.af`; this proprietary layout step is not automated.
 See the [simulation catalog](tests/README.md), [figure sources](paper-figures/README.md), and
 [table sources](paper-tables/README.md) for experiment details and post-processing commands.
+
+## Platform configuration and support
+
+The native profiles were configured with the following reference environments:
+
+| Profile | Platform | C++ compiler | R | Eigen |
+| --- | --- | --- | --- | --- |
+| `macos` | macOS 26.6.2, ARM64 | GCC/G++ 15.2.0 (Homebrew) | 4.3.3 | 3.4.0 |
+| `linux` | Ubuntu 24.04.5 LTS, ARM64, in Docker | GCC/G++ 13.3.0 | 4.3.3 | 3.4.0 |
+
+Profiles are also provided for Windows/WSL2 with Docker (`windows`), Slurm with
+Apptainer/Singularity (`hpc-slurm`), and Torque/PBS (`hpc-torque`). Their compiler
+and R versions depend on the container or cluster installation. The native fdaPDE
+revisions are pinned in [`config.R`](config.R).
+
+On Linux, all four native suite drivers were compiled, and `1D/vary_m` was run
+through aggregation and manuscript panel generation.
+
+On Ubuntu/Debian, R packages compiled from source also need development libraries.
+Install these before `make build PROFILE=linux`:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y build-essential r-base-dev libeigen3-dev \
+  libcurl4-openssl-dev libssl-dev libxml2-dev libuv1-dev libudunits2-dev \
+  libgdal-dev libgeos-dev libproj-dev libsqlite3-dev libabsl-dev cmake
+```
+
+This repository is maintained by Pietro Donelli. For questions or problems, contact
+[pietro.donelli@polimi.it](mailto:pietro.donelli@polimi.it).

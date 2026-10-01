@@ -41,16 +41,27 @@ if (length(missing_packages) > 0) {
 
 if (requireNamespace("femR", quietly = TRUE)) {
   cat("The package femR is already installed\n")
-  quit(save = "no", status = 0)
+} else {
+  if (!requireNamespace("remotes", quietly = TRUE)) {
+    install.packages("remotes", lib = install_lib)
+  }
+
+  remotes::install_github(
+    "fdaPDE/femR",
+    ref = "stable",
+    lib = install_lib,
+    upgrade = "never"
+  )
 }
 
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes", lib = install_lib)
+# Package installation can report failures as warnings; verify the usable runtime.
+required_packages <- c(cran_packages, "femR")
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, quietly = TRUE, FUN.VALUE = logical(1))
+]
+if (length(missing_packages) > 0) {
+  stop(
+    "Required R packages are unavailable: ", paste(missing_packages, collapse = ", "),
+    ". Check the installation errors above.", call. = FALSE
+  )
 }
-
-remotes::install_github(
-  "fdaPDE/femR",
-  ref = "stable",
-  lib = install_lib,
-  upgrade = "never"
-)
